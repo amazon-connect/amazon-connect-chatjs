@@ -5,9 +5,10 @@
   "scripts": {
     "test": "jest",
     "release": "jest && webpack --mode=production",
+    "devo": "jest && webpack --mode=development",
     "watch": "webpack --watch",
     "dev": "webpack --mode=development && webpack --watch",
-    "server": "webpack-dev-server",
+    "server": "webpack-dev-server --hot --inline",
     "clean": "rm -rf build/ node_modules build"
   },
   "repository": {
@@ -22,9 +23,9 @@
   ],
   "jest": {
     "transform": {
-      ".(ts|tsx)$": "ts-jest"
+      ".(js|jsx)$": "babel-jest"
     },
-    "testRegex": "/test/.*\\.spec\\.ts$",
+    "testRegex": "/test/.*\\.spec\\.js$",
     "moduleFileExtensions": [
       "ts",
       "tsx",
@@ -56,5 +57,8 @@
     "webpack": "^4.26.0",
     "webpack-cli": "^3.1.2",
     "webpack-dev-server": "^3.1.10"
+  },
+  "dependencies": {
+    "paho-client": "git+https://github.com/eclipse/paho.mqtt.javascript.git"
   }
 }
