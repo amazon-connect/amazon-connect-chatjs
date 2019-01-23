@@ -8,7 +8,7 @@ import { ChatConnectionManager } from "./connectionManager";
 import { SoloChatConnectionMqttHelper } from "./connectionHelper";
 import { SESSION_TYPES, CHAT_EVENTS } from "../constants";
 import { EventConstructor } from "./eventConstructor";
-import { EventBus } from "./eventBus";
+import { EventBus } from "./eventbus";
 
 import { PersistentConnectionAndChatServiceController } from "./chatController";
 

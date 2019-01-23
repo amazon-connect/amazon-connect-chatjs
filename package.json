@@ -1,6 +1,7 @@
 {
-  "name": "amazonconnectchatjs",
+  "name": "@amzn/amazon-connect-chatjs",
   "version": "1.0.0",
+  "main": "dist/amazon-connect-chat.js",
   "description": "Provides chat support to AmazonConnect customers",
   "scripts": {
     "test": "jest",
@@ -40,6 +41,9 @@
   },
   "author": "amazon",
   "license": "ISC",
+  "npm-pretty-much": {
+    "runRelease": "always"
+  },
   "devDependencies": {
     "@babel/core": "^7.1.6",
     "@babel/preset-env": "^7.1.6",

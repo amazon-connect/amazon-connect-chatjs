@@ -6,8 +6,7 @@ module.exports = {
   mode: "development",
   devtool: "inline-source-map",
   output: {
-    filename: "amazon-connect-chatjs.js",
-    library: "connectchatjs",
+    filename: "amazon-connect-chat.js",
     path: path.resolve(__dirname, "dist")
   },
   resolve: {
