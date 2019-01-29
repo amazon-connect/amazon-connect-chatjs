@@ -158,6 +158,7 @@ class PersistentConnectionAndChatServiceController extends ChatController {
     return self.chatClient.sendMessage(connectionToken, message, type).then(
       function(response) {
         response.requestContext = requestContext;
+        return response;
       },
       function(error) {
         error.requestContext = requestContext;
@@ -186,6 +187,7 @@ class PersistentConnectionAndChatServiceController extends ChatController {
       .then(
         function(response) {
           response.requestContext = requestContext;
+          return response;
         },
         function(error) {
           error.requestContext = requestContext;
@@ -213,6 +215,7 @@ class PersistentConnectionAndChatServiceController extends ChatController {
     return this.chatClient.getTranscript(connectionToken, args).then(
       function(response) {
         response.requestContext = requestContext;
+        return response;
       },
       function(error) {
         error.requestContext = requestContext;
