@@ -36,7 +36,7 @@ class ChatControllerTest {
       //connectionDetails: connectionDetails
     };
     //var factory = new connectchatjs.ChatFactory();
-    self.chatController = connectchatjs.chatSession(chatDetails);
+    self.chatController = connect.ChatSession(INIT_CHAT_RESPONSE);
     self.chatController.onConnectionBroken(data => {
       console.log("onNetworkLinkBreak");
       console.log(data);

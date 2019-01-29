@@ -3,6 +3,8 @@ import {
   UnImplementedMethodException
 } from "./exceptions";
 
+import Paho from "paho-mqtt";
+
 class ChatConnectionManager {
   createNewMqttConnectionProvider(connectionArgs, type) {
     switch (type) {
@@ -99,7 +101,6 @@ var MqttEvents = Object.freeze({
   RECONNECTED: "ReconnectSuccess"
 }); // {}
 
-var PahoClient = require("paho-client");
 
 class PahoMqttConnection extends MQTTClient {
   constructor(args) {
@@ -107,7 +108,7 @@ class PahoMqttConnection extends MQTTClient {
     this.preSignedUrl = args.preSignedUrl;
     this.connectionId = args.connectionId;
     this.status = MqttConnectionStatus.NeverConnected;
-    this.pahoClient = new PahoClient.Client(
+    this.pahoClient = new Paho.Client(
       this.preSignedUrl,
       this.connectionId
     );

@@ -2,8 +2,7 @@
 import { ChatSessionConstructor } from "./core/chatSession";
 import { CHAT_EVENTS, SESSION_TYPES } from "./constants";
 
-connect = global.connect || {};
-global.connect = connect;
+global.connect = global.connect || {};
 connect.ChatSession = ChatSessionConstructor;
 
 export const chatSession = ChatSessionConstructor;

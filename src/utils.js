@@ -1,6 +1,6 @@
 import { IllegalArgumentException } from "./core/exceptions";
 import { ValueError } from "./core/exceptions";
-import { sprintf } from "./sprintf";
+import { sprintf } from "sprintf-js";
 const Utils = {};
 
 /**

@@ -54,10 +54,5 @@ module.exports = {
     compress: false,
     hot: true,
     watchContentBase: true
-  },
-  plugins: [
-    new webpack.ProvidePlugin({
-      paho: "paho-client"
-    })
-  ]
+  }
 };

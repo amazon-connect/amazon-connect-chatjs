@@ -40,10 +40,8 @@ export const PERSISTENCE = Utils.makeEnum(["PERSISTED", "NON_PERSISTED"]);
 
 export const STAGE_CONFIG = {
   PROD: {
-    //GAMMA:
     invokeUrl: "https://2me8bbt55g.execute-api.us-west-2.amazonaws.com/Stage"
-    //BETA:
-    //invokeUrl: "https://vxgh3tfytg.execute-api.us-west-2.amazonaws.com/Stage"
+    // invokeUrl: "https://vxgh3tfytg.execute-api.us-west-2.amazonaws.com/Stage"
     //below is gautam's dev url
     //invokeUrl: "https://j1ltdj6sf6.execute-api.us-west-2.amazonaws.com/Stage"
   }
