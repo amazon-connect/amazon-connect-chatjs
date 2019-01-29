@@ -8,7 +8,9 @@ import {
   HTTP_METHODS,
   STAGE_CONFIG,
   CONTENT_TYPE,
-  MESSAGE_PERSISTENCE
+  MESSAGE_PERSISTENCE,
+  CONNECTION_TOKEN_KEY,
+  PARTICIPANT_TOKEN_KEY
 } from "../constants";
 
 class ChatClientFactoryImpl {
@@ -67,20 +69,22 @@ class HttpChatClient extends ChatClient {
     };
     var requestInput = {
       method: HTTP_METHODS.POST,
-      headers: { ConnectionToken: connectionToken },
+      headers: {},
       url: this.invokeUrl + RESOURCE_PATH.MESSAGE,
       body: body
     };
+    requestInput.headers[CONNECTION_TOKEN_KEY] = connectionToken;
     return this._callHttpClient(requestInput);
   }
 
   getTranscript(connectionToken, args) {
     var requestInput = {
       method: HTTP_METHODS.POST,
-      headers: { ConnectionToken: connectionToken },
+      headers: {},
       url: this.invokeUrl + RESOURCE_PATH.TRANSCRIPT,
       body: args
     };
+    requestInput.headers[CONNECTION_TOKEN_KEY] = connectionToken;
     return this._callHttpClient(requestInput);
   }
 
@@ -95,30 +99,33 @@ class HttpChatClient extends ChatClient {
     };
     var requestInput = {
       method: HTTP_METHODS.POST,
-      headers: { ConnectionToken: connectionToken },
+      headers: {},
       url: this.invokeUrl + RESOURCE_PATH.EVENT,
       body: body
     };
+    requestInput.headers[CONNECTION_TOKEN_KEY] = connectionToken;
     return this._callHttpClient(requestInput);
   }
 
   disconnectChat(connectionToken) {
     var requestInput = {
       method: HTTP_METHODS.POST,
-      headers: { ConnectionToken: connectionToken },
+      headers: {},
       url: this.invokeUrl + RESOURCE_PATH.DISCONNECT,
       body: {}
     };
+    requestInput.headers[CONNECTION_TOKEN_KEY] = connectionToken;
     return this._callHttpClient(requestInput);
   }
 
   createConnectionDetails(participantToken) {
     var requestInput = {
       method: HTTP_METHODS.POST,
-      headers: { ParticipantToken: participantToken },
+      headers: {},
       url: this.invokeUrl + RESOURCE_PATH.CONNECTION_DETAILS,
       body: {}
     };
+    requestInput.headers[PARTICIPANT_TOKEN_KEY] = participantToken;
     return this._callHttpClient(requestInput);
   }
 

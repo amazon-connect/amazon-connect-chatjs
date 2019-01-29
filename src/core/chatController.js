@@ -266,6 +266,7 @@ class PersistentConnectionAndChatServiceController extends ChatController {
   }
 
   _onConnectSuccess(response, requestContext) {
+    var self = this;
     var responseObject = {
       _debug: response,
       connectSuccess: true,
@@ -297,12 +298,11 @@ class PersistentConnectionAndChatServiceController extends ChatController {
     return self.chatClient.createConnectionDetails(self.participantToken).then(
       function(response) {
         var connectionDetails = {};
-        connectionDetails.ConnectionId =
-          response.data.ConnectionDetails.ConnectionId;
+        connectionDetails.ConnectionId = response.data.ConnectionId;
         connectionDetails.PreSignedConnectionUrl =
-          response.data.ConnectionDetails.PreSignedConnectionUrl;
+          response.data.PreSignedConnectionUrl;
         connectionDetails.connectionToken =
-          response.data.ParticipantCredentials.Token;
+          response.data.ParticipantCredentials.ConnectionAuthenticationToken;
         return connectionDetails;
       },
       function(error) {

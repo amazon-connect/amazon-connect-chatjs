@@ -4,6 +4,9 @@ export const CHAT_CONFIGURATIONS = {
   CONCURRENT_CHATS: 10
 };
 
+export const CONNECTION_TOKEN_KEY = "x-amzn-connect-connection-token";
+export const PARTICIPANT_TOKEN_KEY = "x-amzn-connect-participant-token";
+
 export const RESOURCE_PATH = {
   MESSAGE: "/contact/chat/participant/message",
   TRANSCRIPT: "/contact/chat/participant/transcript",
@@ -37,7 +40,10 @@ export const PERSISTENCE = Utils.makeEnum(["PERSISTED", "NON_PERSISTED"]);
 
 export const STAGE_CONFIG = {
   PROD: {
-    invokeUrl: "https://vxgh3tfytg.execute-api.us-west-2.amazonaws.com/Stage"
+    //GAMMA:
+    invokeUrl: "https://2me8bbt55g.execute-api.us-west-2.amazonaws.com/Stage"
+    //BETA:
+    //invokeUrl: "https://vxgh3tfytg.execute-api.us-west-2.amazonaws.com/Stage"
     //below is gautam's dev url
     //invokeUrl: "https://j1ltdj6sf6.execute-api.us-west-2.amazonaws.com/Stage"
   }
