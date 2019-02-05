@@ -5,6 +5,8 @@ import {
 } from "./exceptions";
 import { MqttConnectionStatus, MqttEvents } from "./connectionManager";
 import { MQTT_CONSTANTS } from "../constants";
+import { LogManager } from "../log";
+
 /**
  * This class is used for establishing a connection for the chat.
  * The object of this class can only be started once and can only be closed once.
@@ -60,8 +62,13 @@ which has never been connected and will not be shared with anyone.
 class SoloChatConnectionMqttHelper extends ConnectionHelper {
   constructor(args) {
     super();
+    var prefix = "ContactId-" + args.contactId + ": ";
+    this.logger = LogManager.getLogger({
+      prefix: prefix
+    });
     this.preSignedUrl = args.connectionDetails.preSignedUrl;
     this.topic = args.connectionDetails.connectionId;
+    this.considerParticipantAsDisconnected = false;
     this.iotConnection = args.mqttConnectionProvider((eventType, eventData) =>
       this._handleIotEvent(eventType, eventData)
     );
@@ -74,6 +81,17 @@ class SoloChatConnectionMqttHelper extends ConnectionHelper {
     }
     this.chatControllerCallback = args.callback;
     this.status = ConnectionHelperStatus.NeverStarted;
+  }
+
+  // Add any functionality that you want this to do,
+  // if the participant is to be considered as disconnected.
+  // disconnect here means that the participant is no longer part of ther chat.
+  // it is independent of the actual websocket connection being connected or not.
+  // participant can no longer send and recieve messages to the backend.
+  cleanUpOnParticipantDisconnect() {
+    // Right now, nothing depends on this field.
+    // However in future we might prevent retires on connection if this field is set to true.
+    this.considerParticipantAsDisconnected = true;
   }
 
   start() {
@@ -121,7 +139,7 @@ class SoloChatConnectionMqttHelper extends ConnectionHelper {
       reason: "ConnectionToBrokerFailed",
       details: connectError
     };
-    self.status = ConnectionHelperStatus.Ended;
+    this.status = ConnectionHelperStatus.Ended;
     reject(error);
   }
 
@@ -166,6 +184,7 @@ class SoloChatConnectionMqttHelper extends ConnectionHelper {
   _handleIotEvent(eventType, eventData) {
     switch (eventType) {
       case MqttEvents.MESSAGE:
+        this.logger.debug("Received incoming data", eventData.payloadString);
         this.chatControllerCallback(
           ConnectionHelperEvents.IncomingMessage,
           eventData

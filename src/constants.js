@@ -38,12 +38,25 @@ export const VISIBILITY = Utils.makeEnum([
 
 export const PERSISTENCE = Utils.makeEnum(["PERSISTED", "NON_PERSISTED"]);
 
-export const STAGE_CONFIG = {
-  PROD: {
-    invokeUrl: "https://2me8bbt55g.execute-api.us-west-2.amazonaws.com/Stage"
+// TODO - this needs to be updated with actual PROD endpoints!
+export const REGION_CONFIG = {
+  "us-west-2": {
+    invokeUrl: "https://2me8bbt55g.execute-api.us-west-2.amazonaws.com/gamma"
     // invokeUrl: "https://vxgh3tfytg.execute-api.us-west-2.amazonaws.com/Stage"
     //below is gautam's dev url
     //invokeUrl: "https://j1ltdj6sf6.execute-api.us-west-2.amazonaws.com/Stage"
+  },
+  "us-east-1": {
+    invokeUrl: "https://2me8bbt55g.execute-api.us-west-2.amazonaws.com/gamma"
+  },
+  "ap-southeast-2": {
+    invokeUrl: "https://2me8bbt55g.execute-api.us-west-2.amazonaws.com/gamma"
+  },
+  "ap-northeast-1": {
+    invokeUrl: "https://2me8bbt55g.execute-api.us-west-2.amazonaws.com/gamma"
+  },
+  "eu-central-1": {
+    invokeUrl: "https://2me8bbt55g.execute-api.us-west-2.amazonaws.com/gamma"
   }
 };
 
@@ -68,4 +81,18 @@ export const TRANSCRIPT_DEFAULT_PARAMS = {
   MAX_RESULTS: 15,
   SORT_KEY: "ASCENDING",
   SCAN_DIRECTION: "BACKWARD"
+};
+
+export const LOGS_DESTINATION = {
+  NULL: "NULL",
+  CLIENT_LOGGER: "CLIENT_LOGGER",
+  DEBUG: "DEBUG"
+};
+
+export const REGIONS = {
+  pdx: "us-west-2",
+  iad: "us-east-1",
+  syd: "ap-southeast-2",
+  nrt: "ap-northeast-1",
+  fra: "eu-central-1"
 };

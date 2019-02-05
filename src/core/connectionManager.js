@@ -3,7 +3,7 @@ import {
   UnImplementedMethodException
 } from "./exceptions";
 
-import Paho from "paho-mqtt";
+import Paho from "../paho-mqtt";
 
 class ChatConnectionManager {
   createNewMqttConnectionProvider(connectionArgs, type) {
@@ -101,17 +101,13 @@ var MqttEvents = Object.freeze({
   RECONNECTED: "ReconnectSuccess"
 }); // {}
 
-
 class PahoMqttConnection extends MQTTClient {
   constructor(args) {
     super();
     this.preSignedUrl = args.preSignedUrl;
     this.connectionId = args.connectionId;
     this.status = MqttConnectionStatus.NeverConnected;
-    this.pahoClient = new Paho.Client(
-      this.preSignedUrl,
-      this.connectionId
-    );
+    this.pahoClient = new Paho.Client(this.preSignedUrl, this.connectionId);
     var self = this;
     this.pahoClient.onMessageArrived = function(message) {
       self._messageArrivedCallback(message);
@@ -122,13 +118,6 @@ class PahoMqttConnection extends MQTTClient {
     this.pahoClient.onMessageArrived = function(message) {
       self._messageArrivedCallback(message);
     };
-    this.debug = args.debug;
-    if (args.debug) {
-      this.pahoClient.trace = function(data) {
-        console.log("trace paho: ");
-        console.log(data);
-      };
-    }
     this.callback = args.callback;
     this.killReconnect = null;
     this.maxRetryTime = args.maxRetryTime;
@@ -300,12 +289,6 @@ class PahoMqttConnection extends MQTTClient {
 
   getStatus() {
     return this.status;
-  }
-
-  _logit(data) {
-    if (this.debug) {
-      console.log(data);
-    }
   }
 }
 

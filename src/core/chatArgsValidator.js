@@ -1,5 +1,6 @@
 import Utils from "../utils";
 import { CONTENT_TYPE, VISIBILITY, PERSISTENCE } from "../constants";
+import { IllegalArgumentException } from "./exceptions";
 
 class ChatControllerArgsValidator {
   /*eslint-disable no-unused-vars*/
@@ -20,6 +21,18 @@ class ChatControllerArgsValidator {
     return true;
   }
   /*eslint-enable no-unused-vars*/
+
+  validateLogger(logger) {
+    Utils.assertIsObject(logger, "logger");
+    ["debug", "info", "warn", "error"].forEach(methodName => {
+      if (!Utils.isFunction(logger[methodName])) {
+        throw new IllegalArgumentException(
+          methodName +
+            " should be a valid function on the passed logger object!"
+        );
+      }
+    });
+  }
 
   validateSendEvent(args) {
     Utils.assertIsNonEmptyString(args.eventType, "eventType");

@@ -1,28 +1,44 @@
-import {
-  IllegalArgumentException,
-  UnImplementedMethodException
-} from "../core/exceptions";
+import { UnImplementedMethodException } from "../core/exceptions";
 import { makeHttpRequest } from "./XmlHttpClient";
+import { GlobalConfig } from "../globalConfig";
 import {
   RESOURCE_PATH,
   HTTP_METHODS,
-  STAGE_CONFIG,
+  REGION_CONFIG,
   CONTENT_TYPE,
   MESSAGE_PERSISTENCE,
   CONNECTION_TOKEN_KEY,
-  PARTICIPANT_TOKEN_KEY
+  PARTICIPANT_TOKEN_KEY,
+  REGIONS
 } from "../constants";
 
 class ChatClientFactoryImpl {
-  getClient(stage) {
-    if ("PROD" === stage) {
-      return new HttpChatClient({
-        stageConfig: STAGE_CONFIG.PROD
-      });
+  constructor() {
+    this.clientCache = {};
+  }
+
+  getCachedClient(optionsInput) {
+    var options = Object.assign({}, optionsInput);
+    var region = optionsInput.region || GlobalConfig.getRegion() || REGIONS.pdx;
+    options.region = region;
+    if (this.clientCache[region]) {
+      return this.clientCache[region];
     }
-    throw new IllegalArgumentException(
-      "unrecognized stage in ChatClientFactoryImpl"
-    );
+    var client = this._createClient(options);
+    this.clientCache[region] = client;
+    return client;
+  }
+
+  _createClient(options) {
+    var region = options.region;
+    var endpointOverride = options.endpointOverride;
+    var stageConfig = REGION_CONFIG[region];
+    if (endpointOverride) {
+      stageConfig.invokeUrl = endpointOverride;
+    }
+    return new HttpChatClient({
+      stageConfig: stageConfig
+    });
   }
 }
 

@@ -13,17 +13,17 @@ class EventConstructor {
     };
     switch (eventType) {
       case ConnectionHelperEvents.Ended:
-        data.retrying = false;
+        returnObject.data.retrying = false;
         returnObject.type = CHAT_EVENTS.CONNECTION_BROKEN;
-        break;
+        return returnObject;
       case ConnectionHelperEvents.DisconnectedReconnecting:
-        data.retrying = true;
+        returnObject.data.retrying = true;
         returnObject.type = CHAT_EVENTS.CONNECTION_BROKEN;
-        break;
+        return returnObject;
       case ConnectionHelperEvents.Reconnected:
-        data.connectCalled = false;
+        returnObject.data.connectCalled = false;
         returnObject.type = CHAT_EVENTS.CONNECTION_ESTABLISHED;
-        break;
+        return returnObject;
       case ConnectionHelperEvents.IncomingMessage:
         return this._fromIncomingData(eventData, chatDetails);
     }

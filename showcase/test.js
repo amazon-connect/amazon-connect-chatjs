@@ -1,16 +1,16 @@
 INIT_CHAT_RESPONSE = {
   ChatConnectionAttributes: {
-    ConnectionId: "b245e451-0616-467a-842b-5aad2a9edc01",
+    ConnectionId: "d51df30c-13ec-401d-8c9e-e5dceda82958",
     ParticipantCredentials: {
       ConnectionAuthenticationToken:
-        "AQIDAHgaX8Kqw7kBwr5FwotbWcOGwqPDvmMdwpvDsCHChcKtw6jCuEXDrcKMUsOqwpLDgCvCo8O9ARFdwrvDlV7CvwHDj8O7w5fCvjDCksOiJMKVAAAAbjBsBgkqwoZIwobDtw0BBwbCoF8wXQIBADBYBgkqwoZIwobDtw0BBwEwHgYJYMKGSAFlAwQBLjARBAxLESwUw5LDigfCmnZ8w4nDtwIBEMKAK8Kqwr7Do8K7GB4DayvCrcKXGybDnMKVABfDjsOKw6xuNsOqw5IxPB3DhnXCiy5vRjTCqQ7DmcODKcOpKcKgKDo6fQ5GwofDh8KKwqZxwrUmw6x8w4PDu8KMw7LDgsOcVRHDjMKbEMKNcErCsMKNHsKTJ2JowqZ5w4TDvT5jw6I+dsOGw5NDMcOsw6PCu8OMewTDliDDqsK6I8KdWj3Cu1t8QiFBOnfCvMOnw5QuZBoNOMOgw7nDix/DgcOpwq7CnznDlsK2OAV6LcKHDMONGBPCksOkw6oKw7zDpMKAMsKww5NZScOoACfDrcO/wrrDu0/DtUHCkmvChAHDoMKYw50uPMOnw5nCgMKbwo1Iw4YHwq9PwoLCoBV5wrgBdSkfwrMrc8OXw7DCgXhRw5rDmcO8UBfCm2TDnsKRwr1Vwp7CqcOfBsOZw5XDl8KTVMOfwpczw71jQsKqwowrJ8Odw5U=",
+        "AQIDAHgaX8Kqw7kBwr5FwotbWcOGwqPDvmMdwpvDsCHChcKtw6jCuEXDrcKMUsOqwpLDgCvCo8O9ASHCtsKhNSPDsMKWw6bDu8O+OMKIBcOKw4jCvQAAAG4wbAYJKsKGSMKGw7cNAQcGwqBfMF0CAQAwWAYJKsKGSMKGw7cNAQcBMB4GCWDChkgBZQMEAS4wEQQMGmTCnRABdcKgYygxLgECARDCgCsofSvCg0fDoApvV8OVPl90KsKKw73DtT5Jw6gXcU7ClsKzwrfDikbCkUHCoThPw7MhLcOzPSAbecOdYzo6HMOLw7Q6wqLCqTpqw71bw7lZZVfDjMKiGCxlw4rClR8sJyTDjcOSWyIiwrTDrcKOCsKdwrpHOUBzwrTDusOucT0zwrTCg8Odw69BwogtG8O9QD7CkUfChigqwqrDiFTDgMOSfMOGwoDCgzsMeMOuw5BMw63DqsKuw4HDvMKsw4Aew6UHMMKbeMOaZ8KBFWzCgRbCqhN0AcKlw79Uw7Rmw47CucOnw5lvwpgkw7zDsQFoT8O0V8OHWsOzw6svwqttwokFw4ZOw6LCo8OLw5DCl8KmCjJhw6AfJTXDn17ChT4pUsO4w4MwMcKDwrtuw55SwqkUWSPCrcKXwodhwrJfw4rChAzCmxJhwo1hGMOPw6zDuBjCu8O+w4JU",
       Expiry: null
     },
     PreSignedConnectionUrl:
-      "wss://a2sg9pz864ik5-ats.iot.us-west-2.amazonaws.com/mqtt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAZQCD2SXGEADYBKN6%2F20190129%2Fus-west-2%2Fiotdata%2Faws4_request&X-Amz-Date=20190129T225206Z&X-Amz-SignedHeaders=host&X-Amz-Signature=2b044b8b4eceeb34be8b9a29a1f0b8d7529576e91421e037c1be2f3aee598e75&X-Amz-Security-Token=FQoGZXIvYXdzECAaDA444ycMCZJf58kSDiKEAz19OYhL4z%2B2dkVfvWjEepXg5or1Yu2d7t4JAX%2Bl0131DTFnT1HgoQcN5l8ukhZAPafGtnP8ArNOEs5jeSYkj%2BsA7MfqmdpJHy%2B%2FWV%2FC8bhcOhVnjaY9F2h01jPdj9ObiLE9zcs4cnNNe20fwKYYvTWH2JynOavMvWDSEAxD9CTXiYTJLFKZzoUS%2FrvY5T4L9obYbgVD1NNLehb486BE9dQcIKzRQU9HN%2B9s3rIWh%2FAvJZYfRKpKTCCdOmlsj5sLkJ%2BByXb8gvMIPElvQpS1yG3WuU%2BPeOsdui7bX0q5DZhkQTix2v4USQWx%2BWDjQ01cbAbl8yfZODNoiLiClW89vRv%2B7vErjn37DXRYMS0JmRXem5N2dc5nWc8Z1FRBre0N0Ky9FtD5WloTKVOhVV0M1PWNlcc0LyY4pcYGwVyYb5%2B45Rl4slie1VKAjJNGfQ7%2BCTH92AFOS12BLYGDxcQjdByM%2BvX1FlYgK0fjjFyZqFAXODw8CrtdisVr2ergm%2FmhsL4t2xgolrLD4gU%3D"
+      "wss://a2sg9pz864ik5-ats.iot.us-west-2.amazonaws.com/mqtt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAZQCD2SXGDWJMJO2K%2F20190220%2Fus-west-2%2Fiotdata%2Faws4_request&X-Amz-Date=20190220T234810Z&X-Amz-SignedHeaders=host&X-Amz-Signature=6677180a722fb2636cefc1658189a2e716f79697aa80dd39276d2b7436c482a7&X-Amz-Security-Token=FQoGZXIvYXdzEDEaDCRJjIw3w%2Ft7dpm4DSKDAxiGbdX4Xv0vm1pswPOKKytJO%2B5cOvtaOkyWRkTGQceK3n3sPm%2F6OYgZo91l3hGjY5OdCw2y5uluQFEJ5MsGygTn8uDcuDcZnxNOtMDY0i%2F0tPKdcz1Gbi6CnMQIcVdn5xYw3ZiOb7JWk83QX3pCLMKj5c8aiZFTc7GtgjPfCykN1JPc6W2OVBT8HjPCDeSSLR6iiajoj85dnlpDSudjT41QxLN1dx5QmVAJPzOck%2BZV8hWj%2BYTHYpYddTq69Mac%2FTHcjvB7twnyco7%2FGr5iDrxcjvJiU%2Bo5IhG6T%2BlQA13qc6lGE8dHVKa1DB7WBI%2B0W6H670A0%2Bp1dRHLvRIq2pUphV2en%2BPNFt9pm6nnqtSTUYRxyaFAazVs%2Fi4BUez%2FH35DC6qmtts54py713aYr%2FTRssOY%2FGtZCq83%2B3r1gXEoDLBW8Bq5DtJROCuRzTz2L5xwQP4Y5N1Z9piFYneTK6nZZ8SRh40gnEyU9VO6OmJg9Mo%2FzKGCOk4gcZGMEpkNAqLT09Si6zrfjBQ%3D%3D"
   },
-  ContactId: "07bac4ed-ce8d-4083-b328-960934fcb13e",
-  ParticipantId: "c60cbf51-b466-40fe-8bc2-3e8d5e3d5442"
+  ContactId: "062a2c67-a1d0-4bb2-b1aa-4ff7a136ed58",
+  ParticipantId: "30f92b88-9f6e-470a-b29d-9c341e8b487c"
 };
 
 PID = "caff1d1c-c2b1-4f21-b27e-947132e45f93";
@@ -19,8 +19,31 @@ PTOKEN =
 
 CHAT_ID = "07bac4ed-ce8d-4083-b328-960934fcb13e";
 
+class TestLogger {
+  constructor(prefix) {
+    this.prefix = prefix;
+  }
+
+  debug(data) {
+    console.log(this.prefix, "debug", data);
+  }
+
+  info(data) {
+    console.log(this.prefix, "info", data);
+  }
+
+  warn(data) {
+    console.log(this.prefix, "warn", data);
+  }
+
+  error(data) {
+    console.log(this.prefix, "error", data);
+  }
+}
+
 class ChatControllerTest {
   setup() {
+    var logger = new TestLogger("TEST_LOGGER_111");
     var self = this;
     var connectionDetails = {
       connectionToken: PTOKEN,
@@ -35,8 +58,34 @@ class ChatControllerTest {
       participantToken: PTOKEN
       //connectionDetails: connectionDetails
     };
+    var config = {
+      loggerConfig: {
+        debug: true,
+        //logger: logger,
+        level: 1
+      },
+      region: "us-east-1"
+    };
+
+    connect.ChatSession.setGlobalConfig(config);
+
+    setTimeout(() => {
+      var config2 = config;
+      config2.loggerConfig.logger = new TestLogger("TEST_LOGGER_222");
+      config2.loggerConfig.level = 1;
+      console.log("connect.SetGlobalConfig(config2);");
+      connect.ChatSession.setGlobalConfig(config2);
+    }, 60 * 1000);
+
     //var factory = new connectchatjs.ChatFactory();
-    self.chatController = connect.ChatSession(INIT_CHAT_RESPONSE);
+    var input = {
+      chatDetails: INIT_CHAT_RESPONSE,
+      type: "CUSTOMER"
+      // options: {
+      //   region: "us-west-2"
+      // }
+    };
+    self.chatController = connect.ChatSession.create(input);
     self.chatController.onConnectionBroken(data => {
       console.log("onNetworkLinkBreak");
       console.log(data);
@@ -79,7 +128,12 @@ class ChatControllerTest {
     var self = this;
     console.log("before disconnect");
     self.checkStuff();
-    self.chatController.endChat();
+    self.chatController
+      .disconnectParticipant()
+      .then(
+        response => console.log("disconnect success", response),
+        error => console.log("disconnect failed", error)
+      );
     console.log("just after disconnect");
     self.checkStuff();
   }
@@ -114,12 +168,12 @@ class ChatControllerTest {
       visibility: "ALL",
       persistence: "NON_PERSISTED"
     };
+    args.metadata = { requestContext: "oye balle!!" };
     self.chatController
-      .sendEvent(args, { requestContext: "oye balle!!" })
-      .then(function(response, requestContext) {
+      .sendEvent(args)
+      .then(function(response) {
         console.log("sendEvent response");
         console.log(response);
-        console.log(requestContext);
       })
       .catch(function(error) {
         console.log("sendEvent error");
@@ -137,12 +191,13 @@ class ChatControllerTest {
     args.ScanDirection = "BACKWARD";
     args.SortKey = "ASCENDING";
     args.MaxResults = 5;
+    var args2 = {};
+    args2.metadata = { requestContext: "oye balle!!" };
     self.chatController
-      .getTranscript({}, { requestContext: "oye balle!!" })
-      .then(function(response, requestContext) {
+      .getTranscript(args2)
+      .then(function(response) {
         console.log("transcript is");
         console.log(response);
-        console.log(requestContext);
       })
       .catch(function(error) {
         console.log("transcript error");
@@ -157,12 +212,16 @@ class ChatControllerTest {
     console.log("checking type!");
     console.log(typeof text);
     var self = this;
+    var input = {
+      message: text,
+      type: "text/plain",
+      metadata: { requestContext: "oye balle!!" }
+    };
     self.chatController
-      .sendMessage(text, "text/plain", { requestContext: "oye balle!!" })
-      .then(function(response, requestContext) {
+      .sendMessage(input)
+      .then(function(response) {
         console.log("sentSuccess: " + text);
         console.log(response);
-        console.log(requestContext);
       })
       .catch(function(error) {
         console.log("error");

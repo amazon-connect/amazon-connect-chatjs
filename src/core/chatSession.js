@@ -9,8 +9,10 @@ import { SoloChatConnectionMqttHelper } from "./connectionHelper";
 import { SESSION_TYPES, CHAT_EVENTS } from "../constants";
 import { EventConstructor } from "./eventConstructor";
 import { EventBus } from "./eventbus";
+import { GlobalConfig } from "../globalConfig";
 
 import { PersistentConnectionAndChatServiceController } from "./chatController";
+import { LogManager } from "../log";
 
 class ChatSessionFactory {
   /*eslint-disable no-unused-vars*/
@@ -40,21 +42,20 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
     super();
     this.argsValidator = new ChatServiceArgsValidator();
     this.chatConnectionManager = new ChatConnectionManager();
-    this.chatClient = ChatClientFactory.getClient("PROD");
     this.chatEventConstructor = new EventConstructor();
   }
 
-  createAgentChatSession(chatDetails) {
-    var chatController = this._createChatSession(chatDetails);
+  createAgentChatSession(chatDetails, options) {
+    var chatController = this._createChatSession(chatDetails, options);
     return new AgentChatSession(chatController);
   }
 
-  createCustomerChatSession(chatDetails) {
-    var chatController = this._createChatSession(chatDetails);
+  createCustomerChatSession(chatDetails, options) {
+    var chatController = this._createChatSession(chatDetails, options);
     return new CustomerChatSession(chatController);
   }
 
-  _createChatSession(chatDetailsInput) {
+  _createChatSession(chatDetailsInput, options) {
     var chatDetails = this._normalizeChatDetails(chatDetailsInput);
     var hasConnectionDetails = false;
     if (chatDetails.connectionDetails) {
@@ -65,7 +66,7 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
       chatControllerFactory: this,
       chatEventConstructor: this.chatEventConstructor,
       pubsub: new EventBus(),
-      chatClient: this.chatClient,
+      chatClient: ChatClientFactory.getCachedClient(options),
       argsValidator: this.argsValidator,
       hasConnectionDetails: hasConnectionDetails
     };
@@ -97,13 +98,12 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
     }
   }
 
-  createConnectionHelperProvider(connectionDetails) {
+  createConnectionHelperProvider(connectionDetails, contactId) {
     //later return based on the type argument
     var connectionArgs = {
       preSignedUrl: connectionDetails.PreSignedConnectionUrl,
       connectionId: connectionDetails.ConnectionId,
-      maxRetryTime: 120, // not used right now anyways.
-      debug: true
+      maxRetryTime: 120 // not used right now anyways.
     };
     var mqttConnectionProvider = this.chatConnectionManager.createNewMqttConnectionProvider(
       connectionArgs,
@@ -114,7 +114,8 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
       connectionDetails: {
         preSignedUrl: connectionDetails.PreSignedConnectionUrl,
         connectionId: connectionDetails.ConnectionId
-      }
+      },
+      contactId: contactId
     };
     return function(callback) {
       args.callback = callback;
@@ -144,23 +145,20 @@ class ChatSession {
     this.controller.subscribe(CHAT_EVENTS.CONNECTION_ESTABLISHED, callback);
   }
 
-  sendMessage(message, type, options) {
-    return this.controller.sendMessage(message, type, options);
+  sendMessage(args) {
+    return this.controller.sendMessage(args);
   }
 
-  connect(args, options) {
-    return this.controller.connect(
-      args,
-      options
-    );
+  connect(args) {
+    return this.controller.connect(args);
   }
 
-  sendEvent(args, options) {
-    return this.controller.sendEvent(args, options);
+  sendEvent(args) {
+    return this.controller.sendEvent(args);
   }
 
-  getTranscript(args, options) {
-    return this.controller.getTranscript(args, options);
+  getTranscript(args) {
+    return this.controller.getTranscript(args);
   }
 
   getConnectionStatus() {
@@ -176,6 +174,10 @@ class AgentChatSession extends ChatSession {
   constructor(controller) {
     super(controller);
   }
+
+  cleanUpOnParticipantDisconnect() {
+    return this.controller.cleanUpOnDisconnect();
+  }
 }
 
 class CustomerChatSession extends ChatSession {
@@ -184,24 +186,47 @@ class CustomerChatSession extends ChatSession {
   }
 
   disconnectParticipant() {
-    return this.controller.disconnectParticipant();
+    return this.controller.disconnectParticipant().then(function(response) {
+      this.controller.cleanUpOnParticipantDisconnect();
+      this.controller.breakConnection();
+      return response;
+    });
   }
 }
 
 const CHAT_SESSION_FACTORY = new PersistentConnectionAndChatServiceSessionFactory();
 
-var ChatSessionConstructor = (chatDetails, typeParam) => {
-  var type = typeParam || SESSION_TYPES.AGENT;
+var setGlobalConfig = config => {
+  var loggerConfig = config.loggerConfig;
+  GlobalConfig.update(config);
+  LogManager.updateLoggerConfig(loggerConfig);
+};
+
+var ChatSessionConstructor = args => {
+  var options = args.options || {};
+  var type = args.type || SESSION_TYPES.AGENT;
   if (type === SESSION_TYPES.AGENT) {
-    return CHAT_SESSION_FACTORY.createAgentChatSession(chatDetails);
+    return CHAT_SESSION_FACTORY.createAgentChatSession(
+      args.chatDetails,
+      options
+    );
   } else if (type === SESSION_TYPES.CUSTOMER) {
-    return CHAT_SESSION_FACTORY.createCustomerChatSession(chatDetails);
+    return CHAT_SESSION_FACTORY.createCustomerChatSession(
+      args.chatDetails,
+      options
+    );
   } else {
     throw new IllegalArgumentException(
-      "Unkown value for session type",
-      typeParam
+      "Unkown value for session type, Allowed values are: " +
+        Object.values(SESSION_TYPES),
+      type
     );
   }
 };
 
-export { ChatSessionConstructor };
+const ChatSessionObject = {
+  create: ChatSessionConstructor,
+  setGlobalConfig: setGlobalConfig
+};
+
+export { ChatSessionObject };

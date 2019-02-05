@@ -3,13 +3,15 @@ import {
   IllegalStateException
 } from "./exceptions";
 import { ConnectionHelperStatus } from "./connectionHelper";
-import Utils from "../utils";
 import {
   PERSISTENCE,
   VISIBILITY,
   CHAT_EVENTS,
-  TRANSCRIPT_DEFAULT_PARAMS
+  TRANSCRIPT_DEFAULT_PARAMS,
+  CONTENT_TYPE
 } from "../constants";
+
+import { LogManager } from "../log";
 
 var NetworkLinkStatus = {
   NeverEstablished: "NeverEstablished",
@@ -107,6 +109,10 @@ class PersistentConnectionAndChatServiceController extends ChatController {
 
   setArguments(args) {
     var self = this;
+    var prefix = "ContactId-" + args.chatDetails.contactId + ": ";
+    this.logger = LogManager.getLogger({
+      prefix: prefix
+    });
     this.argsValidator = args.argsValidator;
     this.chatEventConstructor = args.chatEventConstructor;
     this.connectionDetails = args.chatDetails.connectionDetails;
@@ -125,57 +131,71 @@ class PersistentConnectionAndChatServiceController extends ChatController {
     this._connectCalledAtleastOnce = false;
     this._everConnected = false;
     this.pubsub = args.pubsub;
-    this.continuousSuccessFetchConnections = 0;
-    this._chatEnded = false;
+    this._participantDisconnected = false;
   }
 
-  _setConnectionHelper(connectionDetails) {
+  _setConnectionHelper(connectionDetails, contactId) {
     var connectionHelperProvider = this.chatControllerFactory.createConnectionHelperProvider(
-      connectionDetails
+      connectionDetails,
+      contactId
     );
     this.connectionHelper = connectionHelperProvider(
       this.connectionHelperCallback
     );
   }
 
-  subscribe(eventName, callback) {
-    this.pubsub.subscribe(eventName, callback);
+  // Do any clean up that needs to be done upon the participant being disconnected from the chat -
+  // disconnected here means that the participant is no longer part of ther chat.
+  cleanUpOnParticipantDisconnect() {
+    this.pubsub.unsubscribeAll();
+    this.connectionHelper &&
+      this.connectionHelper.cleanUpOnParticipantDisconnect();
   }
 
-  sendMessage(messageInput, type, optionalParams) {
-    var options = optionalParams || {};
-    var self = this;
-    var requestContext = options.requestContext;
-    self.argsValidator.validateSendMessage(messageInput, type);
-    var connectionToken = self.connectionDetails.connectionToken;
+  subscribe(eventName, callback) {
+    this.pubsub.subscribe(eventName, callback);
+    this.logger.info("Subscribed successfully to eventName: ", eventName);
+  }
 
-    var message;
-    if (!Utils.isString(messageInput)) {
-      message = messageInput.message;
-    } else {
-      message = messageInput;
-    }
+  sendMessage(args) {
+    var self = this;
+    var message = args.message;
+    var type = args.type || CONTENT_TYPE.textPlain;
+    var metadata = args.metadata || null;
+    self.argsValidator.validateSendMessage(message, type);
+    var connectionToken = self.connectionDetails.connectionToken;
     return self.chatClient.sendMessage(connectionToken, message, type).then(
       function(response) {
-        response.requestContext = requestContext;
+        response.metadata = metadata;
+        self.logger.debug(
+          "Successfully sent message, response: ",
+          response,
+          " request: ",
+          args
+        );
         return response;
       },
       function(error) {
-        error.requestContext = requestContext;
+        error.metadata = metadata;
+        self.logger.debug(
+          "Failed to send message, error: ",
+          error,
+          " request: ",
+          args
+        );
         return Promise.reject(error);
       }
     );
   }
 
-  sendEvent(args, optionalParams) {
-    var options = optionalParams || {};
+  sendEvent(args) {
     var self = this;
+    var metadata = args.metadata || null;
     self.argsValidator.validateSendEvent(args);
     var connectionToken = self.connectionDetails.connectionToken;
     var persistenceArgument = args.persistence || PERSISTENCE.PERSISTED;
     var visibilityArgument = args.visibility || VISIBILITY.ALL;
 
-    var requestContext = options.requestContext;
     return self.chatClient
       .sendEvent(
         connectionToken,
@@ -186,18 +206,31 @@ class PersistentConnectionAndChatServiceController extends ChatController {
       )
       .then(
         function(response) {
-          response.requestContext = requestContext;
+          response.metadata = metadata;
+          self.logger.debug(
+            "Successfully sent event, response: ",
+            response,
+            " request: ",
+            args
+          );
           return response;
         },
         function(error) {
-          error.requestContext = requestContext;
+          error.metadata = metadata;
+          self.logger.debug(
+            "Failed to send event, error: ",
+            error,
+            " request: ",
+            args
+          );
           return Promise.reject(error);
         }
       );
   }
 
-  getTranscript(inputArgs, optionalParams) {
-    var options = optionalParams || {};
+  getTranscript(inputArgs) {
+    var self = this;
+    var metadata = inputArgs.metadata || null;
     var args = {};
     args.IntialContactId = this.intialContactId;
     args.StartKey = inputArgs.StartKey || {};
@@ -210,15 +243,25 @@ class PersistentConnectionAndChatServiceController extends ChatController {
       args.NextToken = inputArgs.NextToken;
     }
     var connectionToken = this.connectionDetails.connectionToken;
-
-    var requestContext = options.requestContext;
     return this.chatClient.getTranscript(connectionToken, args).then(
       function(response) {
-        response.requestContext = requestContext;
+        response.metadata = metadata;
+        self.logger.debug(
+          "Successfully retrieved transcript, response: ",
+          response,
+          " request: ",
+          args
+        );
         return response;
       },
       function(error) {
-        error.requestContext = requestContext;
+        error.metadata = metadata;
+        self.logger.debug(
+          "Failed to retrieve transcript, error: ",
+          error,
+          " request: ",
+          args
+        );
         return Promise.reject(error);
       }
     );
@@ -229,18 +272,27 @@ class PersistentConnectionAndChatServiceController extends ChatController {
       var chatEvent = this.chatEventConstructor.fromConnectionHelperEvent(
         eventType,
         eventData,
-        this.getChatDetails()
+        this.getChatDetails(),
+        this.logger
       );
     } catch (exc) {
-      // TODO log the exception
-      console.log(exc);
-      throw exc;
+      this.logger.error(
+        "Error occured while handling event from Connection. eventType and eventData: ",
+        eventType,
+        eventData,
+        " Causing exception: ",
+        exc
+      );
+      return;
     }
+    this.logger.debug("Triggering event for subscribers:", chatEvent);
     this.pubsub.triggerAsync(chatEvent.type, chatEvent.data);
   }
 
-  connect(args) {
+  connect(inputArgs) {
     var self = this;
+    var args = inputArgs || {};
+    var metadata = args.metadata || null;
     this.argsValidator.validateConnectChat(args);
     if (
       self.getConnectionStatus() !== NetworkLinkStatus.Broken &&
@@ -250,8 +302,8 @@ class PersistentConnectionAndChatServiceController extends ChatController {
         "Can call establishNetworkLink only when getConnectionStatus is Broken or NeverEstablished"
       );
     }
-    var _onSuccess = response => self._onConnectSuccess(response, args);
-    var _onFailure = error => self._onConnectFailure(error, args);
+    var _onSuccess = response => self._onConnectSuccess(response, metadata);
+    var _onFailure = error => self._onConnectFailure(error, metadata);
     self._connectCalledAtleastOnce = true;
     if (self._hasConnectionDetails) {
       return self.connectionHelper.start().then(_onSuccess, _onFailure);
@@ -268,13 +320,14 @@ class PersistentConnectionAndChatServiceController extends ChatController {
     }
   }
 
-  _onConnectSuccess(response, requestContext) {
+  _onConnectSuccess(response, metadata) {
     var self = this;
+    self.logger.info("Connect successful!");
     var responseObject = {
       _debug: response,
       connectSuccess: true,
       connectCalled: true,
-      requestContext: requestContext
+      metadata: metadata
     };
     var eventData = Object.assign(
       {
@@ -286,13 +339,14 @@ class PersistentConnectionAndChatServiceController extends ChatController {
     return responseObject;
   }
 
-  _onConnectFailure(error, requestContext) {
+  _onConnectFailure(error, metadata) {
     var errorObject = {
       _debug: error,
       connectSuccess: false,
       connectCalled: true,
-      requestContext: requestContext
+      metadata: metadata
     };
+    this.logger.error("Connect Failed with data: ", errorObject);
     return Promise.reject(errorObject);
   }
 
@@ -317,18 +371,24 @@ class PersistentConnectionAndChatServiceController extends ChatController {
     );
   }
 
+  breakConnection() {
+    return this.connectionHelper.end();
+  }
+
   disconnectParticipant() {
-    // how to handle the failure of the acps disconnect API call?
-    // Cant trouble the client to make sure it disconnects the chat be
-    // retrying through a button click, at max should have scheduled
-    // retry for disconnecting internally without informing the client.
     var self = this;
-    self._chatEnded = true;
     var connectionToken = self.connectionDetails.connectionToken;
-    setTimeout(function() {
-      self.chatClient.disconnectChat(connectionToken);
-      self.connectionHelper.end();
-    }, 0);
+    return self.chatClient.disconnectChat(connectionToken).then(
+      function(response) {
+        self.logger.info("disconnect participant successful");
+        self._participantDisconnected = true;
+        return response;
+      },
+      function(error) {
+        self.logger.error("disconnect participant failed with error: ", error);
+        return Promise.reject(error);
+      }
+    );
   }
 
   getChatDetails() {
@@ -355,7 +415,10 @@ class PersistentConnectionAndChatServiceController extends ChatController {
       case ConnectionHelperStatus.DisconnectedReconnecting:
         return NetworkLinkStatus.BrokenRetrying;
     }
-    // LOG fatal error here. We should never reach here.
+    self.logger.error(
+      "Reached invalid state. Unknown connectionHelperStatus: ",
+      connectionHelperStatus
+    );
   }
 
   getConnectionStatus() {

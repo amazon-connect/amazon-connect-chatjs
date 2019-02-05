@@ -154,8 +154,12 @@ Utils.values = function(map) {
   return values;
 };
 
+Utils.isObject = function(value) {
+  return !(typeof value !== "object" || value === null);
+};
+
 Utils.assertIsObject = function(value, key) {
-  if (typeof value !== "object" || value === null) {
+  if (!Utils.isObject(value)) {
     throw new IllegalArgumentException(key + " is not an object!");
   }
 };
