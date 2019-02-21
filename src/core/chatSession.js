@@ -186,9 +186,10 @@ class CustomerChatSession extends ChatSession {
   }
 
   disconnectParticipant() {
+    var self = this;
     return this.controller.disconnectParticipant().then(function(response) {
-      this.controller.cleanUpOnParticipantDisconnect();
-      this.controller.breakConnection();
+      self.controller.cleanUpOnParticipantDisconnect();
+      self.controller.breakConnection();
       return response;
     });
   }

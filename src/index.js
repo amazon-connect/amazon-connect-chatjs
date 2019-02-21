@@ -7,6 +7,6 @@ connect.ChatSession = ChatSessionObject;
 connect.ChatEvents = CHAT_EVENTS;
 connect.SessionTypes = SESSION_TYPES;
 
-export const ChatSession = ChatSession;
+export const ChatSession = ChatSessionObject;
 export const ChatEvents = CHAT_EVENTS;
 export const SessionTypes = SESSION_TYPES;
