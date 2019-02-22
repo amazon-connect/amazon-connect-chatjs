@@ -217,5 +217,6 @@ class SoloChatConnectionMqttHelper extends ConnectionHelper {
 export {
   SoloChatConnectionMqttHelper,
   ConnectionHelperEvents,
-  ConnectionHelperStatus
+  ConnectionHelperStatus,
+  ConnectionHelper
 };

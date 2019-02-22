@@ -292,4 +292,4 @@ class PahoMqttConnection extends MQTTClient {
   }
 }
 
-export { ChatConnectionManager, MqttEvents, MqttConnectionStatus };
+export { ChatConnectionManager, MqttEvents, MqttConnectionStatus, MQTTClient };
