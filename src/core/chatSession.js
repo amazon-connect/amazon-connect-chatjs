@@ -176,7 +176,7 @@ class AgentChatSession extends ChatSession {
   }
 
   cleanUpOnParticipantDisconnect() {
-    return this.controller.cleanUpOnDisconnect();
+    return this.controller.cleanUpOnParticipantDisconnect();
   }
 }
 

@@ -11,6 +11,7 @@ import {
   PARTICIPANT_TOKEN_KEY,
   REGIONS
 } from "../constants";
+import { LogManager } from "../log";
 
 class ChatClientFactoryImpl {
   constructor() {
@@ -31,7 +32,7 @@ class ChatClientFactoryImpl {
 
   _createClient(options) {
     var region = options.region;
-    var endpointOverride = options.endpointOverride;
+    var endpointOverride = GlobalConfig.getEndpointOverride();
     var stageConfig = REGION_CONFIG[region];
     if (endpointOverride) {
       stageConfig.invokeUrl = endpointOverride;
@@ -72,6 +73,7 @@ class HttpChatClient extends ChatClient {
     super();
     this.invokeUrl = args.stageConfig.invokeUrl;
     this.callHttpClient = makeHttpRequest;
+    this.logger = LogManager.getLogger({ prefix: "ChatClient" });
   }
 
   sendMessage(connectionToken, message, type) {
@@ -161,6 +163,12 @@ class HttpChatClient extends ChatClient {
       var failure = request => {
         var errorObject = {};
         errorObject.statusText = request.statusText;
+        try {
+          errorObject.error = JSON.parse(request.responseText);
+        } catch (e) {
+          this.logger.warn("invalid json error from server");
+          errorObject.error = null;
+        }
         reject(errorObject);
       };
       self.callHttpClient(requestInput, success, failure);

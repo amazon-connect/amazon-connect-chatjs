@@ -38,25 +38,23 @@ export const VISIBILITY = Utils.makeEnum([
 
 export const PERSISTENCE = Utils.makeEnum(["PERSISTED", "NON_PERSISTED"]);
 
-// TODO - this needs to be updated with actual PROD endpoints!
 export const REGION_CONFIG = {
   "us-west-2": {
-    invokeUrl: "https://2me8bbt55g.execute-api.us-west-2.amazonaws.com/gamma"
-    // invokeUrl: "https://vxgh3tfytg.execute-api.us-west-2.amazonaws.com/Stage"
-    //below is gautam's dev url
-    //invokeUrl: "https://j1ltdj6sf6.execute-api.us-west-2.amazonaws.com/Stage"
+    invokeUrl: "https://eap1w93j0k.execute-api.us-west-2.amazonaws.com/prod"
   },
   "us-east-1": {
-    invokeUrl: "https://2me8bbt55g.execute-api.us-west-2.amazonaws.com/gamma"
+    invokeUrl: "https://4agcjusx3k.execute-api.us-east-1.amazonaws.com/prod"
   },
   "ap-southeast-2": {
-    invokeUrl: "https://2me8bbt55g.execute-api.us-west-2.amazonaws.com/gamma"
+    invokeUrl:
+      "https://v4u8oq0cve.execute-api.ap-southeast-2.amazonaws.com/prod"
   },
   "ap-northeast-1": {
-    invokeUrl: "https://2me8bbt55g.execute-api.us-west-2.amazonaws.com/gamma"
+    invokeUrl:
+      "https://3fidunfyz7.execute-api.ap-northeast-1.amazonaws.com/prod"
   },
   "eu-central-1": {
-    invokeUrl: "https://2me8bbt55g.execute-api.us-west-2.amazonaws.com/gamma"
+    invokeUrl: "https://1gynaarm3e.execute-api.eu-central-1.amazonaws.com/prod"
   }
 };
 

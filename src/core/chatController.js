@@ -126,7 +126,10 @@ class PersistentConnectionAndChatServiceController extends ChatController {
     this._hasConnectionDetails = args.hasConnectionDetails;
     this.chatControllerFactory = args.chatControllerFactory;
     if (args.hasConnectionDetails) {
-      this._setConnectionHelper(args.chatDetails.connectionDetails);
+      this._setConnectionHelper(
+        args.chatDetails.connectionDetails,
+        args.chatDetails.contactId
+      );
     }
     this._connectCalledAtleastOnce = false;
     this._everConnected = false;
@@ -311,7 +314,7 @@ class PersistentConnectionAndChatServiceController extends ChatController {
       return self
         ._fetchConnectionDetails()
         .then(function(connectionDetails) {
-          self._setConnectionHelper(connectionDetails);
+          self._setConnectionHelper(connectionDetails, this.contactId);
           self.connectionDetails = connectionDetails;
           self._hasConnectionDetails = true;
           return self.connectionHelper.start();
