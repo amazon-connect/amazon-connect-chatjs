@@ -166,7 +166,7 @@ class HttpChatClient extends ChatClient {
         try {
           errorObject.error = JSON.parse(request.responseText);
         } catch (e) {
-          this.logger.warn("invalid json error from server");
+          self.logger.warn("invalid json error from server");
           errorObject.error = null;
         }
         reject(errorObject);
