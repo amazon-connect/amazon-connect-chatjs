@@ -435,4 +435,4 @@ class PersistentConnectionAndChatServiceController extends ChatController {
   }
 }
 
-export { PersistentConnectionAndChatServiceController };
+export { PersistentConnectionAndChatServiceController, NetworkLinkStatus };

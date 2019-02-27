@@ -12,7 +12,7 @@ import { EventBus } from "./eventbus";
 import { GlobalConfig } from "../globalConfig";
 
 import { PersistentConnectionAndChatServiceController } from "./chatController";
-import { LogManager } from "../log";
+import { LogManager, LogLevel, Logger } from "../log";
 
 class ChatSessionFactory {
   /*eslint-disable no-unused-vars*/
@@ -161,10 +161,6 @@ class ChatSession {
     return this.controller.getTranscript(args);
   }
 
-  getConnectionStatus() {
-    return this.controller.getConnectionStatus();
-  }
-
   getChatDetails() {
     return this.controller.getChatDetails();
   }
@@ -227,7 +223,10 @@ var ChatSessionConstructor = args => {
 
 const ChatSessionObject = {
   create: ChatSessionConstructor,
-  setGlobalConfig: setGlobalConfig
+  setGlobalConfig: setGlobalConfig,
+  LogLevel: LogLevel,
+  Logger: Logger,
+  SessionTypes: SESSION_TYPES
 };
 
 export { ChatSessionObject };
