@@ -1,9 +1,11 @@
 import {
   ConnectionHelper,
-  ConnectionHelperStatus
+  ConnectionHelperStatus,
+  ConnectionHelperEvents
 } from "../../src/core/connectionHelper";
 import { MQTTClient } from "../../src/core/connectionManager";
 import { MqttConnectionStatus } from "../../src/core/connectionManager";
+import { EventBus } from "../../src/core/eventbus";
 
 const TextMessage = {
   ContactId: "8e4a71b4-60b2-49cf-8566-8f984aa8add4",
@@ -98,10 +100,11 @@ const MockChatClient = {
 };
 
 class MockConnectionHelper extends ConnectionHelper {
-  constructor(callback) {
+  constructor(callback, canConnect=true) {
     super();
     this.status = ConnectionHelperStatus.NeverStarted;
     this.callback = callback;
+    this.canConnect = canConnect;
   }
 
   scheduleEvent(eventType, eventData, timeInMillis = 0) {
@@ -112,14 +115,22 @@ class MockConnectionHelper extends ConnectionHelper {
 
   start() {
     this.status = ConnectionHelperStatus.Starting;
-    return Promise.resolve().then(() => {
-      this.status = ConnectionHelperStatus.Connected;
-      return;
-    });
+    if (this.canConnect) {
+      return Promise.resolve().then(() => {
+        this.status = ConnectionHelperStatus.Connected;
+        return;
+      });
+    } else {
+      return Promise.resolve().then(() => {
+        this.status = ConnectionHelperStatus.Ended;
+        return Promise.reject();
+      });
+    }
   }
 
   end() {
     this.status = ConnectionHelperStatus.Ended;
+    this.callback(ConnectionHelperEvents.Ended, {});
   }
   getStatus() {
     return this.status;
@@ -166,6 +177,13 @@ class MockMqttConnection extends MQTTClient {
   }
 }
 
+
+class MockEventBus extends EventBus {
+  triggerAsync(eventName, data) {
+    return this.trigger(eventName, data);
+  }
+}
+
 export {
   MockConnectionHelper,
   MockChatClient,
@@ -176,5 +194,6 @@ export {
   DisconnectChatResponse,
   TextMessage,
   TypingEvent,
-  MockMqttConnection
+  MockMqttConnection,
+  MockEventBus
 };

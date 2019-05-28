@@ -1,6 +1,7 @@
 import { CHAT_EVENTS } from "../constants";
 import { ConnectionHelperEvents } from "./connectionHelper";
 
+
 class EventConstructor {
   fromConnectionHelperEvent(eventType, eventData, chatDetails) {
     var data = {
@@ -13,16 +14,7 @@ class EventConstructor {
     };
     switch (eventType) {
       case ConnectionHelperEvents.Ended:
-        returnObject.data.retrying = false;
         returnObject.type = CHAT_EVENTS.CONNECTION_BROKEN;
-        return returnObject;
-      case ConnectionHelperEvents.DisconnectedReconnecting:
-        returnObject.data.retrying = true;
-        returnObject.type = CHAT_EVENTS.CONNECTION_BROKEN;
-        return returnObject;
-      case ConnectionHelperEvents.Reconnected:
-        returnObject.data.connectCalled = false;
-        returnObject.type = CHAT_EVENTS.CONNECTION_ESTABLISHED;
         return returnObject;
       case ConnectionHelperEvents.IncomingMessage:
         return this._fromIncomingData(eventData, chatDetails);

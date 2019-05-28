@@ -164,4 +164,20 @@ Utils.assertIsObject = function(value, key) {
   }
 };
 
+Utils.delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+Utils.asyncWhileInterval = function(f, predicate, interval, count=0) {
+  const now = new Date();
+  if (predicate(count)) {
+    return f(count).catch(() => {
+      const delay = Math.max(0, interval - (new Date()).valueOf() + now.valueOf());
+      return Utils
+        .delay(delay)
+        .then(() => Utils.asyncWhileInterval(f, predicate, interval, count + 1));
+    });
+  } else {
+    return Promise.reject(new Error("async while aborted"));
+  }
+};
+
 export default Utils;

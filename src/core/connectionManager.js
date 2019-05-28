@@ -89,16 +89,12 @@ var MqttConnectionStatus = Object.freeze({
   NeverConnected: "NeverConnected",
   Connecting: "Connecting",
   Connected: "Connected",
-  DisconnectedRetrying: "DisconnectedRetrying",
-  Disconnected: "Disconnected",
-  Reconnecting: "Reconnecting"
+  Disconnected: "Disconnected"
 });
 
 var MqttEvents = Object.freeze({
   MESSAGE: "Message", // topic, qos, payloadString
-  DISCONNECTED_RETRYING: "DisconnectedRetrying", // reason: pahoObject
   DISCONNECTED: "Disconnected", // reason: pahoObject/ "TimeOutInReconnect"
-  RECONNECTED: "ReconnectSuccess"
 }); // {}
 
 class PahoMqttConnection extends MQTTClient {
@@ -119,8 +115,6 @@ class PahoMqttConnection extends MQTTClient {
       self._messageArrivedCallback(message);
     };
     this.callback = args.callback;
-    this.killReconnect = null;
-    this.maxRetryTime = args.maxRetryTime;
     this.neverConnected = true;
     this._subscribedTopics = [];
   }
@@ -130,12 +124,8 @@ class PahoMqttConnection extends MQTTClient {
     return new Promise(function(resolve, reject) {
       connectOptions.onSuccess = function(response) {
         self.neverConnected = false;
-        var oldStatus = self.status;
         self._onConnectSuccess(response);
         resolve({});
-        if (oldStatus === MqttConnectionStatus.DisconnectedRetrying) {
-          self.callback(MqttEvents.RECONNECTED, {});
-        }
       };
       connectOptions.onFailure = function(error) {
         var errorDetails = {
@@ -157,15 +147,8 @@ class PahoMqttConnection extends MQTTClient {
     if (this.status === MqttConnectionStatus.Disconnected) {
       return;
     }
-    if (data.reason.reconnect) {
-      this.status = MqttConnectionStatus.DisconnectedRetrying;
-      this.callback(MqttEvents.DISCONNECTED_RETRYING, data);
-      this.killReconnect = this._scheduleReconnectKilling();
-      return;
-    } else {
-      this.status = MqttConnectionStatus.Disconnected;
-      this.callback(MqttEvents.DISCONNECTED, data);
-    }
+    this.status = MqttConnectionStatus.Disconnected;
+    this.callback(MqttEvents.DISCONNECTED, data);
   }
 
   _messageArrivedCallback(message) {
@@ -180,10 +163,6 @@ class PahoMqttConnection extends MQTTClient {
   /*eslint-disable no-unused-vars*/
   _onConnectSuccess(response) {
     /*eslint-enable no-unused-vars*/
-    if (this.killReconnect !== null) {
-      clearTimeout(this.killReconnect);
-      this.killReconnect = null;
-    }
     this.status = MqttConnectionStatus.Connected;
   }
 
@@ -196,14 +175,6 @@ class PahoMqttConnection extends MQTTClient {
     } else {
       self.status = MqttConnectionStatus.Disconnected;
     }
-  }
-
-  _scheduleReconnectKilling() {
-    var self = this;
-    return setTimeout(function() {
-      self.disconnect();
-      self.callback(MqttEvents.DISCONNECTED, { reason: "TimeoutInReconnect" });
-    }, self.maxRetryTime * 1000);
   }
 
   disconnect() {

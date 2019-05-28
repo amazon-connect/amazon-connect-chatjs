@@ -102,8 +102,7 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
     //later return based on the type argument
     var connectionArgs = {
       preSignedUrl: connectionDetails.PreSignedConnectionUrl,
-      connectionId: connectionDetails.ConnectionId,
-      maxRetryTime: 120 // not used right now anyways.
+      connectionId: connectionDetails.ConnectionId
     };
     var mqttConnectionProvider = this.chatConnectionManager.createNewMqttConnectionProvider(
       connectionArgs,

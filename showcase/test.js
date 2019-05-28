@@ -349,7 +349,6 @@ class PahoIotConnectionTest {
 this.preSignedUrl = args.preSignedUrl;
 this.connectionId = args.connectionId;
 this.callback = args.callback;
-this.maxRetryTime = args.maxRetryTime;
 //
 
 
@@ -367,7 +366,6 @@ this.maxRetryTime = args.maxRetryTime;
             preSignedUrl:purl,
             connectionId:cId,
             callback:function(eventType, data){self.called(eventType, data);},
-            maxRetryTime : 120,
             debug: true
         };
         self.paho = new PahoIotConnection(args);

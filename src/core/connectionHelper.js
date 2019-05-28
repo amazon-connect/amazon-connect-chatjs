@@ -43,14 +43,11 @@ var ConnectionHelperStatus = {
   NeverStarted: "NeverStarted",
   Starting: "Starting",
   Connected: "Connected",
-  DisconnectedReconnecting: "DisconnectedReconnecting",
   Ended: "Ended"
 };
 
 var ConnectionHelperEvents = {
   Ended: "Ended", // event data is: {reason: ...}
-  DisconnectedReconnecting: "DisconnectedReconnecting", // event data is: {reason: ...}
-  Reconnected: "Reconnected", // event data is: {}
   IncomingMessage: "IncomingMessage" // event data is: {payloadString: ...}
 };
 
@@ -190,15 +187,9 @@ class SoloChatConnectionMqttHelper extends ConnectionHelper {
           eventData
         );
         break;
-      case MqttEvents.DISCONNECTED_RETRYING:
-        console.log("ERROR. Received unexpected event DISCONNECTED_RETRYING");
-        break;
       case MqttEvents.DISCONNECTED:
         this.status = ConnectionHelperStatus.Ended;
         this.chatControllerCallback(ConnectionHelperEvents.Ended, eventData);
-        break;
-      case MqttEvents.RECONNECTED:
-        console.log("ERROR. Received unexpected event DISCONNECTED_RETRYING");
         break;
     }
   }

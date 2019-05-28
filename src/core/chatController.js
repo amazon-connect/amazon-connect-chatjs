@@ -10,14 +10,14 @@ import {
   TRANSCRIPT_DEFAULT_PARAMS,
   CONTENT_TYPE
 } from "../constants";
-
+import { GlobalConfig } from "../globalConfig";
 import { LogManager } from "../log";
+import Utils from "../utils";
 
 var NetworkLinkStatus = {
   NeverEstablished: "NeverEstablished",
   Establishing: "Establishing",
   Established: "Established",
-  BrokenRetrying: "BrokenRetrying",
   Broken: "Broken"
 };
 
@@ -135,6 +135,7 @@ class PersistentConnectionAndChatServiceController extends ChatController {
     this._everConnected = false;
     this.pubsub = args.pubsub;
     this._participantDisconnected = false;
+    this.sessionMetadata = {};
   }
 
   _setConnectionHelper(connectionDetails, contactId) {
@@ -270,9 +271,9 @@ class PersistentConnectionAndChatServiceController extends ChatController {
     );
   }
 
-  _handleConnectionHelperEvents(eventType, eventData) {
+  _mapConnectionHelperEventToChatEvent(eventType, eventData) {
     try {
-      var chatEvent = this.chatEventConstructor.fromConnectionHelperEvent(
+      return this.chatEventConstructor.fromConnectionHelperEvent(
         eventType,
         eventData,
         this.getChatDetails(),
@@ -286,41 +287,90 @@ class PersistentConnectionAndChatServiceController extends ChatController {
         " Causing exception: ",
         exc
       );
-      return;
+      return null;
     }
+  }
+
+  _forwardChatEvent(chatEvent) {
     this.logger.debug("Triggering event for subscribers:", chatEvent);
     this.pubsub.triggerAsync(chatEvent.type, chatEvent.data);
   }
 
+  _handleConnectionHelperEvents(eventType, eventData) {
+    const chatEvent = this._mapConnectionHelperEventToChatEvent(eventType, eventData);
+    if (!chatEvent) {
+      return;
+    }
+    this._handleChatEvent(chatEvent);
+    this._forwardChatEvent(chatEvent);
+  }
+
+  _handleChatEvent(chatEvent) {
+    if (chatEvent.type === CHAT_EVENTS.CONNECTION_BROKEN && GlobalConfig.reconnect) {
+      this._initiateReconnect();
+    }
+  }
+
   connect(inputArgs) {
-    var self = this;
     var args = inputArgs || {};
-    var metadata = args.metadata || null;
+    this.sessionMetadata = args.metadata || null;
     this.argsValidator.validateConnectChat(args);
-    if (
-      self.getConnectionStatus() !== NetworkLinkStatus.Broken &&
-      self.getConnectionStatus() !== NetworkLinkStatus.NeverEstablished
-    ) {
+    return this._connect();
+  }
+
+  _connect() {
+    if (!this._canConnect()) {
       throw new IllegalStateException(
         "Can call establishNetworkLink only when getConnectionStatus is Broken or NeverEstablished"
       );
     }
-    var _onSuccess = response => self._onConnectSuccess(response, metadata);
-    var _onFailure = error => self._onConnectFailure(error, metadata);
-    self._connectCalledAtleastOnce = true;
-    if (self._hasConnectionDetails) {
-      return self.connectionHelper.start().then(_onSuccess, _onFailure);
+    var _onSuccess = response => this._onConnectSuccess(response, this.sessionMetadata);
+    var _onFailure = error => this._onConnectFailure(error, this.sessionMetadata);
+    this._connectCalledAtleastOnce = true;
+    if (this._hasConnectionDetails) {
+      return this.connectionHelper.start().then(_onSuccess, _onFailure);
     } else {
-      return self
+      return this
         ._fetchConnectionDetails()
-        .then(function(connectionDetails) {
-          self._setConnectionHelper(connectionDetails, self.contactId);
-          self.connectionDetails = connectionDetails;
-          self._hasConnectionDetails = true;
-          return self.connectionHelper.start();
+        .then(connectionDetails => {
+          this._setConnectionHelper(connectionDetails, this.contactId);
+          this.connectionDetails = connectionDetails;
+          this._hasConnectionDetails = true;
+          return this.connectionHelper.start();
         })
         .then(_onSuccess, _onFailure);
     }
+  }
+
+  _initiateReconnect() {
+    Utils
+      .asyncWhileInterval(
+        (count) => {
+          this.logger.info(`Reconnect - ${count}. try`);
+          this._hasConnectionDetails = false;
+          this.connectionDetails = null;
+          return this._connect();
+        },
+        (count) => count < GlobalConfig.maxReconnectAttempts && this._canReconnect(),
+        GlobalConfig.reconnectInterval
+      )
+      .then(() => {
+        this.logger.info(`Reconnect - Success`);
+      })
+      .catch(() => {
+        this.logger.info(`Reconnect - Failed`);
+      });
+  }
+
+  _canConnect() {
+    return (
+      this.getConnectionStatus() === NetworkLinkStatus.Broken ||
+      this.getConnectionStatus() === NetworkLinkStatus.NeverEstablished
+    );
+  }
+
+  _canReconnect() {
+    return this.getConnectionStatus() === NetworkLinkStatus.Broken;
   }
 
   _onConnectSuccess(response, metadata) {
@@ -415,8 +465,6 @@ class PersistentConnectionAndChatServiceController extends ChatController {
         return NetworkLinkStatus.Broken;
       case ConnectionHelperStatus.Connected:
         return NetworkLinkStatus.Established;
-      case ConnectionHelperStatus.DisconnectedReconnecting:
-        return NetworkLinkStatus.BrokenRetrying;
     }
     self.logger.error(
       "Reached invalid state. Unknown connectionHelperStatus: ",
@@ -425,12 +473,8 @@ class PersistentConnectionAndChatServiceController extends ChatController {
   }
 
   getConnectionStatus() {
-    var self = this;
-    if (!self._hasConnectionDetails) {
-      return NetworkLinkStatus.NeverEstablished;
-    }
-    return self._convertConnectionHelperStatus(
-      self.connectionHelper.getStatus()
+    return this._convertConnectionHelperStatus(
+      this.connectionHelper.getStatus()
     );
   }
 }
