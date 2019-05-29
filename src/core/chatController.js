@@ -8,7 +8,9 @@ import {
   VISIBILITY,
   CHAT_EVENTS,
   TRANSCRIPT_DEFAULT_PARAMS,
-  CONTENT_TYPE
+  CONTENT_TYPE,
+  RECONNECT_INTERVAL,
+  MAX_RECONNECT_ATTEMPTS
 } from "../constants";
 import { GlobalConfig } from "../globalConfig";
 import { LogManager } from "../log";
@@ -351,8 +353,8 @@ class PersistentConnectionAndChatServiceController extends ChatController {
           this.connectionDetails = null;
           return this._connect();
         },
-        (count) => count < GlobalConfig.maxReconnectAttempts && this._canReconnect(),
-        GlobalConfig.reconnectInterval
+        (count) => count < MAX_RECONNECT_ATTEMPTS && this._canReconnect(),
+        RECONNECT_INTERVAL
       )
       .then(() => {
         this.logger.info(`Reconnect - Success`);

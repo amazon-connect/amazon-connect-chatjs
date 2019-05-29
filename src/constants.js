@@ -94,3 +94,6 @@ export const REGIONS = {
   nrt: "ap-northeast-1",
   fra: "eu-central-1"
 };
+
+export const RECONNECT_INTERVAL = 1000;
+export const MAX_RECONNECT_ATTEMPTS = 5;
