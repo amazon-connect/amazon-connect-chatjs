@@ -15,6 +15,7 @@ class EventConstructor {
     switch (eventType) {
       case ConnectionHelperEvents.Ended:
         returnObject.type = CHAT_EVENTS.CONNECTION_BROKEN;
+        returnObject.data.reconnect = eventData.reason.errorCode !== 0;
         return returnObject;
       case ConnectionHelperEvents.IncomingMessage:
         return this._fromIncomingData(eventData, chatDetails);
