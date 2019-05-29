@@ -128,9 +128,9 @@ class MockConnectionHelper extends ConnectionHelper {
     }
   }
 
-  end() {
+  end(eventData={}) {
     this.status = ConnectionHelperStatus.Ended;
-    this.callback(ConnectionHelperEvents.Ended, {});
+    this.callback(ConnectionHelperEvents.Ended, eventData);
   }
   getStatus() {
     return this.status;

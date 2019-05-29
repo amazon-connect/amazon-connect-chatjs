@@ -7,7 +7,7 @@ import {
   MockEventBus
 } from "./testUtils";
 import { ChatSessionObject } from "../../src/core/chatSession";
-import { CHAT_EVENTS } from "../../src/constants";
+import { CHAT_EVENTS, MAX_RECONNECT_ATTEMPTS, RECONNECT_INTERVAL } from "../../src/constants";
 
 var CHAT_DETAILS = {
   connectionDetails: {
@@ -45,14 +45,10 @@ describe("Reconnect", () => {
   let controller = null;
   let connectionHelper = null;
   let reconnect = true;
-  let maxReconnectAttempts = 1;
-  let reconnectInterval = 1000;
 
   beforeEach(() => {
     canConnect = true;
     reconnect = true;
-    maxReconnectAttempts = 1;
-    reconnectInterval = 1;
     jest.useFakeTimers();
   });
 
@@ -62,7 +58,7 @@ describe("Reconnect", () => {
 
   async function advanceIteration() {
     await Promise.resolve();
-    jest.advanceTimersByTime(reconnectInterval);
+    jest.advanceTimersByTime(RECONNECT_INTERVAL);
     await Promise.resolve();
   }
 
@@ -73,9 +69,7 @@ describe("Reconnect", () => {
         level: 1
       },
       region: "us-east-1",
-      reconnect: reconnect,
-      maxReconnectAttempts: maxReconnectAttempts,
-      reconnectInterval: reconnectInterval
+      reconnect: reconnect
     });
     var createConnectionHelperProvider = jest.fn(
       () => {
@@ -107,7 +101,7 @@ describe("Reconnect", () => {
   test("ending connection results in status=Broken", async () => {
     setup();
     await controller.connect();
-    connectionHelper.end();
+    connectionHelper.end({ reason: {errorCode: 1} });
     expect(controller.getConnectionStatus()).toBe(NetworkLinkStatus.Broken);
   });
 
@@ -115,7 +109,7 @@ describe("Reconnect", () => {
     setup();
     controller._initiateReconnect = jest.fn();
     await controller.connect();
-    connectionHelper.end();
+    connectionHelper.end({ reason: {errorCode: 1} });
     expect(controller._initiateReconnect).toHaveBeenCalled();
   });
 
@@ -126,31 +120,27 @@ describe("Reconnect", () => {
       expect(controller.getConnectionStatus()).toBe(NetworkLinkStatus.Established);
       done();
     });
-    connectionHelper.end();
+    connectionHelper.end({ reason: {errorCode: 1} });
   });
 
   test("honors maxReconnectAttempts", async () => {
-    maxReconnectAttempts = 3;
     setup();
     await controller.connect();
     controller._connect = jest.fn(() => Promise.reject());
-    connectionHelper.end();
-    expect(controller._connect).toHaveBeenCalledTimes(1);
-    await advanceIteration();
-    expect(controller._connect).toHaveBeenCalledTimes(2);
-    await advanceIteration();
-    expect(controller._connect).toHaveBeenCalledTimes(3);
-    await advanceIteration();
-    expect(controller._connect).toHaveBeenCalledTimes(3);
+    connectionHelper.end({ reason: {errorCode: 1} });
+    for (let i = 0; i < MAX_RECONNECT_ATTEMPTS; i++) {
+      expect(controller._connect).toHaveBeenCalledTimes(i + 1);
+      await advanceIteration();
+    }
+    expect(controller._connect).toHaveBeenCalledTimes(MAX_RECONNECT_ATTEMPTS);
   });
 
   test("stops attempting to reconnect when connection was successful", async () => {
-    maxReconnectAttempts = 3;
     let canConnect = false;
     setup();
     await controller.connect();
     controller._connect = jest.fn(() => canConnect ? Promise.resolve() : Promise.reject());
-    connectionHelper.end();
+    connectionHelper.end({ reason: {errorCode: 1} });
     expect(controller._connect).toHaveBeenCalledTimes(1);
     canConnect = true;
     await advanceIteration();
@@ -160,11 +150,10 @@ describe("Reconnect", () => {
   });
 
   test("successful reconnect results in status=Established", async () => {
-    maxReconnectAttempts = 3;
     setup();
     await controller.connect();
     canConnect = false;
-    connectionHelper.end();
+    connectionHelper.end({ reason: {errorCode: 1} });
     canConnect = true;
     await advanceIteration();
     expect(controller.getConnectionStatus()).toBe(NetworkLinkStatus.Established);
