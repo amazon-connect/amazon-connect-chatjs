@@ -67,10 +67,6 @@ class ChatServiceArgsValidator extends ChatControllerArgsValidator {
   validateChatDetails(chatDetails) {
     Utils.assertIsObject(chatDetails, "chatDetails");
     Utils.assertIsNonEmptyString(
-      chatDetails.initialContactId,
-      "chatDetails.initialContactId"
-    );
-    Utils.assertIsNonEmptyString(
       chatDetails.contactId,
       "chatDetails.contactId"
     );
