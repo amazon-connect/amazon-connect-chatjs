@@ -93,13 +93,8 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
       chatDetails.initialContactId = chatDetailsInput.ContactId;
       return chatDetails;
     } else {
-      const chatDetails = {
-        participantToken: chatDetailsInput.ParticipantToken,
-        participantId: chatDetailsInput.ParticipantId,
-        contactId: chatDetailsInput.ContactId
-      };
-      this.argsValidator.validateChatDetails(chatDetails);
-      return chatDetails;
+      this.argsValidator.validateChatDetails(chatDetailsInput);
+      return chatDetailsInput;
     }
   }
 
