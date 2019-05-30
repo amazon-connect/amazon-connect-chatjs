@@ -140,6 +140,7 @@ class PahoMqttConnection extends MQTTClient {
   }
 
   _connectionLostCallBack(error) {
+    console.warn("Connection lost: ", error);
     var data = {
       reason: error
     };
