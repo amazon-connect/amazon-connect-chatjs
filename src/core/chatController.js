@@ -366,6 +366,7 @@ class PersistentConnectionAndChatServiceController extends ChatController {
 
   _canConnect() {
     return (
+      !this.connectionHelper ||
       this.getConnectionStatus() === NetworkLinkStatus.Broken ||
       this.getConnectionStatus() === NetworkLinkStatus.NeverEstablished
     );
