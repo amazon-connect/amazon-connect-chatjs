@@ -74,12 +74,18 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
   }
 
   _normalizeChatDetails(chatDetailsInput) {
-    if (
+    var chatDetails = {};
+    if (chatDetailsInput.participantToken || chatDetailsInput.ParticipantToken) {
+      chatDetails.participantId = chatDetailsInput.ParticipantId || chatDetailsInput.participantId;
+      chatDetails.contactId = chatDetailsInput.ContactId || chatDetailsInput.contactId;
+      chatDetails.participantToken = chatDetailsInput.ParticipantToken || chatDetailsInput.participantToken;
+      this.argsValidator.validateChatDetails(chatDetails);
+      return chatDetails;
+    } else if (
       chatDetailsInput.ChatConnectionAttributes &&
       chatDetailsInput.ChatConnectionAttributes.ParticipantCredentials
     ) {
       this.argsValidator.validateInitiateChatResponse(chatDetailsInput);
-      var chatDetails = {};
       var connectionDetails = {};
       connectionDetails.connectionToken =
         chatDetailsInput.ChatConnectionAttributes.ParticipantCredentials.ConnectionAuthenticationToken;
