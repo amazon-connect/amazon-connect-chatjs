@@ -95,5 +95,12 @@ export const REGIONS = {
   fra: "eu-central-1"
 };
 
-export const RECONNECT_INTERVAL = 10000;
-export const MAX_RECONNECT_ATTEMPTS = 5;
+export const AGENT_RECONNECT_CONFIG = {
+  interval: 3000,
+  maxRetries: 5
+};
+
+export const CUSTOMER_RECONNECT_CONFIG = {
+  interval: 3000,
+  maxRetries: 5
+};

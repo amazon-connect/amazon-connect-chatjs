@@ -6,7 +6,7 @@ import { ChatClientFactory } from "../client/client";
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
 import { ChatConnectionManager } from "./connectionManager";
 import { SoloChatConnectionMqttHelper } from "./connectionHelper";
-import { SESSION_TYPES, CHAT_EVENTS } from "../constants";
+import { SESSION_TYPES, CHAT_EVENTS, AGENT_RECONNECT_CONFIG, CUSTOMER_RECONNECT_CONFIG } from "../constants";
 import { EventConstructor } from "./eventConstructor";
 import { EventBus } from "./eventbus";
 import { GlobalConfig } from "../globalConfig";
@@ -46,16 +46,16 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
   }
 
   createAgentChatSession(chatDetails, options) {
-    var chatController = this._createChatSession(chatDetails, options);
+    var chatController = this._createChatSession(chatDetails, options, AGENT_RECONNECT_CONFIG);
     return new AgentChatSession(chatController);
   }
 
   createCustomerChatSession(chatDetails, options) {
-    var chatController = this._createChatSession(chatDetails, options);
+    var chatController = this._createChatSession(chatDetails, options, CUSTOMER_RECONNECT_CONFIG);
     return new CustomerChatSession(chatController);
   }
 
-  _createChatSession(chatDetailsInput, options) {
+  _createChatSession(chatDetailsInput, options, reconnectConfig) {
     var chatDetails = this._normalizeChatDetails(chatDetailsInput);
     var hasConnectionDetails = false;
     if (chatDetails.connectionDetails) {
@@ -68,7 +68,8 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
       pubsub: new EventBus(),
       chatClient: ChatClientFactory.getCachedClient(options),
       argsValidator: this.argsValidator,
-      hasConnectionDetails: hasConnectionDetails
+      hasConnectionDetails: hasConnectionDetails,
+      reconnectConfig: reconnectConfig
     };
     return new PersistentConnectionAndChatServiceController(args);
   }

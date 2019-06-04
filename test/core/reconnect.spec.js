@@ -7,7 +7,7 @@ import {
   MockEventBus
 } from "./testUtils";
 import { ChatSessionObject } from "../../src/core/chatSession";
-import { CHAT_EVENTS, MAX_RECONNECT_ATTEMPTS, RECONNECT_INTERVAL } from "../../src/constants";
+import { CHAT_EVENTS } from "../../src/constants";
 
 var CHAT_DETAILS = {
   connectionDetails: {
@@ -21,7 +21,7 @@ var CHAT_DETAILS = {
   participantId: "5c2c827f-18ca-4b8a-869e-acefe4a74dc4"
 };
 
-const _createController = createConnectionHelperProvider => {
+const _createController = (createConnectionHelperProvider, reconnectConfig) => {
   var args = {};
   args.argsValidator = new ChatServiceArgsValidator();
   args.chatEventConstructor = new EventConstructor();
@@ -35,6 +35,7 @@ const _createController = createConnectionHelperProvider => {
   args.pubsub = new MockEventBus();
   args.argsValidator = new ChatServiceArgsValidator();
   args.argsValidator = new ChatServiceArgsValidator();
+  args.reconnectConfig = reconnectConfig;
   return new PersistentConnectionAndChatServiceController(args);
 };
 
@@ -45,6 +46,10 @@ describe("Reconnect", () => {
   let controller = null;
   let connectionHelper = null;
   let reconnect = true;
+  let reconnectConfig = {
+    interval: 1000,
+    maxRetries: 3
+  };
 
   beforeEach(() => {
     canConnect = true;
@@ -58,7 +63,7 @@ describe("Reconnect", () => {
 
   async function advanceIteration() {
     await Promise.resolve();
-    jest.advanceTimersByTime(RECONNECT_INTERVAL);
+    jest.advanceTimersByTime(reconnectConfig.interval);
     await Promise.resolve();
   }
 
@@ -79,7 +84,7 @@ describe("Reconnect", () => {
         };
       }
     );
-    controller = _createController(createConnectionHelperProvider);
+    controller = _createController(createConnectionHelperProvider, reconnectConfig);
   }
 
   test("succeeding connection results in resolving promise and status=Established", async () => {
@@ -128,11 +133,11 @@ describe("Reconnect", () => {
     await controller.connect();
     controller._connect = jest.fn(() => Promise.reject());
     connectionHelper.end({ reason: {errorCode: 1} });
-    for (let i = 0; i < MAX_RECONNECT_ATTEMPTS; i++) {
+    for (let i = 0; i < reconnectConfig.maxRetries; i++) {
       expect(controller._connect).toHaveBeenCalledTimes(i + 1);
       await advanceIteration();
     }
-    expect(controller._connect).toHaveBeenCalledTimes(MAX_RECONNECT_ATTEMPTS);
+    expect(controller._connect).toHaveBeenCalledTimes(reconnectConfig.maxRetries);
   });
 
   test("stops attempting to reconnect when connection was successful", async () => {
