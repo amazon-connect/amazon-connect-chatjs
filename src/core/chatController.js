@@ -310,7 +310,7 @@ class PersistentConnectionAndChatServiceController extends ChatController {
   }
 
   _handleChatEvent(chatEvent) {
-    if (chatEvent.type === CHAT_EVENTS.CONNECTION_BROKEN && GlobalConfig.reconnect && chatEvent.data.reconnect) {
+    if (chatEvent.type === CHAT_EVENTS.CONNECTION_BROKEN && GlobalConfig.reconnect && chatEvent.data.reconnect && this.participantToken) {
       this._initiateReconnect();
     }
   }
