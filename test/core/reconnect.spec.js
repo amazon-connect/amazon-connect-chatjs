@@ -18,14 +18,15 @@ var CHAT_DETAILS = {
   },
   initialContactId: "8e4a71b4-60b2-49cf-8566-8f984aa8add4",
   contactId: "8e4a71b4-60b2-49cf-8566-8f984aa8add4",
-  participantId: "5c2c827f-18ca-4b8a-869e-acefe4a74dc4"
+  participantId: "5c2c827f-18ca-4b8a-869e-acefe4a74dc4",
+  participantToken: ""
 };
 
-const _createController = (createConnectionHelperProvider, reconnectConfig) => {
+const _createController = (createConnectionHelperProvider, reconnectConfig, participantToken) => {
   var args = {};
   args.argsValidator = new ChatServiceArgsValidator();
   args.chatEventConstructor = new EventConstructor();
-  args.chatDetails = CHAT_DETAILS;
+  args.chatDetails = Object.assign({}, CHAT_DETAILS, {participantToken: participantToken});
   args.chatClient = MockChatClient;
   args.hasConnectionDetails = true;
   var MockChatControllerFactory = {
@@ -46,6 +47,7 @@ describe("Reconnect", () => {
   let controller = null;
   let connectionHelper = null;
   let reconnect = true;
+  let participantToken = 'token';
   let reconnectConfig = {
     interval: 1000,
     maxRetries: 3
@@ -54,6 +56,7 @@ describe("Reconnect", () => {
   beforeEach(() => {
     canConnect = true;
     reconnect = true;
+    participantToken = 'token';
     jest.useFakeTimers();
   });
 
@@ -84,7 +87,7 @@ describe("Reconnect", () => {
         };
       }
     );
-    controller = _createController(createConnectionHelperProvider, reconnectConfig);
+    controller = _createController(createConnectionHelperProvider, reconnectConfig, participantToken);
   }
 
   test("succeeding connection results in resolving promise and status=Established", async () => {
@@ -116,6 +119,15 @@ describe("Reconnect", () => {
     await controller.connect();
     connectionHelper.end({ reason: {errorCode: 1} });
     expect(controller._initiateReconnect).toHaveBeenCalled();
+  });
+
+  test("ending connection does not initiate reconnect routine if participantToken is missing", async () => {
+    participantToken = null;
+    setup();
+    controller._initiateReconnect = jest.fn();
+    await controller.connect();
+    connectionHelper.end({ reason: {errorCode: 1} });
+    expect(controller._initiateReconnect).not.toHaveBeenCalled();
   });
 
   test("ending connection reconnects successfully", async (done) => {
