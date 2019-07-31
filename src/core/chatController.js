@@ -185,7 +185,7 @@ class PersistentConnectionAndChatServiceController extends ChatController {
       },
       function(error) {
         error.metadata = metadata;
-        self.logger.debug(
+        self.logger.error(
           "Failed to send message, error: ",
           error,
           " request: ",
