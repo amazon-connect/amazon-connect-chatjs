@@ -1,3 +1,5 @@
+import '../polyfills';
+
 import { PersistentConnectionAndChatServiceController, NetworkLinkStatus } from "../../src/core/chatController";
 import { ChatServiceArgsValidator } from "../../src/core/chatArgsValidator";
 import { EventConstructor } from "../../src/core/eventConstructor";
@@ -49,7 +51,7 @@ describe("Reconnect", () => {
   let reconnect = true;
   let participantToken = 'token';
   let reconnectConfig = {
-    interval: 1000,
+    interval: 0,
     maxRetries: 3
   };
 
@@ -57,11 +59,6 @@ describe("Reconnect", () => {
     canConnect = true;
     reconnect = true;
     participantToken = 'token';
-    jest.useFakeTimers();
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
   });
 
   async function advanceIteration() {
@@ -96,14 +93,13 @@ describe("Reconnect", () => {
     expect(controller.getConnectionStatus()).toBe(NetworkLinkStatus.Established);
   });
 
-  test("failing connection results in rejected promise and status=Broken", async () => {
+  test("failing connection results in rejected promise and status=Broken", (done) => {
     canConnect = false;
     setup();
-    try {
-      await controller.connect();
-    } catch(e) {
+    controller.connect().catch(() => {
       expect(controller.getConnectionStatus()).toBe(NetworkLinkStatus.Broken);
-    }
+      done();
+    });
   });
 
   test("ending connection results in status=Broken", async () => {
@@ -115,19 +111,19 @@ describe("Reconnect", () => {
 
   test("ending connection initiated reconnect routine", async () => {
     setup();
-    controller._initiateReconnect = jest.fn();
+    controller._initiateConnectWithRetry = jest.fn(() => Promise.resolve());
     await controller.connect();
     connectionHelper.end({ reason: {errorCode: 1} });
-    expect(controller._initiateReconnect).toHaveBeenCalled();
+    expect(controller._initiateConnectWithRetry).toHaveBeenCalled();
   });
 
   test("ending connection does not initiate reconnect routine if participantToken is missing", async () => {
     participantToken = null;
     setup();
-    controller._initiateReconnect = jest.fn();
     await controller.connect();
+    controller._initiateConnectWithRetry = jest.fn(() => Promise.resolve());
     connectionHelper.end({ reason: {errorCode: 1} });
-    expect(controller._initiateReconnect).not.toHaveBeenCalled();
+    expect(controller._initiateConnectWithRetry).not.toHaveBeenCalled();
   });
 
   test("ending connection reconnects successfully", async (done) => {
@@ -141,6 +137,7 @@ describe("Reconnect", () => {
   });
 
   test("honors maxReconnectAttempts", async () => {
+    jest.useFakeTimers();
     setup();
     await controller.connect();
     controller._connect = jest.fn(() => Promise.reject());
@@ -154,6 +151,7 @@ describe("Reconnect", () => {
 
   test("stops attempting to reconnect when connection was successful", async () => {
     let canConnect = false;
+    jest.useFakeTimers();
     setup();
     await controller.connect();
     controller._connect = jest.fn(() => canConnect ? Promise.resolve() : Promise.reject());
@@ -167,6 +165,7 @@ describe("Reconnect", () => {
   });
 
   test("successful reconnect results in status=Established", async () => {
+    jest.useFakeTimers();
     setup();
     await controller.connect();
     canConnect = false;

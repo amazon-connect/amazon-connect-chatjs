@@ -1,6 +1,5 @@
 import {
-  UnImplementedMethodException,
-  IllegalStateException
+  UnImplementedMethodException
 } from "./exceptions";
 import { ConnectionHelperStatus } from "./connectionHelper";
 import {
@@ -12,6 +11,7 @@ import {
 } from "../constants";
 import { GlobalConfig } from "../globalConfig";
 import { LogManager } from "../log";
+import { NetworkInfo } from "./networkInfo";
 import Utils from "../utils";
 
 var NetworkLinkStatus = {
@@ -105,6 +105,7 @@ class PersistentConnectionAndChatServiceController extends ChatController {
   constructor(args) {
     super();
     this.setArguments(args);
+    this._setNetworkEventHandlers();
   }
 
   setArguments(args) {
@@ -135,6 +136,8 @@ class PersistentConnectionAndChatServiceController extends ChatController {
         args.chatDetails.contactId
       );
     }
+    this._initiateConnectPromise = null;
+    this._unsubscribeFunctions = [];
     this._connectCalledAtleastOnce = false;
     this._everConnected = false;
     this.pubsub = args.pubsub;
@@ -311,7 +314,7 @@ class PersistentConnectionAndChatServiceController extends ChatController {
 
   _handleChatEvent(chatEvent) {
     if (chatEvent.type === CHAT_EVENTS.CONNECTION_BROKEN && GlobalConfig.reconnect && chatEvent.data.reconnect && this.participantToken) {
-      this._initiateReconnect();
+      this._initiateConnectWithRetry().catch(() => {});
     }
   }
 
@@ -319,15 +322,10 @@ class PersistentConnectionAndChatServiceController extends ChatController {
     var args = inputArgs || {};
     this.sessionMetadata = args.metadata || null;
     this.argsValidator.validateConnectChat(args);
-    return this._connect();
+    return this._initiateConnectWithRetry();
   }
 
   _connect() {
-    if (!this._canConnect()) {
-      throw new IllegalStateException(
-        "Can call establishNetworkLink only when getConnectionStatus is Broken or NeverEstablished"
-      );
-    }
     var _onSuccess = response => this._onConnectSuccess(response, this.sessionMetadata);
     var _onFailure = error => this._onConnectFailure(error, this.sessionMetadata);
     this._connectCalledAtleastOnce = true;
@@ -346,36 +344,49 @@ class PersistentConnectionAndChatServiceController extends ChatController {
     }
   }
 
-  _initiateReconnect() {
-    Utils
-      .asyncWhileInterval(
-        (count) => {
-          this.logger.info(`Reconnect - ${count}. try`);
-          this._hasConnectionDetails = false;
-          this.connectionDetails = null;
-          return this._connect();
-        },
-        (count) => count < this.reconnectConfig.maxRetries && this._canReconnect(),
-        this.reconnectConfig.interval
-      )
-      .then(() => {
-        this.logger.info(`Reconnect - Success`);
-      })
-      .catch(() => {
-        this.logger.info(`Reconnect - Failed`);
-      });
+  _initiateConnectWithRetry() {
+    if (!this._initiateConnectPromise) {
+      this._initiateConnectPromise = Utils
+        .asyncWhileInterval(
+          (count) => {
+            this.logger.info(`Connect - ${count}. try`);
+            this._hasConnectionDetails = false;
+            return this._connect();
+          },
+          (count) => count < this.reconnectConfig.maxRetries && this._canConnect(),
+          this.reconnectConfig.interval
+        )
+        .then(() => {
+          this.logger.info(`Connect - Success`);
+        })
+        .catch((e) => {
+          this.logger.info(`Connect - Failed`);
+          return Promise.reject(e);
+        })
+        .finally(() => {
+          this._initiateConnectPromise = null;
+        });
+    }
+    return this._initiateConnectPromise;
   }
 
   _canConnect() {
     return (
-      !this.connectionHelper ||
-      this.getConnectionStatus() === NetworkLinkStatus.Broken ||
-      this.getConnectionStatus() === NetworkLinkStatus.NeverEstablished
+      NetworkInfo.isOnline() && (
+        !this.connectionHelper ||
+        this.getConnectionStatus() === NetworkLinkStatus.Broken ||
+        this.getConnectionStatus() === NetworkLinkStatus.NeverEstablished
+      )
     );
   }
 
-  _canReconnect() {
-    return this.getConnectionStatus() === NetworkLinkStatus.Broken;
+  _setNetworkEventHandlers() {
+    const unsubscribe = NetworkInfo.onOnline(() => {
+      if (this._connectCalledAtleastOnce) {
+        this._initiateConnectWithRetry().catch(() => {});
+      }
+    });
+    this._unsubscribeFunctions.push(unsubscribe);
   }
 
   _onConnectSuccess(response, metadata) {
@@ -430,6 +441,7 @@ class PersistentConnectionAndChatServiceController extends ChatController {
   }
 
   breakConnection() {
+    this._unsubscribeFunctions.forEach(f => f());
     return this.connectionHelper.end();
   }
 
