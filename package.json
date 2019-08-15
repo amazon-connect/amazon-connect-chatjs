@@ -26,7 +26,7 @@
     "transform": {
       ".(js|jsx)$": "babel-jest"
     },
-    "testRegex": "/test/.*\\.spec\\.js$",
+    "testRegex": "/src/.*\\.spec\\.js$",
     "moduleFileExtensions": [
       "ts",
       "tsx",
@@ -58,6 +58,7 @@
     "webpack-dev-server": "^3.1.10"
   },
   "dependencies": {
-    "sprintf-js": "^1.1.2"
+    "sprintf-js": "^1.1.2",
+    "@amzn/amazon-connect-websocket-manager": "0.1.0"
   }
 }

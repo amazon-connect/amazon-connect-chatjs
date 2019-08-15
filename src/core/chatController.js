@@ -1,7 +1,4 @@
-import {
-  UnImplementedMethodException
-} from "./exceptions";
-import { ConnectionHelperStatus } from "./connectionHelper";
+import { ConnectionHelperStatus } from "./connectionHelpers/baseConnectionHelper";
 import {
   PERSISTENCE,
   VISIBILITY,
@@ -9,10 +6,10 @@ import {
   TRANSCRIPT_DEFAULT_PARAMS,
   CONTENT_TYPE
 } from "../constants";
-import { GlobalConfig } from "../globalConfig";
 import { LogManager } from "../log";
-import { NetworkInfo } from "./networkInfo";
-import Utils from "../utils";
+import { EventBus } from "./eventbus";
+import { ChatServiceArgsValidator } from "./chatArgsValidator";
+import connectionHelperProvider from "./connectionHelpers/connectionHelperProvider";
 
 var NetworkLinkStatus = {
   NeverEstablished: "NeverEstablished",
@@ -21,146 +18,29 @@ var NetworkLinkStatus = {
   Broken: "Broken"
 };
 
-/*eslint-disable no-unused-vars*/
 class ChatController {
-  /**
-   *
-   * @param {string} textMessage
-   * @return a promise object with
-   * success = {
-   *  "statusCode": 200,
-   *  "data": {
-   *      "MessageId": <string>
-   *      }
-   *  }
-   * error = {
-   *  "statusCode": <errorStatusCode>,
-   *  "exception": {} // some object...
-   * }
-   */
-  sendTextMessage(textMessage) {
-    throw new UnImplementedMethodException("sendTextMessage in ChatController");
-  }
 
-  /**
-   *
-   * @param {*} args
-   * @return Promise object with
-   *      response = {
-   *              "details": {}, // Implementation specific
-   *              "initialContactId": <InitialContactId>,
-   *              "contactId":  <contactId>,
-   *              "connectSuccess": true
-   *      }
-   *      error = {
-   *              "details": {}, // Implementation specific
-   *              "initialContactId": <InitialContactId>,
-   *              "contactId":  <contactId>,
-   *              "connectSuccess": false
-   *      }
-   */
-  establishNetworkLink(args) {
-    throw new UnImplementedMethodException("connectChat in ChatController");
-  }
-
-  /**
-   * @return null
-   */
-  disconnectParticipant() {
-    throw new UnImplementedMethodException("endChat in ChatController");
-  }
-
-  /**
-   *
-   * @param {string} eventType
-   * @return Promise object with
-   *  success = {
-   *      "statusCode": 200,
-   *      "data": {} // empty object? TODO
-   *  }
-   *  error = {
-   *      "statusCode": <errorCode>,
-   *      "exception": {} // some object
-   *  }
-   */
-  sendEvent(eventType) {
-    throw new UnImplementedMethodException("sendEvent in ChatController");
-  }
-
-  /**
-   * @param {object} args //TODO
-   * @return // TODO
-   */
-  getTranscript(args) {
-    throw new UnImplementedMethodException("getTranscript in ChatController");
-  }
-
-  getConnectionStatus() {
-    throw new UnImplementedMethodException("getStatus in ChatController");
-  }
-}
-/*eslint-enable no-unused-vars*/
-
-class PersistentConnectionAndChatServiceController extends ChatController {
   constructor(args) {
-    super();
-    this.setArguments(args);
-    this._setNetworkEventHandlers();
-  }
-
-  setArguments(args) {
-    var self = this;
-    var prefix = "ContactId-" + args.chatDetails.contactId + ": ";
     this.logger = LogManager.getLogger({
-      prefix: prefix
+      prefix: "ContactId-" + args.chatDetails.contactId + ": "
     });
-    this.argsValidator = args.argsValidator;
-    this.chatEventConstructor = args.chatEventConstructor;
+    this.argsValidator = new ChatServiceArgsValidator();
+    this.pubsub = new EventBus();
+
+    this.reconnectConfig = Object.assign({}, {
+      interval: 3000,
+      maxRetries: 5,
+    }, args.reconnectConfig || {});
     this.connectionDetails = args.chatDetails.connectionDetails;
     this.intialContactId = args.chatDetails.initialContactId;
     this.contactId = args.chatDetails.contactId;
     this.participantId = args.chatDetails.participantId;
     this.chatClient = args.chatClient;
     this.participantToken = args.chatDetails.participantToken;
-    this.reconnectConfig = Object.assign({}, {
-      interval: 3000,
-      maxRetries: 5,
-    }, args.reconnectConfig || {});
-    this.connectionHelperCallback = (eventType, eventData) =>
-      self._handleConnectionHelperEvents(eventType, eventData);
-    this._hasConnectionDetails = args.hasConnectionDetails;
-    this.chatControllerFactory = args.chatControllerFactory;
-    if (args.hasConnectionDetails) {
-      this._setConnectionHelper(
-        args.chatDetails.connectionDetails,
-        args.chatDetails.contactId
-      );
-    }
-    this._initiateConnectPromise = null;
-    this._unsubscribeFunctions = [];
-    this._connectCalledAtleastOnce = false;
-    this._everConnected = false;
-    this.pubsub = args.pubsub;
+    this.websocketManager = args.websocketManager;
+
     this._participantDisconnected = false;
     this.sessionMetadata = {};
-  }
-
-  _setConnectionHelper(connectionDetails, contactId) {
-    var connectionHelperProvider = this.chatControllerFactory.createConnectionHelperProvider(
-      connectionDetails,
-      contactId
-    );
-    this.connectionHelper = connectionHelperProvider(
-      this.connectionHelperCallback
-    );
-  }
-
-  // Do any clean up that needs to be done upon the participant being disconnected from the chat -
-  // disconnected here means that the participant is no longer part of ther chat.
-  cleanUpOnParticipantDisconnect() {
-    this.pubsub.unsubscribeAll();
-    this.connectionHelper &&
-      this.connectionHelper.cleanUpOnParticipantDisconnect();
   }
 
   subscribe(eventName, callback) {
@@ -168,46 +48,42 @@ class PersistentConnectionAndChatServiceController extends ChatController {
     this.logger.info("Subscribed successfully to eventName: ", eventName);
   }
 
+  handleRequestSuccess(metadata, request, requestName) {
+    return response => {
+      response.metadata = metadata;
+      this.logger.debug(`${requestName} successful! Response: `, response, " / Request: ", request);
+      return response;
+    };
+  }
+
+  handleRequestFailure(metadata, request, requestName) {
+    return error => {
+      error.metadata = metadata;
+      this.logger.debug(`${requestName} failed! Error: `, error, " / Request: ", request);
+      return Promise.reject(error);
+    };
+  }
+
   sendMessage(args) {
-    var self = this;
-    var message = args.message;
-    var type = args.type || CONTENT_TYPE.textPlain;
-    var metadata = args.metadata || null;
-    self.argsValidator.validateSendMessage(message, type);
-    var connectionToken = self.connectionDetails.connectionToken;
-    return self.chatClient.sendMessage(connectionToken, message, type).then(
-      function(response) {
-        response.metadata = metadata;
-        self.logger.debug(
-          "Successfully sent message, response: ",
-          response,
-          " request: ",
-          args
-        );
-        return response;
-      },
-      function(error) {
-        error.metadata = metadata;
-        self.logger.error(
-          "Failed to send message, error: ",
-          error,
-          " request: ",
-          args
-        );
-        return Promise.reject(error);
-      }
-    );
+    const message = args.message;
+    const type = args.type || CONTENT_TYPE.textPlain;
+    const metadata = args.metadata || null;
+    this.argsValidator.validateSendMessage(message, type);
+    const connectionToken = this.connectionHelper.getConnectionToken();
+    return this.chatClient
+      .sendMessage(connectionToken, message, type)
+      .then(this.handleRequestSuccess(metadata, args, "sendMessage"))
+      .catch(this.handleRequestFailure(metadata, args, "sendMessage"));
   }
 
   sendEvent(args) {
-    var self = this;
-    var metadata = args.metadata || null;
-    self.argsValidator.validateSendEvent(args);
-    var connectionToken = self.connectionDetails.connectionToken;
-    var persistenceArgument = args.persistence || PERSISTENCE.PERSISTED;
-    var visibilityArgument = args.visibility || VISIBILITY.ALL;
+    const metadata = args.metadata || null;
+    this.argsValidator.validateSendEvent(args);
+    const connectionToken = this.connectionHelper.getConnectionToken();
+    const persistenceArgument = args.persistence || PERSISTENCE.PERSISTED;
+    const visibilityArgument = args.visibility || VISIBILITY.ALL;
 
-    return self.chatClient
+    return this.chatClient
       .sendEvent(
         connectionToken,
         args.eventType,
@@ -215,260 +91,167 @@ class PersistentConnectionAndChatServiceController extends ChatController {
         visibilityArgument,
         persistenceArgument
       )
-      .then(
-        function(response) {
-          response.metadata = metadata;
-          self.logger.debug(
-            "Successfully sent event, response: ",
-            response,
-            " request: ",
-            args
-          );
-          return response;
-        },
-        function(error) {
-          error.metadata = metadata;
-          self.logger.debug(
-            "Failed to send event, error: ",
-            error,
-            " request: ",
-            args
-          );
-          return Promise.reject(error);
-        }
-      );
+      .then(this.handleRequestSuccess(metadata, args, "sendEvent"))
+      .catch(this.handleRequestFailure(metadata, args, "sendEvent"));
   }
 
   getTranscript(inputArgs) {
-    var self = this;
-    var metadata = inputArgs.metadata || null;
-    var args = {};
-    args.IntialContactId = this.intialContactId;
-    args.StartKey = inputArgs.StartKey || {};
-    args.ScanDirection =
-      inputArgs.ScanDirection || TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION;
-    args.SortKey = inputArgs.SortKey || TRANSCRIPT_DEFAULT_PARAMS.SORT_KEY;
-    args.MaxResults =
-      inputArgs.MaxResults || TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS;
+    const metadata = inputArgs.metadata || null;
+    const args = {
+      IntialContactId: this.intialContactId,
+      StartKey: inputArgs.StartKey || {},
+      ScanDirection: inputArgs.ScanDirection || TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
+      SortKey: inputArgs.SortKey || TRANSCRIPT_DEFAULT_PARAMS.SORT_KEY,
+      MaxResults: inputArgs.MaxResults || TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS
+    };
     if (inputArgs.NextToken) {
       args.NextToken = inputArgs.NextToken;
     }
-    var connectionToken = this.connectionDetails.connectionToken;
-    return this.chatClient.getTranscript(connectionToken, args).then(
-      function(response) {
-        response.metadata = metadata;
-        self.logger.debug(
-          "Successfully retrieved transcript, response: ",
-          response,
-          " request: ",
-          args
-        );
-        return response;
-      },
-      function(error) {
-        error.metadata = metadata;
-        self.logger.debug(
-          "Failed to retrieve transcript, error: ",
-          error,
-          " request: ",
-          args
-        );
-        return Promise.reject(error);
-      }
-    );
+    const connectionToken = this.connectionHelper.getConnectionToken();
+    return this.chatClient
+      .getTranscript(connectionToken, args)
+      .then(this.handleRequestSuccess(metadata, args, "getTranscript"))
+      .catch(this.handleRequestFailure(metadata, args, "getTranscript"));
   }
 
-  _mapConnectionHelperEventToChatEvent(eventType, eventData) {
-    try {
-      return this.chatEventConstructor.fromConnectionHelperEvent(
-        eventType,
-        eventData,
-        this.getChatDetails(),
-        this.logger
-      );
-    } catch (exc) {
-      this.logger.error(
-        "Error occured while handling event from Connection. eventType and eventData: ",
-        eventType,
-        eventData,
-        " Causing exception: ",
-        exc
-      );
-      return null;
-    }
-  }
-
-  _forwardChatEvent(chatEvent) {
-    this.logger.debug("Triggering event for subscribers:", chatEvent);
-    this.pubsub.triggerAsync(chatEvent.type, chatEvent.data);
-  }
-
-  _handleConnectionHelperEvents(eventType, eventData) {
-    const chatEvent = this._mapConnectionHelperEventToChatEvent(eventType, eventData);
-    if (!chatEvent) {
-      return;
-    }
-    this._handleChatEvent(chatEvent);
-    this._forwardChatEvent(chatEvent);
-  }
-
-  _handleChatEvent(chatEvent) {
-    if (chatEvent.type === CHAT_EVENTS.CONNECTION_BROKEN && GlobalConfig.reconnect && chatEvent.data.reconnect && this.participantToken) {
-      this._initiateConnectWithRetry().catch(() => {});
-    }
-  }
-
-  connect(inputArgs) {
-    var args = inputArgs || {};
+  connect(args={}) {
     this.sessionMetadata = args.metadata || null;
     this.argsValidator.validateConnectChat(args);
-    return this._initiateConnectWithRetry();
-  }
 
-  _connect() {
-    var _onSuccess = response => this._onConnectSuccess(response, this.sessionMetadata);
-    var _onFailure = error => this._onConnectFailure(error, this.sessionMetadata);
-    this._connectCalledAtleastOnce = true;
-    if (this._hasConnectionDetails) {
-      return this.connectionHelper.start().then(_onSuccess, _onFailure);
-    } else {
-      return this
-        ._fetchConnectionDetails()
-        .then(connectionDetails => {
-          this._setConnectionHelper(connectionDetails, this.contactId);
-          this.connectionDetails = connectionDetails;
-          this._hasConnectionDetails = true;
-          return this.connectionHelper.start();
-        })
-        .then(_onSuccess, _onFailure);
-    }
-  }
-
-  _initiateConnectWithRetry() {
-    if (!this._initiateConnectPromise) {
-      this._initiateConnectPromise = Utils
-        .asyncWhileInterval(
-          (count) => {
-            this.logger.info(`Connect - ${count}. try`);
-            this._hasConnectionDetails = false;
-            return this._connect();
-          },
-          (count) => count < this.reconnectConfig.maxRetries && this._canConnect(),
-          this.reconnectConfig.interval
-        )
-        .then(() => {
-          this.logger.info(`Connect - Success`);
-        })
-        .catch((e) => {
-          this.logger.info(`Connect - Failed`);
-          return Promise.reject(e);
-        })
-        .finally(() => {
-          this._initiateConnectPromise = null;
-        });
-    }
-    return this._initiateConnectPromise;
-  }
-
-  _canConnect() {
-    return (
-      NetworkInfo.isOnline() && (
-        !this.connectionHelper ||
-        this.getConnectionStatus() === NetworkLinkStatus.Broken ||
-        this.getConnectionStatus() === NetworkLinkStatus.NeverEstablished
+    return connectionHelperProvider
+      .get(
+        this.contactId,
+        this.connectionDetails,
+        this.participantToken,
+        this.chatClient,
+        this.websocketManager,
+        this.reconnectConfig
       )
-    );
+      .then(
+        this._initConnectionHelper.bind(this)
+      )
+      .then(
+        this._onConnectSuccess.bind(this),
+        this._onConnectFailure.bind(this)
+      );
   }
 
-  _setNetworkEventHandlers() {
-    const unsubscribe = NetworkInfo.onOnline(() => {
-      if (this._connectCalledAtleastOnce) {
-        this._initiateConnectWithRetry().catch(() => {});
-      }
+  _initConnectionHelper(connectionHelper) {
+    this.connectionHelper = connectionHelper;
+    this.connectionHelper.onEnded(this._handleEndedConnection.bind(this));
+    this.connectionHelper.onConnectionLost(this._handleLostConnection.bind(this));
+    this.connectionHelper.onConnectionGain(this._handleGainedConnection.bind(this));
+    this.connectionHelper.onMessage(this._handleIncomingMessage.bind(this));
+    return this.connectionHelper.start();
+  }
+
+  _handleEndedConnection(eventData) {
+    this._forwardChatEvent(CHAT_EVENTS.CONNECTION_BROKEN, {
+      data: eventData,
+      chatDetails: this.getChatDetails()
     });
-    this._unsubscribeFunctions.push(unsubscribe);
   }
 
-  _onConnectSuccess(response, metadata) {
-    var self = this;
-    self.logger.info("Connect successful!");
-    var responseObject = {
+  _handleLostConnection(eventData) {
+    this._forwardChatEvent(CHAT_EVENTS.CONNECTION_LOST, {
+      data: eventData,
+      chatDetails: this.getChatDetails()
+    });
+  }
+
+  _handleGainedConnection(eventData) {
+    this._forwardChatEvent(CHAT_EVENTS.CONNECTION_ESTABLISHED, {
+      data: eventData,
+      chatDetails: this.getChatDetails()
+    });
+  }
+
+  _handleIncomingMessage(eventData) {
+    try {
+      const incomingData = JSON.parse(eventData.payloadString);
+      const eventType = {
+        TYPING: CHAT_EVENTS.INCOMING_TYPING
+      }[incomingData.Data.Type] || CHAT_EVENTS.INCOMING_MESSAGE;
+      this._forwardChatEvent(eventType, {
+        data: incomingData,
+        chatDetails: this.getChatDetails()
+      });
+    } catch (e) {
+      this.logger.error(
+        "Error occured while handling message from Connection. eventData: ",
+        eventData,
+        " Causing exception: ",
+        e
+      );
+    }
+  }
+
+  _forwardChatEvent(eventName, eventData) {
+    this.logger.debug("Triggering event for subscribers:", eventName, eventData);
+    this.pubsub.triggerAsync(eventName, eventData);
+  }
+
+  _onConnectSuccess(response) {
+    this.logger.info("Connect successful!");
+    const responseObject = {
       _debug: response,
       connectSuccess: true,
       connectCalled: true,
-      metadata: metadata
+      metadata: this.sessionMetadata
     };
-    var eventData = Object.assign(
-      {
-        chatDetails: self.getChatDetails()
-      },
-      responseObject
-    );
+    const eventData = Object.assign({
+      chatDetails: this.getChatDetails()
+    }, responseObject);
     this.pubsub.triggerAsync(CHAT_EVENTS.CONNECTION_ESTABLISHED, eventData);
     return responseObject;
   }
 
-  _onConnectFailure(error, metadata) {
-    var errorObject = {
+  _onConnectFailure(error) {
+    const errorObject = {
       _debug: error,
       connectSuccess: false,
       connectCalled: true,
-      metadata: metadata
+      metadata: this.sessionMetadata
     };
     this.logger.error("Connect Failed with data: ", errorObject);
     return Promise.reject(errorObject);
   }
 
-  _fetchConnectionDetails() {
-    var self = this;
-    return self.chatClient.createConnectionDetails(self.participantToken).then(
-      function(response) {
-        var connectionDetails = {};
-        connectionDetails.ConnectionId = response.data.ConnectionId;
-        connectionDetails.PreSignedConnectionUrl =
-          response.data.PreSignedConnectionUrl;
-        connectionDetails.connectionToken =
-          response.data.ParticipantCredentials.ConnectionAuthenticationToken;
-        return connectionDetails;
-      },
-      function(error) {
-        return Promise.reject({
-          reason: "Failed to fetch connectionDetails",
-          _debug: error
-        });
-      }
-    );
+  breakConnection() {
+    return this.connectionHelper
+      ? this.connectionHelper.end()
+      : Promise.resolve();
   }
 
-  breakConnection() {
-    this._unsubscribeFunctions.forEach(f => f());
-    return this.connectionHelper.end();
+  // Do any clean up that needs to be done upon the participant being disconnected from the chat -
+  // disconnected here means that the participant is no longer part of ther chat.
+  cleanUpOnParticipantDisconnect() {
+    this.pubsub.unsubscribeAll();
   }
 
   disconnectParticipant() {
-    var self = this;
-    var connectionToken = self.connectionDetails.connectionToken;
-    return self.chatClient.disconnectChat(connectionToken).then(
-      function(response) {
-        self.logger.info("disconnect participant successful");
-        self._participantDisconnected = true;
+    const connectionToken = this.connectionHelper.getConnectionToken();
+    return this.chatClient
+      .disconnectChat(connectionToken)
+      .then(response => {
+        this.logger.info("disconnect participant successful");
+        this._participantDisconnected = true;
+        this.cleanUpOnParticipantDisconnect();
+        this.breakConnection();
         return response;
-      },
-      function(error) {
-        self.logger.error("disconnect participant failed with error: ", error);
+      }, error => {
+        this.logger.error("disconnect participant failed with error: ", error);
         return Promise.reject(error);
-      }
-    );
+      });
   }
 
   getChatDetails() {
-    var self = this;
     return {
-      intialContactId: self.intialContactId,
-      contactId: self.contactId,
-      participantId: self.participantId,
-      participantToken: self.participantToken,
-      connectionDetails: self.connectionDetails
+      intialContactId: this.intialContactId,
+      contactId: this.contactId,
+      participantId: this.participantId,
+      participantToken: this.participantToken,
+      connectionDetails: this.connectionDetails
     };
   }
 
@@ -480,10 +263,12 @@ class PersistentConnectionAndChatServiceController extends ChatController {
         return NetworkLinkStatus.Establishing;
       case ConnectionHelperStatus.Ended:
         return NetworkLinkStatus.Broken;
+      case ConnectionHelperStatus.ConnectionLost:
+        return NetworkLinkStatus.Broken;
       case ConnectionHelperStatus.Connected:
         return NetworkLinkStatus.Established;
     }
-    self.logger.error(
+    this.logger.error(
       "Reached invalid state. Unknown connectionHelperStatus: ",
       connectionHelperStatus
     );
@@ -496,4 +281,4 @@ class PersistentConnectionAndChatServiceController extends ChatController {
   }
 }
 
-export { PersistentConnectionAndChatServiceController, NetworkLinkStatus };
+export { ChatController, NetworkLinkStatus };

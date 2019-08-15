@@ -1,6 +1,5 @@
 //import "jest"
-import Chat from "../src/chat";
-import { CHAT_CONFIGURATIONS } from "../src/constants";
+import Chat from "./chat";
 
 //Placeholder
 describe("Chat JS", () => {

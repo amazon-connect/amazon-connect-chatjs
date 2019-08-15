@@ -1,5 +1,5 @@
 
-import Utils from "../../src/utils";
+import Utils from "./utils";
 
 describe("Utils", () => {
   describe(".delay()", () => {

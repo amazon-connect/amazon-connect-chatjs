@@ -4,14 +4,10 @@ import {
 } from "./exceptions";
 import { ChatClientFactory } from "../client/client";
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
-import { ChatConnectionManager } from "./connectionManager";
-import { SoloChatConnectionMqttHelper } from "./connectionHelper";
 import { SESSION_TYPES, CHAT_EVENTS, AGENT_RECONNECT_CONFIG, CUSTOMER_RECONNECT_CONFIG } from "../constants";
-import { EventConstructor } from "./eventConstructor";
-import { EventBus } from "./eventbus";
 import { GlobalConfig } from "../globalConfig";
 
-import { PersistentConnectionAndChatServiceController } from "./chatController";
+import { ChatController } from "./chatController";
 import { LogManager, LogLevel, Logger } from "../log";
 
 class ChatSessionFactory {
@@ -28,12 +24,6 @@ class ChatSessionFactory {
       "createCustomerChatController in ChatControllerFactory."
     );
   }
-
-  createConnectionHelperProvider(connectionDetails) {
-    throw new UnImplementedMethodException(
-      "createIncomingChatController in ChatControllerFactory"
-    );
-  }
   /*eslint-enable no-unused-vars*/
 }
 
@@ -41,37 +31,27 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
   constructor() {
     super();
     this.argsValidator = new ChatServiceArgsValidator();
-    this.chatConnectionManager = new ChatConnectionManager();
-    this.chatEventConstructor = new EventConstructor();
   }
 
-  createAgentChatSession(chatDetails, options) {
-    var chatController = this._createChatSession(chatDetails, options, AGENT_RECONNECT_CONFIG);
+  createAgentChatSession(chatDetails, options, websocketManager=null) {
+    var chatController = this._createChatSession(chatDetails, options, AGENT_RECONNECT_CONFIG, websocketManager);
     return new AgentChatSession(chatController);
   }
 
-  createCustomerChatSession(chatDetails, options) {
-    var chatController = this._createChatSession(chatDetails, options, CUSTOMER_RECONNECT_CONFIG);
+  createCustomerChatSession(chatDetails, options, websocketManager=null) {
+    var chatController = this._createChatSession(chatDetails, options, CUSTOMER_RECONNECT_CONFIG, websocketManager);
     return new CustomerChatSession(chatController);
   }
 
-  _createChatSession(chatDetailsInput, options, reconnectConfig) {
+  _createChatSession(chatDetailsInput, options, reconnectConfig, websocketManager=null) {
     var chatDetails = this._normalizeChatDetails(chatDetailsInput);
-    var hasConnectionDetails = false;
-    if (chatDetails.connectionDetails) {
-      hasConnectionDetails = true;
-    }
     var args = {
       chatDetails: chatDetails,
-      chatControllerFactory: this,
-      chatEventConstructor: this.chatEventConstructor,
-      pubsub: new EventBus(),
       chatClient: ChatClientFactory.getCachedClient(options),
-      argsValidator: this.argsValidator,
-      hasConnectionDetails: hasConnectionDetails,
-      reconnectConfig: reconnectConfig
+      reconnectConfig: reconnectConfig,
+      websocketManager: websocketManager
     };
-    return new PersistentConnectionAndChatServiceController(args);
+    return new ChatController(args);
   }
 
   _normalizeChatDetails(chatDetailsInput) {
@@ -103,30 +83,6 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
       this.argsValidator.validateChatDetails(chatDetailsInput);
       return chatDetailsInput;
     }
-  }
-
-  createConnectionHelperProvider(connectionDetails, contactId) {
-    //later return based on the type argument
-    var connectionArgs = {
-      preSignedUrl: connectionDetails.PreSignedConnectionUrl,
-      connectionId: connectionDetails.ConnectionId
-    };
-    var mqttConnectionProvider = this.chatConnectionManager.createNewMqttConnectionProvider(
-      connectionArgs,
-      "PahoMqttConnection"
-    );
-    var args = {
-      mqttConnectionProvider: mqttConnectionProvider,
-      connectionDetails: {
-        preSignedUrl: connectionDetails.PreSignedConnectionUrl,
-        connectionId: connectionDetails.ConnectionId
-      },
-      contactId: contactId
-    };
-    return function(callback) {
-      args.callback = callback;
-      return new SoloChatConnectionMqttHelper(args);
-    };
   }
 }
 
@@ -188,12 +144,7 @@ class CustomerChatSession extends ChatSession {
   }
 
   disconnectParticipant() {
-    var self = this;
-    return this.controller.disconnectParticipant().then(function(response) {
-      self.controller.cleanUpOnParticipantDisconnect();
-      self.controller.breakConnection();
-      return response;
-    });
+    return this.controller.disconnectParticipant();
   }
 }
 
@@ -211,12 +162,14 @@ var ChatSessionConstructor = args => {
   if (type === SESSION_TYPES.AGENT) {
     return CHAT_SESSION_FACTORY.createAgentChatSession(
       args.chatDetails,
-      options
+      options,
+      args.websocketManager
     );
   } else if (type === SESSION_TYPES.CUSTOMER) {
     return CHAT_SESSION_FACTORY.createCustomerChatSession(
       args.chatDetails,
-      options
+      options,
+      args.websocketManager
     );
   } else {
     throw new IllegalArgumentException(

@@ -166,17 +166,17 @@ Utils.assertIsObject = function(value, key) {
 
 Utils.delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-Utils.asyncWhileInterval = function(f, predicate, interval, count=0) {
+Utils.asyncWhileInterval = function(f, predicate, interval, count=0, error=null) {
   const now = new Date();
   if (predicate(count)) {
-    return f(count).catch(() => {
+    return f(count).catch((e) => {
       const delay = Math.max(0, interval - (new Date()).valueOf() + now.valueOf());
       return Utils
         .delay(delay)
-        .then(() => Utils.asyncWhileInterval(f, predicate, interval, count + 1));
+        .then(() => Utils.asyncWhileInterval(f, predicate, interval, count + 1, e));
     });
   } else {
-    return Promise.reject(new Error("async while aborted"));
+    return Promise.reject(error || new Error("async while aborted"));
   }
 };
 

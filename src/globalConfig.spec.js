@@ -1,6 +1,6 @@
-import { ChatSessionObject } from "../src/core/chatSession";
-import { LogLevel, LogManager } from "../src/log";
-import { GlobalConfig } from "../src/globalConfig";
+import { ChatSessionObject } from "./core/chatSession";
+import { LogLevel, LogManager } from "./log";
+import { GlobalConfig } from "./globalConfig";
 
 test("check logger", () => {
   var testLogger = {};

@@ -1,25 +1,9 @@
 import {
-  IllegalArgumentException,
   UnImplementedMethodException
-} from "./exceptions";
+} from "../core/exceptions";
 
 import Paho from "../paho-mqtt";
 
-class ChatConnectionManager {
-  createNewMqttConnectionProvider(connectionArgs, type) {
-    switch (type) {
-      case "PahoMqttConnection":
-        return function(callback) {
-          connectionArgs.callback = callback;
-          return new PahoMqttConnection(connectionArgs);
-        };
-    }
-    throw new IllegalArgumentException(
-      "type in ChatConnectionManager.createNewMqttConnectionProvider",
-      type
-    );
-  }
-}
 
 // What is the expectation from this class?
 // This should provide an interface for connecting + subscribing && disconnecting + unsubscribing to endpoint + topic.
@@ -97,7 +81,7 @@ var MqttEvents = Object.freeze({
   DISCONNECTED: "Disconnected", // reason: pahoObject/ "TimeOutInReconnect"
 }); // {}
 
-class PahoMqttConnection extends MQTTClient {
+class PahoMqttClient extends MQTTClient {
   constructor(args) {
     super();
     this.preSignedUrl = args.preSignedUrl;
@@ -264,4 +248,4 @@ class PahoMqttConnection extends MQTTClient {
   }
 }
 
-export { ChatConnectionManager, MqttEvents, MqttConnectionStatus, MQTTClient };
+export { MqttEvents, PahoMqttClient };
