@@ -121,6 +121,7 @@ class ChatController {
     return connectionHelperProvider
       .get(
         this.contactId,
+        this.intialContactId,
         this.connectionDetails,
         this.participantToken,
         this.chatClient,

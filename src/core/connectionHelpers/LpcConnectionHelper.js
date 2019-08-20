@@ -1,5 +1,5 @@
 import { EventBus } from "../eventbus";
-
+import { LogManager } from "../../log";
 import { 
   ConnectionHelperEvents,
   ConnectionHelperStatus
@@ -71,8 +71,7 @@ class LpcConnectionHelper {
   }
 
   handleMessage(message) {
-    // TODO: use correct contactId
-    if (message.contactId === this.contactId) {
+    if (message.InitialContactId === this.contactId) {
       this.eventBus.trigger(ConnectionHelperEvents.IncomingMessage, message);
     }
   }
@@ -85,6 +84,9 @@ class LPCConnectionHelperBase extends BaseConnectionHelper {
     super(connectionDetailsProvider);
     this.status = ConnectionHelperStatus.NeverStarted;
     this.eventBus = new EventBus();
+    this.logger = LogManager.getLogger({
+      prefix: "LPC WebSockets: "
+    });
     this.initWebsocketManager(websocketManager);
   }
 
@@ -100,7 +102,8 @@ class LPCConnectionHelperBase extends BaseConnectionHelper {
         () => this.connectionDetailsProvider.fetchConnectionDetails()
           .then(connectionDetails => ({
             webSocketTransport: {
-              url: connectionDetails.preSignedConnectionUrl
+              url: connectionDetails.preSignedConnectionUrl,
+              transportLifeTimeInSeconds: 7140 // 119 mins
             }
           }))
       );
@@ -147,7 +150,13 @@ class LPCConnectionHelperBase extends BaseConnectionHelper {
   }
 
   handleMessage(message) {
-    this.eventBus.trigger(ConnectionHelperEvents.IncomingMessage, message);
+    let parsedMessage;
+    try {
+      parsedMessage = JSON.parse(message.content);
+    } catch (e) {
+      this.logger.error(`Wrong message format: `, message);
+    }
+    this.eventBus.trigger(ConnectionHelperEvents.IncomingMessage, parsedMessage);
   }
 }
 
