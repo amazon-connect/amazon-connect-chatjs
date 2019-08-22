@@ -26,9 +26,11 @@ describe("LpcConnectionHelper", () => {
       onConnectionLost: jest.fn((handler) => {
         connectionLostHandlers.push(handler);
       }),
-      init: jest.fn((dataProvider, endedHandler) => {
+      onInitFailure: jest.fn((handler) => {
+        endedHandlers.push(handler);
+      }),
+      init: jest.fn((dataProvider) => {
         refreshHandlers.push(dataProvider);
-        endedHandlers.push(endedHandler);
       }),
       $simulateMessage(message) {
         messageHandlers.forEach(f => f(message));
@@ -56,7 +58,7 @@ describe("LpcConnectionHelper", () => {
     LpcConnectionHelper.singleton = null;
     initWebsocketManager();
     global.connect = global.connect || {};
-    global.connect.WebsocketManager = initWebsocketManager;
+    global.connect.WebSocketManager = { create: initWebsocketManager };
   });
 
   function getLpcConnectionHelper(contactId) {
@@ -108,12 +110,12 @@ describe("LpcConnectionHelper", () => {
       const onMessageHandler2 = jest.fn();
       getLpcConnectionHelper("id1").onMessage(onMessageHandler1);
       getLpcConnectionHelper("id2").onMessage(onMessageHandler2);
-      websocketManager.$simulateMessage({ contactId: "id1" });
-      websocketManager.$simulateMessage({ contactId: "id2" });
+      websocketManager.$simulateMessage({ content: JSON.stringify({ InitialContactId: "id1" }) });
+      websocketManager.$simulateMessage({ content: JSON.stringify({ InitialContactId: "id2" }) });
       expect(onMessageHandler1).toHaveBeenCalledTimes(1);
-      expect(onMessageHandler1).toHaveBeenCalledWith({ contactId: "id1" }, expect.anything(), expect.anything());
+      expect(onMessageHandler1).toHaveBeenCalledWith({ InitialContactId: "id1" }, expect.anything(), expect.anything());
       expect(onMessageHandler2).toHaveBeenCalledTimes(1);
-      expect(onMessageHandler2).toHaveBeenCalledWith({ contactId: "id2" }, expect.anything(), expect.anything());
+      expect(onMessageHandler2).toHaveBeenCalledWith({ InitialContactId: "id2" }, expect.anything(), expect.anything());
     });
   });
 
