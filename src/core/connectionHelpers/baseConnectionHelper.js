@@ -23,6 +23,7 @@ const ConnectionType = {
 export default class BaseConnectionHelper {
   constructor(connectionDetailsProvider) {
     this.connectionDetailsProvider = connectionDetailsProvider;
+    this.isStarted = false;
   }
 
   startConnectionTokenPolling() {
@@ -32,6 +33,10 @@ export default class BaseConnectionHelper {
   }
 
   start() {
+    if (this.isStarted) {
+      return;
+    }
+    this.isStarted = true;
     this.startConnectionTokenPolling();
   }
 

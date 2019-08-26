@@ -1,5 +1,6 @@
 import { EventBus } from "../eventbus";
 import { LogManager } from "../../log";
+import { TRANSPORT_LIFETIME_IN_SECONDS } from "../../constants";
 import { 
   ConnectionHelperEvents,
   ConnectionHelperStatus
@@ -10,23 +11,22 @@ import BaseConnectionHelper from "./baseConnectionHelper";
 class LpcConnectionHelper {
 
   constructor(contactId, connectionDetailsProvider, websocketManager) {
-    if (!LpcConnectionHelper.singleton) {
-      LpcConnectionHelper.singleton = new LPCConnectionHelperBase(connectionDetailsProvider, websocketManager);
-      this.isFirstInstance = true;
+    if (!LpcConnectionHelper.baseInstance) {
+      LpcConnectionHelper.baseInstance = new LPCConnectionHelperBase(connectionDetailsProvider, websocketManager);
     }
 
     this.contactId = contactId;
     this.eventBus = new EventBus();
     this.subscriptions = [
-      LpcConnectionHelper.singleton.onEnded(this.handleEnded.bind(this)),
-      LpcConnectionHelper.singleton.onConnectionGain(this.handleConnectionGain.bind(this)),
-      LpcConnectionHelper.singleton.onConnectionLost(this.handleConnectionLost.bind(this)),
-      LpcConnectionHelper.singleton.onMessage(this.handleMessage.bind(this))
+      LpcConnectionHelper.baseInstance.onEnded(this.handleEnded.bind(this)),
+      LpcConnectionHelper.baseInstance.onConnectionGain(this.handleConnectionGain.bind(this)),
+      LpcConnectionHelper.baseInstance.onConnectionLost(this.handleConnectionLost.bind(this)),
+      LpcConnectionHelper.baseInstance.onMessage(this.handleMessage.bind(this))
     ];
   }
 
   start() {
-    return this.isFirstInstance ? LpcConnectionHelper.singleton.start() : Promise.resolve();
+    return LpcConnectionHelper.baseInstance.start();
   }
 
   end() {
@@ -35,11 +35,11 @@ class LpcConnectionHelper {
   }
 
   getStatus() {
-    return LpcConnectionHelper.singleton.getStatus();
+    return LpcConnectionHelper.baseInstance.getStatus();
   }
 
   getConnectionToken() {
-    return LpcConnectionHelper.singleton.getConnectionToken();
+    return LpcConnectionHelper.baseInstance.getConnectionToken();
   }
 
   onEnded(handler) {
@@ -76,7 +76,7 @@ class LpcConnectionHelper {
     }
   }
 }
-LpcConnectionHelper.singleton = null;
+LpcConnectionHelper.baseInstance = null;
 
 
 class LPCConnectionHelperBase extends BaseConnectionHelper {
@@ -103,7 +103,7 @@ class LPCConnectionHelperBase extends BaseConnectionHelper {
           .then(connectionDetails => ({
             webSocketTransport: {
               url: connectionDetails.preSignedConnectionUrl,
-              transportLifeTimeInSeconds: 7140 // 119 mins
+              transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS
             }
           }))
       );

@@ -55,7 +55,7 @@ describe("LpcConnectionHelper", () => {
     connectionDetailsProvider.fetchConnectionDetails = jest.fn(() => Promise.resolve({
       preSignedConnectionUrl: "url"
     }));
-    LpcConnectionHelper.singleton = null;
+    LpcConnectionHelper.baseInstance = null;
     initWebsocketManager();
     global.connect = global.connect || {};
     global.connect.WebSocketManager = { create: initWebsocketManager };
