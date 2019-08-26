@@ -59,6 +59,7 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
     if (chatDetailsInput.participantToken || chatDetailsInput.ParticipantToken) {
       chatDetails.participantId = chatDetailsInput.ParticipantId || chatDetailsInput.participantId;
       chatDetails.contactId = chatDetailsInput.ContactId || chatDetailsInput.contactId;
+      chatDetails.initialContactId = chatDetailsInput.InitialContactId || chatDetailsInput.initialContactId || chatDetails.contactId;
       chatDetails.participantToken = chatDetailsInput.ParticipantToken || chatDetailsInput.participantToken;
       this.argsValidator.validateChatDetails(chatDetails);
       return chatDetails;
