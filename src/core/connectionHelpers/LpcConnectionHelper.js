@@ -153,10 +153,10 @@ class LPCConnectionHelperBase extends BaseConnectionHelper {
     let parsedMessage;
     try {
       parsedMessage = JSON.parse(message.content);
+      this.eventBus.trigger(ConnectionHelperEvents.IncomingMessage, parsedMessage);
     } catch (e) {
       this.logger.error(`Wrong message format: `, message);
     }
-    this.eventBus.trigger(ConnectionHelperEvents.IncomingMessage, parsedMessage);
   }
 }
 

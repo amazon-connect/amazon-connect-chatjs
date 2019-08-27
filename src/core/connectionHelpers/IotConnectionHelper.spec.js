@@ -96,9 +96,9 @@ describe("IotConnectionHelper", () => {
     const messageHandler = jest.fn();
     await iotConnectionHelper.start();
     iotConnectionHelper.onMessage(messageHandler);
-    iotConnectionHelper.iotConnection.$simulateMessage("message");
+    iotConnectionHelper.iotConnection.$simulateMessage(JSON.stringify({ Data: "message" }));
     expect(messageHandler).toHaveBeenCalledTimes(1);
-    expect(messageHandler).toHaveBeenCalledWith({ payloadString: "message" }, expect.anything(), expect.anything());
+    expect(messageHandler).toHaveBeenCalledWith({ Data: "message" }, expect.anything(), expect.anything());
   });
 
   test("Connect fails on connect error (no retries)", async () => {

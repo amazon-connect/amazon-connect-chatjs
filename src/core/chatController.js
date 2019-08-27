@@ -167,9 +167,8 @@ class ChatController {
     });
   }
 
-  _handleIncomingMessage(eventData) {
+  _handleIncomingMessage(incomingData) {
     try {
-      const incomingData = JSON.parse(eventData.payloadString);
       const eventType = {
         TYPING: CHAT_EVENTS.INCOMING_TYPING
       }[incomingData.Data.Type] || CHAT_EVENTS.INCOMING_MESSAGE;
@@ -180,7 +179,7 @@ class ChatController {
     } catch (e) {
       this.logger.error(
         "Error occured while handling message from Connection. eventData: ",
-        eventData,
+        incomingData,
         " Causing exception: ",
         e
       );

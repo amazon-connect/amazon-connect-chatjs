@@ -57,19 +57,19 @@ describe("ChatController", () => {
       getStatus: () => ConnectionHelperStatus.Connected,
       getConnectionToken: () => "token",
       $simulateMessage: (message) => {
-        messageHandlers.forEach(f => f({ payloadString: JSON.stringify({
+        messageHandlers.forEach(f => f({
           Data: {
             Type: "INCOMING_MESSAGE",
             Message: message
           }
-        })}));
+        }));
       },
       $simulateTyping: () => {
-        messageHandlers.forEach(f => f({ payloadString: JSON.stringify({
+        messageHandlers.forEach(f => f({
           Data: {
             Type: "TYPING"
           }
-        })}));
+        }));
       }
     });
     chatClient = {

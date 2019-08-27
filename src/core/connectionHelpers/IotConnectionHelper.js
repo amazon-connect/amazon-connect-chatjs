@@ -126,7 +126,12 @@ class IotConnectionHelper extends BaseConnectionHelper {
     switch (eventType) {
       case MqttEvents.MESSAGE:
         this.logger.debug("Received incoming data", eventData.payloadString);
-        this.eventBus.trigger(ConnectionHelperEvents.IncomingMessage, eventData);
+        try {
+          const incomingData = JSON.parse(eventData.payloadString);
+          this.eventBus.trigger(ConnectionHelperEvents.IncomingMessage, incomingData);
+        } catch (e) {
+          this.logger.error(`Wrong message format: `, eventData.payloadString);
+        }
         break;
       case MqttEvents.DISCONNECTED:
         if (GlobalConfig.reconnect && eventData.reason.errorCode !== 0) {
