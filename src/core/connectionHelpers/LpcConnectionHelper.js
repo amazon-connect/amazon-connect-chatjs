@@ -11,10 +11,8 @@ import BaseConnectionHelper from "./baseConnectionHelper";
 class LpcConnectionHelper {
 
   constructor(contactId, connectionDetailsProvider, websocketManager) {
-    if (!LpcConnectionHelper.baseInstance) {
-      LpcConnectionHelper.baseInstance = new LPCConnectionHelperBase(connectionDetailsProvider, websocketManager);
-    }
 
+    LpcConnectionHelper.baseInstance = new LPCConnectionHelperBase(connectionDetailsProvider, websocketManager);
     this.contactId = contactId;
     this.eventBus = new EventBus();
     this.subscriptions = [
@@ -93,10 +91,12 @@ class LPCConnectionHelperBase extends BaseConnectionHelper {
   initWebsocketManager(websocketManager) {
     this.websocketManager = websocketManager || connect.WebSocketManager.create();
     this.websocketManager.subscribeTopics(["aws/chat"]);
-    this.websocketManager.onMessage("aws/chat", this.handleMessage.bind(this));
-    this.websocketManager.onConnectionGain(this.handleConnectionGain.bind(this));
-    this.websocketManager.onConnectionLost(this.handleConnectionLost.bind(this));
-    this.websocketManager.onInitFailure(this.handleEnded.bind(this));
+    this.subscriptions = [
+      this.websocketManager.onMessage("aws/chat", this.handleMessage.bind(this)),
+      this.websocketManager.onConnectionGain(this.handleConnectionGain.bind(this)),
+      this.websocketManager.onConnectionLost(this.handleConnectionLost.bind(this)),
+      this.websocketManager.onInitFailure(this.handleEnded.bind(this))
+    ];
     if (!websocketManager) {
       this.websocketManager.init(
         () => this.connectionDetailsProvider.fetchConnectionDetails()
@@ -108,6 +108,12 @@ class LPCConnectionHelperBase extends BaseConnectionHelper {
           }))
       );
     }
+  }
+
+  end() {
+    super.end();
+    this.eventBus.unsubscribeAll();
+    this.subscriptions.forEach(f => f());
   }
 
   start() {
