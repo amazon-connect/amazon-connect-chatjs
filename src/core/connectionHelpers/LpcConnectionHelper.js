@@ -11,8 +11,14 @@ import BaseConnectionHelper from "./baseConnectionHelper";
 class LpcConnectionHelper {
 
   constructor(contactId, connectionDetailsProvider, websocketManager) {
-
-    LpcConnectionHelper.baseInstance = new LPCConnectionHelperBase(connectionDetailsProvider, websocketManager);
+    const cleanUpBaseInstance = LpcConnectionHelper.baseInstance && !websocketManager;
+    if (cleanUpBaseInstance) {
+      LpcConnectionHelper.baseInstance.end();
+      LpcConnectionHelper.baseInstance = null;
+    }
+    if (!LpcConnectionHelper.baseInstance) {
+      LpcConnectionHelper.baseInstance = new LPCConnectionHelperBase(connectionDetailsProvider, websocketManager);
+    }
     this.contactId = contactId;
     this.eventBus = new EventBus();
     this.subscriptions = [
