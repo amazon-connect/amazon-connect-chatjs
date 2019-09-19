@@ -6,17 +6,13 @@ import LpcConnectionHelper from "./LpcConnectionHelper";
 
 class ConnectionHelperProvider {
 
-  constructor() {
-    this.connectionDetailsProvider = null;
-  }
-
   get(contactId, initialContactId, connectionDetails, participantToken, chatClient, websocketManager, reconnectConfig) {
-    this.connectionDetailsProvider = new ConnectionDetailsProvider(connectionDetails, participantToken, chatClient);
-    return this.connectionDetailsProvider.init().then(() => {
-      if (this.connectionDetailsProvider.connectionType === ConnectionType.LPC) {
-        return new LpcConnectionHelper(initialContactId, this.connectionDetailsProvider, websocketManager);
-      } else if (this.connectionDetailsProvider.connectionType === ConnectionType.IOT) {
-        return new IotConnectionHelper(contactId, this.connectionDetailsProvider, reconnectConfig);
+    const connectionDetailsProvider = new ConnectionDetailsProvider(connectionDetails, participantToken, chatClient);
+    return connectionDetailsProvider.init().then(() => {
+      if (connectionDetailsProvider.connectionType === ConnectionType.LPC) {
+        return new LpcConnectionHelper(initialContactId, connectionDetailsProvider, websocketManager);
+      } else if (connectionDetailsProvider.connectionType === ConnectionType.IOT) {
+        return new IotConnectionHelper(contactId, connectionDetailsProvider, reconnectConfig);
       }
     });
   }

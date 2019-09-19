@@ -76,14 +76,14 @@ describe("LpcConnectionHelper", () => {
       expect(websocketManager.onConnectionLost).toHaveBeenCalledTimes(1);
     });
   
-    // test("websocket manager will only be initialized once", () => {
-    //   getLpcConnectionHelper("id1").start();
-    //   getLpcConnectionHelper("id2").start();
-    //   expect(websocketManager.subscribeTopics).toHaveBeenCalledTimes(1);
-    //   expect(websocketManager.onMessage).toHaveBeenCalledTimes(1);
-    //   expect(websocketManager.onConnectionGain).toHaveBeenCalledTimes(1);
-    //   expect(websocketManager.onConnectionLost).toHaveBeenCalledTimes(1);
-    // });
+    test("websocket manager will only be initialized once", () => {
+      getLpcConnectionHelper("id1").start();
+      getLpcConnectionHelper("id2").start();
+      expect(websocketManager.subscribeTopics).toHaveBeenCalledTimes(1);
+      expect(websocketManager.onMessage).toHaveBeenCalledTimes(1);
+      expect(websocketManager.onConnectionGain).toHaveBeenCalledTimes(1);
+      expect(websocketManager.onConnectionLost).toHaveBeenCalledTimes(1);
+    });
 
     test("onConnectionLost handler is called", () => {
       const onConnectionLostHandler1 = jest.fn();
@@ -132,16 +132,16 @@ describe("LpcConnectionHelper", () => {
       expect(websocketManager.init).toHaveBeenCalledTimes(1);
     });
   
-    // test("websocket manager will only be initialized once", () => {
-    //   websocketManager = null;
-    //   getLpcConnectionHelper("id1").start();
-    //   getLpcConnectionHelper("id2").start();
-    //   expect(websocketManager.subscribeTopics).toHaveBeenCalledTimes(1);
-    //   expect(websocketManager.onMessage).toHaveBeenCalledTimes(1);
-    //   expect(websocketManager.onConnectionGain).toHaveBeenCalledTimes(1);
-    //   expect(websocketManager.onConnectionLost).toHaveBeenCalledTimes(1);
-    //   expect(websocketManager.init).toHaveBeenCalledTimes(1);
-    // });
+    test("websocket manager will only be initialized once", () => {
+      websocketManager = null;
+      getLpcConnectionHelper("id1").start();
+      getLpcConnectionHelper("id2").start();
+      expect(websocketManager.subscribeTopics).toHaveBeenCalledTimes(1);
+      expect(websocketManager.onMessage).toHaveBeenCalledTimes(1);
+      expect(websocketManager.onConnectionGain).toHaveBeenCalledTimes(1);
+      expect(websocketManager.onConnectionLost).toHaveBeenCalledTimes(1);
+      expect(websocketManager.init).toHaveBeenCalledTimes(1);
+    });
 
     test("onEnded handler is called", () => {
       websocketManager = null;

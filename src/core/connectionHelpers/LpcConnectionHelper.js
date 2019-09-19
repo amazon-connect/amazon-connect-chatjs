@@ -8,9 +8,10 @@ import {
 import BaseConnectionHelper from "./baseConnectionHelper";
 
 
-class LpcConnectionHelper {
+class LpcConnectionHelper extends BaseConnectionHelper {
 
   constructor(contactId, connectionDetailsProvider, websocketManager) {
+    super(connectionDetailsProvider);
     const cleanUpBaseInstance = LpcConnectionHelper.baseInstance && !websocketManager;
     if (cleanUpBaseInstance) {
       LpcConnectionHelper.baseInstance.end();
@@ -30,20 +31,18 @@ class LpcConnectionHelper {
   }
 
   start() {
+    super.start();
     return LpcConnectionHelper.baseInstance.start();
   }
 
   end() {
+    super.end();
     this.eventBus.unsubscribeAll();
     this.subscriptions.forEach(f => f());
   }
 
   getStatus() {
     return LpcConnectionHelper.baseInstance.getStatus();
-  }
-
-  getConnectionToken() {
-    return LpcConnectionHelper.baseInstance.getConnectionToken();
   }
 
   onEnded(handler) {
@@ -83,18 +82,17 @@ class LpcConnectionHelper {
 LpcConnectionHelper.baseInstance = null;
 
 
-class LPCConnectionHelperBase extends BaseConnectionHelper {
+class LPCConnectionHelperBase {
   constructor(connectionDetailsProvider, websocketManager) {
-    super(connectionDetailsProvider);
     this.status = ConnectionHelperStatus.NeverStarted;
     this.eventBus = new EventBus();
     this.logger = LogManager.getLogger({
       prefix: "LPC WebSockets: "
     });
-    this.initWebsocketManager(websocketManager);
+    this.initWebsocketManager(websocketManager, connectionDetailsProvider);
   }
 
-  initWebsocketManager(websocketManager) {
+  initWebsocketManager(websocketManager, connectionDetailsProvider) {
     this.websocketManager = websocketManager || connect.WebSocketManager.create();
     this.websocketManager.subscribeTopics(["aws/chat"]);
     this.subscriptions = [
@@ -105,7 +103,7 @@ class LPCConnectionHelperBase extends BaseConnectionHelper {
     ];
     if (!websocketManager) {
       this.websocketManager.init(
-        () => this.connectionDetailsProvider.fetchConnectionDetails()
+        () => connectionDetailsProvider.fetchConnectionDetails()
           .then(connectionDetails => ({
             webSocketTransport: {
               url: connectionDetails.preSignedConnectionUrl,
@@ -117,13 +115,11 @@ class LPCConnectionHelperBase extends BaseConnectionHelper {
   }
 
   end() {
-    super.end();
     this.eventBus.unsubscribeAll();
     this.subscriptions.forEach(f => f());
   }
 
   start() {
-    super.start();
     if (this.status === ConnectionHelperStatus.NeverStarted) {
       this.status = ConnectionHelperStatus.Starting;
     }
