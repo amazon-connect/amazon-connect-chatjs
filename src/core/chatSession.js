@@ -160,6 +160,12 @@ var setGlobalConfig = config => {
 var ChatSessionConstructor = args => {
   var options = args.options || {};
   var type = args.type || SESSION_TYPES.AGENT;
+  // Utils.assertTrue(Utils.isFunction(args.createTransport), 'transportHandle must be a function');
+  if (!(args.createTransport instanceof Function)) {
+    console.log("createTransport not a function");
+  }
+  console.log("createTransport within constructor: ");
+  console.log(args.createTransport);
   if (type === SESSION_TYPES.AGENT) {
     return CHAT_SESSION_FACTORY.createAgentChatSession(
       args.chatDetails,
