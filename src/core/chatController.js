@@ -4,7 +4,10 @@ import {
   VISIBILITY,
   CHAT_EVENTS,
   TRANSCRIPT_DEFAULT_PARAMS,
-  CONTENT_TYPE
+  CONTENT_TYPE,
+  AGENT_RECONNECT_CONFIG,
+  CUSTOMER_RECONNECT_CONFIG,
+  SESSION_TYPES
 } from "../constants";
 import { LogManager } from "../log";
 import { EventBus } from "./eventbus";
@@ -27,10 +30,7 @@ class ChatController {
     this.argsValidator = new ChatServiceArgsValidator();
     this.pubsub = new EventBus();
 
-    this.reconnectConfig = Object.assign({}, {
-      interval: 3000,
-      maxRetries: 5,
-    }, args.reconnectConfig || {});
+    this.sessionType = args.sessionType;
     this.connectionDetails = args.chatDetails.connectionDetails;
     this.intialContactId = args.chatDetails.initialContactId;
     this.contactId = args.chatDetails.contactId;
@@ -126,7 +126,7 @@ class ChatController {
         this.participantToken,
         this.chatClient,
         this.websocketManager,
-        this.reconnectConfig
+        this.sessionType === SESSION_TYPES.AGENT ? AGENT_RECONNECT_CONFIG : CUSTOMER_RECONNECT_CONFIG
       )
       .then(
         this._initConnectionHelper.bind(this)
@@ -203,6 +203,16 @@ class ChatController {
       chatDetails: this.getChatDetails()
     }, responseObject);
     this.pubsub.triggerAsync(CHAT_EVENTS.CONNECTION_ESTABLISHED, eventData);
+
+    if (this._shouldAcknowledgeContact()) {
+      this.sendEvent({
+        eventType: "CONNECTION_ACK",
+        messageIds: [],
+        visibility: VISIBILITY.ALL,
+        persistence: PERSISTENCE.NON_PERSISTED
+      });
+    }
+
     return responseObject;
   }
 
@@ -215,6 +225,10 @@ class ChatController {
     };
     this.logger.error("Connect Failed with data: ", errorObject);
     return Promise.reject(errorObject);
+  }
+
+  _shouldAcknowledgeContact() {
+    return this.sessionType === SESSION_TYPES.AGENT;
   }
 
   breakConnection() {
