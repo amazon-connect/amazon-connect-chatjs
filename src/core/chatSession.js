@@ -33,23 +33,24 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
     this.argsValidator = new ChatServiceArgsValidator();
   }
 
-  createAgentChatSession(chatDetails, options, websocketManager=null) {
-    var chatController = this._createChatSession(chatDetails, options, AGENT_RECONNECT_CONFIG, websocketManager);
+  createAgentChatSession(chatDetails, options, websocketManager=null, createTransport=null) {
+    var chatController = this._createChatSession(chatDetails, options, AGENT_RECONNECT_CONFIG, websocketManager, createTransport);
     return new AgentChatSession(chatController);
   }
 
-  createCustomerChatSession(chatDetails, options, websocketManager=null) {
-    var chatController = this._createChatSession(chatDetails, options, CUSTOMER_RECONNECT_CONFIG, websocketManager);
+  createCustomerChatSession(chatDetails, options, websocketManager=null, createTransport=null) {
+    var chatController = this._createChatSession(chatDetails, options, CUSTOMER_RECONNECT_CONFIG, websocketManager, createTransport);
     return new CustomerChatSession(chatController);
   }
 
-  _createChatSession(chatDetailsInput, options, reconnectConfig, websocketManager=null) {
+  _createChatSession(chatDetailsInput, options, reconnectConfig, websocketManager=null, createTransport=null) {
     var chatDetails = this._normalizeChatDetails(chatDetailsInput);
     var args = {
       chatDetails: chatDetails,
       chatClient: ChatClientFactory.getCachedClient(options),
       reconnectConfig: reconnectConfig,
-      websocketManager: websocketManager
+      websocketManager: websocketManager,
+      createTransport: createTransport
     };
     return new ChatController(args);
   }
@@ -160,23 +161,20 @@ var setGlobalConfig = config => {
 var ChatSessionConstructor = args => {
   var options = args.options || {};
   var type = args.type || SESSION_TYPES.AGENT;
-  // Utils.assertTrue(Utils.isFunction(args.createTransport), 'transportHandle must be a function');
-  if (!(args.createTransport instanceof Function)) {
-    console.log("createTransport not a function");
-  }
-  console.log("createTransport within constructor: ");
-  console.log(args.createTransport);
+
   if (type === SESSION_TYPES.AGENT) {
     return CHAT_SESSION_FACTORY.createAgentChatSession(
       args.chatDetails,
       options,
-      args.websocketManager
+      args.websocketManager,
+      args.createTransport
     );
   } else if (type === SESSION_TYPES.CUSTOMER) {
     return CHAT_SESSION_FACTORY.createCustomerChatSession(
       args.chatDetails,
       options,
-      args.websocketManager
+      args.websocketManager,
+      args.createTransport
     );
   } else {
     throw new IllegalArgumentException(

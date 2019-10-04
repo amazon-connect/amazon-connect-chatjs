@@ -14,19 +14,22 @@ describe("ConnectionHelperProvider", () => {
     ParticipantCredentials: {
       ConnectionAuthenticationToken: 'token'
     },
-    PreSignedConnectionUrl: 'url',
+    PreSignedConnectionUrl: 'url.iot.',
     ConnectionId: 'id'
   };
 
   let contactId;
+  let participantId;
   let initialContactId;
   let connectionDetails;
   let participantToken;
   let websocketManager;
   let reconnectConfig;
+  let createTransport;
 
   beforeEach(() => {
     contactId = 'id';
+    participantId = 'id';
     initialContactId = 'id';
     connectionDetails = {};
     participantToken = 'token';
@@ -39,10 +42,10 @@ describe("ConnectionHelperProvider", () => {
   }
 
   function getConnectionHelper() {
-    return connectionHelperProvider.get(contactId, initialContactId, connectionDetails, participantToken, chatClient, websocketManager, reconnectConfig);
+    return connectionHelperProvider.get(contactId, participantId, initialContactId, connectionDetails, participantToken, chatClient, websocketManager, createTransport, reconnectConfig);
   }
 
-  test("returns IotConnectionHelper for each call if ConnectionId !== null", async () => {
+  test("returns IotConnectionHelper for each call if Connection Url contains .iot.", async () => {
     setup();
     const helper1 = await getConnectionHelper();
     expect(helper1).toBeInstanceOf(IotConnectionHelper);
@@ -50,8 +53,8 @@ describe("ConnectionHelperProvider", () => {
     expect(helper2).toBeInstanceOf(IotConnectionHelper);
   });
 
-  test("returns LpcConnectionHelper for each call if ConnectionId === null", async () => {
-    fetchedConnectionDetails.ConnectionId = null;
+  test("returns LpcConnectionHelper for each call if Connection Url does not contain .iot.", async () => {
+    fetchedConnectionDetails.PreSignedConnectionUrl = 'url';
     setup();
     const helper1 = await getConnectionHelper();
     expect(helper1).toBeInstanceOf(LpcConnectionHelper);

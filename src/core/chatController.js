@@ -38,7 +38,7 @@ class ChatController {
     this.chatClient = args.chatClient;
     this.participantToken = args.chatDetails.participantToken;
     this.websocketManager = args.websocketManager;
-
+    this.createTransport = args.createTransport;
     this._participantDisconnected = false;
     this.sessionMetadata = {};
   }
@@ -65,6 +65,14 @@ class ChatController {
   }
 
   sendMessage(args) {
+    if (this.createTransport) {
+      this.createTransport({transportType: "chat_token", participantId : this.participantId, contactId : this.contactId})
+      .then(function(data){
+        console.log("data from chat_token: ");
+        console.log(data.chatTokenTransport.participantToken);
+        // console.log("data from chat_token participantToken" + data.chatTokenTransportDetails.participantToken);
+      });
+    }
     const message = args.message;
     const type = args.type || CONTENT_TYPE.textPlain;
     const metadata = args.metadata || null;
@@ -121,11 +129,13 @@ class ChatController {
     return connectionHelperProvider
       .get(
         this.contactId,
+        this.participantId,
         this.intialContactId,
         this.connectionDetails,
         this.participantToken,
         this.chatClient,
         this.websocketManager,
+        this.createTransport,
         this.reconnectConfig
       )
       .then(

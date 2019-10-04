@@ -4,6 +4,8 @@ import { ConnectionType } from "./baseConnectionHelper";
 
 describe("ConnectionDetailsProvider", () => {
 
+ 
+
   const chatClient = {
     createConnectionDetails: () => {}
   };
@@ -12,9 +14,14 @@ describe("ConnectionDetailsProvider", () => {
   let connectionDetails;
   let participantToken;
   let fetchedConnectionDetails;
+  let createTransport;
+  let fetchedConnectionToken;
+  let fetchedConnectionUrl;
+  let contactId;
+  let participantId;
 
   function setup() {
-    connectionDetailsProvider = new ConnectionDetailsProvider(connectionDetails, participantToken, chatClient);
+    connectionDetailsProvider = new ConnectionDetailsProvider(connectionDetails, participantToken, chatClient, createTransport, contactId, participantId);
   }
 
 
@@ -22,16 +29,44 @@ describe("ConnectionDetailsProvider", () => {
     connectionDetails = {
       connectionToken: 'token',
       ConnectionId: 'id',
-      PreSignedConnectionUrl: 'url'
+      PreSignedConnectionUrl: '.iot.'
     };
     fetchedConnectionDetails = {
       ParticipantCredentials: {
         ConnectionAuthenticationToken: 'token'
       },
-      PreSignedConnectionUrl: 'url',
+      PreSignedConnectionUrl: '.iot.',
       ConnectionId: 'id'
     };
+
+    fetchedConnectionToken = 'token';
+
+    fetchedConnectionUrl = 'url';
+
     participantToken = 'ptoken';
+
+    contactId = 'cid';
+    participantId = 'pid';
+
+    //TODO : Make this function more representative of the real API.
+    createTransport = jest.fn((function () {
+      let counter = 0;
+      return () => {
+        counter+=1;
+        console.log(counter);
+        return fetchedConnectionToken
+          ? Promise.resolve({ 
+              chatTokenTransport: {
+                participantToken: fetchedConnectionToken+counter
+              },
+              webSocketTransport: {
+                url: fetchedConnectionUrl+counter
+              }
+          })
+          : Promise.reject('error');
+      }
+    }()));
+  
     chatClient.createConnectionDetails = jest.fn((function () {
       let counter = 0;
       return () => {
@@ -49,7 +84,153 @@ describe("ConnectionDetailsProvider", () => {
     } ()));
   });
 
-  describe("with ParticipantToken", () => {
+  describe("with ParticipantToken, IOT", () => {
+    describe(".init()", () => {
+      test("returns valid connection details", async () => {
+        setup();
+        const connectionDetails = await connectionDetailsProvider.init();
+        expect(connectionDetails).toEqual({
+          connectionId: 'id1',
+          preSignedConnectionUrl: '.iot.1'
+        });
+      });
+
+      test("calls createConnectionDetails API", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        expect(chatClient.createConnectionDetails).toHaveBeenCalledWith(participantToken);
+      });
+
+      test("has correct inner state after call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        expect(connectionDetailsProvider.connectionDetails).toEqual({
+          connectionId: 'id1',
+          preSignedConnectionUrl: '.iot.1'
+        });
+        expect(connectionDetailsProvider.connectionToken).toEqual('token1');
+      });
+
+      test("sets connectionType to IOT", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        expect(connectionDetailsProvider.connectionType).toEqual(ConnectionType.IOT);
+      });
+    });
+
+    describe(".fetchConnectionDetails()", () => {
+      test("returns valid connection details on first call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        const connectionDetails = await connectionDetailsProvider.fetchConnectionDetails();
+        expect(connectionDetails).toEqual({
+          connectionId: 'id1',
+          preSignedConnectionUrl: '.iot.1'
+        });
+      });
+
+      test("returns valid connection details on second call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        await connectionDetailsProvider.fetchConnectionDetails();
+        const connectionDetails = await connectionDetailsProvider.fetchConnectionDetails();
+        expect(connectionDetails).toEqual({
+          connectionId: 'id2',
+          preSignedConnectionUrl: '.iot.2'
+        });
+      });
+
+      test("has correct inner state after first call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        await connectionDetailsProvider.fetchConnectionDetails();
+        expect(connectionDetailsProvider.connectionDetails).toEqual({
+          connectionId: 'id1',
+          preSignedConnectionUrl: '.iot.1'
+        });
+      });
+
+      test("updates internal state on second call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        await connectionDetailsProvider.fetchConnectionDetails();
+        await connectionDetailsProvider.fetchConnectionDetails();
+        expect(connectionDetailsProvider.connectionDetails).toEqual({
+          connectionId: 'id2',
+          preSignedConnectionUrl: '.iot.2'
+        });
+      });
+
+      test("doesn't hit API on first call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        await connectionDetailsProvider.fetchConnectionDetails();
+        expect(chatClient.createConnectionDetails).toHaveBeenCalledTimes(1);
+      });
+
+      test("hits API on second call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        await connectionDetailsProvider.fetchConnectionDetails();
+        await connectionDetailsProvider.fetchConnectionDetails();
+        expect(chatClient.createConnectionDetails).toHaveBeenCalledTimes(2);
+        expect(chatClient.createConnectionDetails).toHaveBeenLastCalledWith(participantToken);
+      });
+    });
+
+    describe(".fetchConnectionToken()", () => {
+      test("returns valid connection token on first call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        const connectionToken = await connectionDetailsProvider.fetchConnectionToken();
+        expect(connectionToken).toBe('token1');
+      });
+
+      test("returns valid connection token on second call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        await connectionDetailsProvider.fetchConnectionToken();
+        const connectionToken = await connectionDetailsProvider.fetchConnectionToken();
+        expect(connectionToken).toBe('token2');
+      });
+
+      test("has correct inner state after first call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        await connectionDetailsProvider.fetchConnectionToken();
+        expect(connectionDetailsProvider.connectionToken).toBe('token1');
+      });
+
+      test("updates internal state on second call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        await connectionDetailsProvider.fetchConnectionToken();
+        await connectionDetailsProvider.fetchConnectionToken();
+        expect(connectionDetailsProvider.connectionToken).toBe('token2');
+      });
+
+      test("doesn't hit API on first call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        await connectionDetailsProvider.fetchConnectionToken();
+        expect(chatClient.createConnectionDetails).toHaveBeenCalledTimes(1);
+      });
+
+      test("hits API on second call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        await connectionDetailsProvider.fetchConnectionToken();
+        await connectionDetailsProvider.fetchConnectionToken();
+        expect(chatClient.createConnectionDetails).toHaveBeenCalledTimes(2);
+        expect(chatClient.createConnectionDetails).toHaveBeenLastCalledWith(participantToken);
+      });
+    });
+  });
+
+  describe("with ParticipantToken, LPC", () => {
+    beforeEach(() => {
+      fetchedConnectionDetails.PreSignedConnectionUrl = 'url';
+    });
     describe(".init()", () => {
       test("returns valid connection details", async () => {
         setup();
@@ -76,14 +257,7 @@ describe("ConnectionDetailsProvider", () => {
         expect(connectionDetailsProvider.connectionToken).toEqual('token1');
       });
 
-      test("sets connectionType to IOT with connectionId !== null", async () => {
-        setup();
-        await connectionDetailsProvider.init();
-        expect(connectionDetailsProvider.connectionType).toEqual(ConnectionType.IOT);
-      });
-
-      test("sets connectionType to LPC with connectionId === null", async () => {
-        fetchedConnectionDetails.ConnectionId = null;
+      test("sets connectionType to LPC", async () => {
         setup();
         await connectionDetailsProvider.init();
         expect(connectionDetailsProvider.connectionType).toEqual(ConnectionType.LPC);
@@ -150,7 +324,6 @@ describe("ConnectionDetailsProvider", () => {
       });
     });
 
-
     describe(".fetchConnectionToken()", () => {
       test("returns valid connection token on first call", async () => {
         setup();
@@ -200,8 +373,7 @@ describe("ConnectionDetailsProvider", () => {
     });
   });
 
-  describe("without ParticipantToken", () => {
-
+  describe("without ParticipantToken, Static Connection Details (IOT)", () => {
     beforeEach(() => {
       participantToken = null;  
     });
@@ -212,7 +384,7 @@ describe("ConnectionDetailsProvider", () => {
         const connectionDetails = await connectionDetailsProvider.init();
         expect(connectionDetails).toEqual({
           connectionId: 'id',
-          preSignedConnectionUrl: 'url'
+          preSignedConnectionUrl: '.iot.'
         });
       });
 
@@ -227,7 +399,7 @@ describe("ConnectionDetailsProvider", () => {
         await connectionDetailsProvider.init();
         expect(connectionDetailsProvider.connectionDetails).toEqual({
           connectionId: 'id',
-          preSignedConnectionUrl: 'url'
+          preSignedConnectionUrl: '.iot.'
         });
         expect(connectionDetailsProvider.connectionToken).toEqual('token');
       });
@@ -246,7 +418,7 @@ describe("ConnectionDetailsProvider", () => {
         const connectionDetails = await connectionDetailsProvider.fetchConnectionDetails();
         expect(connectionDetails).toEqual({
           connectionId: 'id',
-          preSignedConnectionUrl: 'url'
+          preSignedConnectionUrl: '.iot.'
         });
       });
 
@@ -254,11 +426,13 @@ describe("ConnectionDetailsProvider", () => {
         setup();
         await connectionDetailsProvider.init();
         await connectionDetailsProvider.fetchConnectionDetails();
+        var error = null;
         try {
           await connectionDetailsProvider.fetchConnectionDetails();
         } catch (e) {
-          expect(e.length).toBeGreaterThan(0);
+          error = e;
         }
+        expect(error).not.toBe(null);
       });
 
       test("has correct inner state after first call", async () => {
@@ -267,7 +441,7 @@ describe("ConnectionDetailsProvider", () => {
         await connectionDetailsProvider.fetchConnectionDetails();
         expect(connectionDetailsProvider.connectionDetails).toEqual({
           connectionId: 'id',
-          preSignedConnectionUrl: 'url'
+          preSignedConnectionUrl: '.iot.'
         });
       });
     });
@@ -284,11 +458,13 @@ describe("ConnectionDetailsProvider", () => {
         setup();
         await connectionDetailsProvider.init();
         await connectionDetailsProvider.fetchConnectionToken();
+        var error = null;
         try {
           await connectionDetailsProvider.fetchConnectionToken();
         } catch (e) {
-          expect(e.length).toBeGreaterThan(0);
+          error = e;
         }
+        expect(error).not.toBe(null);
       });
 
       test("has correct inner state after first call", async () => {
@@ -296,6 +472,123 @@ describe("ConnectionDetailsProvider", () => {
         await connectionDetailsProvider.init();
         await connectionDetailsProvider.fetchConnectionToken();
         expect(connectionDetailsProvider.connectionToken).toBe('token');
+      });
+    });
+  });
+
+  describe("without ParticipantToken, LPC", () => {
+    beforeEach(() => {
+      participantToken = null;
+      connectionDetails = null;
+    });
+
+    describe(".init()", () => {
+      test("returns valid connection details", async () => {
+        setup();
+        const connectionDetails = await connectionDetailsProvider.init();
+        expect(connectionDetails).toEqual({
+          connectionId: null,
+          preSignedConnectionUrl: 'url2'
+        });
+      });
+
+      test("does not call createConnection API, does call createTransport API twice", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        expect(chatClient.createConnectionDetails).not.toHaveBeenCalled();
+        expect(createTransport).toHaveBeenCalledTimes(2);
+      });
+
+      test("has correct inner state after call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        expect(connectionDetailsProvider.connectionDetails).toEqual({
+          connectionId: null,
+          preSignedConnectionUrl: 'url2'
+        });
+        expect(connectionDetailsProvider.connectionToken).toEqual('token1');
+      });
+
+      test("sets connectionType to LPC", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        expect(connectionDetailsProvider.connectionType).toEqual(ConnectionType.LPC);
+      });
+    });
+
+    describe(".fetchConnectionDetails()", () => {
+      test("returns valid connection details on first call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        const connectionDetails = await connectionDetailsProvider.fetchConnectionDetails();
+        expect(connectionDetails).toEqual({
+          connectionId: null,
+          preSignedConnectionUrl: 'url2'
+        });
+      });
+
+      test("returns expected details after a second call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        await connectionDetailsProvider.fetchConnectionDetails();
+        const connectionDetails = await connectionDetailsProvider.fetchConnectionDetails();
+        expect(connectionDetails).toEqual({
+          connectionId: null,
+          preSignedConnectionUrl: 'url4'
+        })
+      });
+
+      test("has correct inner state after first call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        await connectionDetailsProvider.fetchConnectionDetails();
+        expect(connectionDetailsProvider.connectionDetails).toEqual({
+          connectionId: null,
+          preSignedConnectionUrl: 'url2'
+        });
+      });
+
+      test("Invalid props leads to error", async () => {
+        participantId = null;
+        contactId = null;
+        createTransport = null;
+        var error = null;
+        setup();
+        try {
+          await connectionDetailsProvider.init();
+        } catch (e) {
+          error = e;
+        }
+        expect(error).not.toBe(null);
+
+      })
+    });
+
+    describe(".fetchConnectionToken()", () => {
+      test("returns valid connection token on first call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        const connectionToken = await connectionDetailsProvider.fetchConnectionToken();
+        expect(connectionToken).toBe('token1');
+      });
+
+      test("has correct inner state after first call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        await connectionDetailsProvider.fetchConnectionToken();
+        expect(connectionDetailsProvider.connectionToken).toBe('token1');
+      });
+
+      test("has correct inner state after second call", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        await connectionDetailsProvider.fetchConnectionToken();
+        await connectionDetailsProvider.fetchConnectionToken();
+        expect(connectionDetailsProvider.connectionToken).toBe('token3');
+        expect(connectionDetailsProvider.connectionDetails).toEqual({
+          connectionId: null,
+          preSignedConnectionUrl: 'url4'
+        });
       });
     });
   });
