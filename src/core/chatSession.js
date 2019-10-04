@@ -6,7 +6,6 @@ import { ChatClientFactory } from "../client/client";
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
 import { SESSION_TYPES, CHAT_EVENTS } from "../constants";
 import { GlobalConfig } from "../globalConfig";
-
 import { ChatController } from "./chatController";
 import { LogManager, LogLevel, Logger } from "../log";
 

@@ -65,14 +65,6 @@ class ChatController {
   }
 
   sendMessage(args) {
-    if (this.createTransport) {
-      this.createTransport({transportType: "chat_token", participantId : this.participantId, contactId : this.contactId})
-      .then(function(data){
-        console.log("data from chat_token: ");
-        console.log(data.chatTokenTransport.participantToken);
-        // console.log("data from chat_token participantToken" + data.chatTokenTransportDetails.participantToken);
-      });
-    }
     const message = args.message;
     const type = args.type || CONTENT_TYPE.textPlain;
     const metadata = args.metadata || null;

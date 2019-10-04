@@ -53,7 +53,6 @@ describe("ConnectionDetailsProvider", () => {
       let counter = 0;
       return () => {
         counter+=1;
-        console.log(counter);
         return fetchedConnectionToken
           ? Promise.resolve({ 
               chatTokenTransport: {
