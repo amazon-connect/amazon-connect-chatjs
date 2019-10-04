@@ -4,7 +4,7 @@ import {
 } from "./exceptions";
 import { ChatClientFactory } from "../client/client";
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
-import { SESSION_TYPES, CHAT_EVENTS, AGENT_RECONNECT_CONFIG, CUSTOMER_RECONNECT_CONFIG } from "../constants";
+import { SESSION_TYPES, CHAT_EVENTS } from "../constants";
 import { GlobalConfig } from "../globalConfig";
 
 import { ChatController } from "./chatController";
@@ -33,22 +33,41 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
     this.argsValidator = new ChatServiceArgsValidator();
   }
 
-  createAgentChatSession(chatDetails, options, websocketManager=null, createTransport=null) {
-    var chatController = this._createChatSession(chatDetails, options, AGENT_RECONNECT_CONFIG, websocketManager, createTransport);
-    return new AgentChatSession(chatController);
+// <<<<<<< HEAD
+  // createAgentChatSession(chatDetails, options, websocketManager=null, createTransport=null) {
+  //   var chatController = this._createChatSession(chatDetails, options, AGENT_RECONNECT_CONFIG, websocketManager, createTransport);
+  //   return new AgentChatSession(chatController);
+  // }
+
+  // createCustomerChatSession(chatDetails, options, websocketManager=null, createTransport=null) {
+  //   var chatController = this._createChatSession(chatDetails, options, CUSTOMER_RECONNECT_CONFIG, websocketManager, createTransport);
+  //   return new CustomerChatSession(chatController);
+  // }
+
+  // _createChatSession(chatDetailsInput, options, reconnectConfig, websocketManager=null, createTransport=null) {
+// =======
+  createChatSession(sessionType, chatDetails, options, websocketManager=null, createTransport=null) {
+    const chatController = this._createChatController(sessionType, chatDetails, options, websocketManager, createTransport);
+    if (sessionType === SESSION_TYPES.AGENT) {
+      return new AgentChatSession(chatController);
+    } else if (sessionType === SESSION_TYPES.CUSTOMER) {
+      return new CustomerChatSession(chatController);
+    } else {
+      throw new IllegalArgumentException(
+        "Unkown value for session type, Allowed values are: " +
+          Object.values(SESSION_TYPES),
+          sessionType
+      );
+    }
   }
 
-  createCustomerChatSession(chatDetails, options, websocketManager=null, createTransport=null) {
-    var chatController = this._createChatSession(chatDetails, options, CUSTOMER_RECONNECT_CONFIG, websocketManager, createTransport);
-    return new CustomerChatSession(chatController);
-  }
-
-  _createChatSession(chatDetailsInput, options, reconnectConfig, websocketManager=null, createTransport=null) {
+  _createChatController(sessionType, chatDetailsInput, options, websocketManager, createTransport) {
+// >>>>>>> websocket-migration-fixes
     var chatDetails = this._normalizeChatDetails(chatDetailsInput);
     var args = {
+      sessionType: sessionType,
       chatDetails: chatDetails,
       chatClient: ChatClientFactory.getCachedClient(options),
-      reconnectConfig: reconnectConfig,
       websocketManager: websocketManager,
       createTransport: createTransport
     };
@@ -161,28 +180,38 @@ var setGlobalConfig = config => {
 var ChatSessionConstructor = args => {
   var options = args.options || {};
   var type = args.type || SESSION_TYPES.AGENT;
+// <<<<<<< HEAD
 
-  if (type === SESSION_TYPES.AGENT) {
-    return CHAT_SESSION_FACTORY.createAgentChatSession(
-      args.chatDetails,
-      options,
-      args.websocketManager,
-      args.createTransport
-    );
-  } else if (type === SESSION_TYPES.CUSTOMER) {
-    return CHAT_SESSION_FACTORY.createCustomerChatSession(
-      args.chatDetails,
-      options,
-      args.websocketManager,
-      args.createTransport
-    );
-  } else {
-    throw new IllegalArgumentException(
-      "Unkown value for session type, Allowed values are: " +
-        Object.values(SESSION_TYPES),
-      type
-    );
-  }
+//   if (type === SESSION_TYPES.AGENT) {
+//     return CHAT_SESSION_FACTORY.createAgentChatSession(
+//       args.chatDetails,
+//       options,
+//       args.websocketManager,
+//       args.createTransport
+//     );
+//   } else if (type === SESSION_TYPES.CUSTOMER) {
+//     return CHAT_SESSION_FACTORY.createCustomerChatSession(
+//       args.chatDetails,
+//       options,
+//       args.websocketManager,
+//       args.createTransport
+//     );
+//   } else {
+//     throw new IllegalArgumentException(
+//       "Unkown value for session type, Allowed values are: " +
+//         Object.values(SESSION_TYPES),
+//       type
+//     );
+//   }
+// =======
+  return CHAT_SESSION_FACTORY.createChatSession(
+    type,
+    args.chatDetails,
+    options,
+    args.websocketManager,
+    args.createTransport
+  );
+// >>>>>>> websocket-migration-fixes
 };
 
 const ChatSessionObject = {

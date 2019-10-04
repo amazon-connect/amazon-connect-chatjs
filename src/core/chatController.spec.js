@@ -3,7 +3,8 @@ import {
   VISIBILITY,
   CHAT_EVENTS,
   TRANSCRIPT_DEFAULT_PARAMS,
-  CONTENT_TYPE
+  CONTENT_TYPE,
+  SESSION_TYPES
 } from "../constants";
 import Utils from "../utils";
 import { ChatController } from "./chatController";
@@ -24,19 +25,15 @@ describe("ChatController", () => {
   let chatClient = {
     createConnectionDetails: () => {}
   };
-  const reconnectConfig = {
-    interval: 1,
-    maxRetries: 1
-  };
   const websocketManager = {};
   let startResponse;
   let endResponse;
 
   function getChatController() {
     return new ChatController({
+      sessionType: SESSION_TYPES.AGENT,
       chatDetails: chatDetails,
       chatClient: chatClient,
-      reconnectConfig: reconnectConfig,
       websocketManager: websocketManager
     });
   }
