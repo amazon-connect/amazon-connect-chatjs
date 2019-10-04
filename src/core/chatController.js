@@ -135,12 +135,9 @@ class ChatController {
         this.participantToken,
         this.chatClient,
         this.websocketManager,
-// <<<<<<< HEAD
         this.createTransport,
-        this.reconnectConfig
-// =======
+        this.reconnectConfig,
         this.sessionType === SESSION_TYPES.AGENT ? AGENT_RECONNECT_CONFIG : CUSTOMER_RECONNECT_CONFIG
-// >>>>>>> websocket-migration-fixes
       )
       .then(
         this._initConnectionHelper.bind(this)
