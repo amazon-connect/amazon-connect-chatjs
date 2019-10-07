@@ -19,6 +19,8 @@ describe("ConnectionDetailsProvider", () => {
   let fetchedConnectionUrl;
   let contactId;
   let participantId;
+  let pcounter;
+  let wcounter;
 
   function setup() {
     connectionDetailsProvider = new ConnectionDetailsProvider(connectionDetails, participantToken, chatClient, createTransport, contactId, participantId);
@@ -48,23 +50,37 @@ describe("ConnectionDetailsProvider", () => {
     contactId = 'cid';
     participantId = 'pid';
 
-    //TODO : Make this function more representative of the real API.
-    createTransport = jest.fn((function () {
-      let counter = 0;
-      return () => {
-        counter+=1;
-        return fetchedConnectionToken
-          ? Promise.resolve({ 
-              chatTokenTransport: {
-                participantToken: fetchedConnectionToken+counter
-              },
-              webSocketTransport: {
-                url: fetchedConnectionUrl+counter
-              }
-          })
-          : Promise.reject('error');
+    wcounter = 0;
+    pcounter = 0;
+
+    createTransport = jest.fn(function(transport) {
+      if (transport.transportType === "chat_token") {
+        pcounter+=1;
       }
-    }()));
+      else {
+        wcounter +=1;
+      }
+      return new Promise(function(resolve, reject) {
+        if (transport.transportType === "chat_token") {
+          fetchedConnectionToken 
+            ? resolve({
+                chatTokenTransport: {
+                  participantToken: fetchedConnectionToken+pcounter
+                }
+              })
+            : reject("error in createTransport type chat_token");
+        }
+        else {
+          fetchedConnectionUrl 
+            ? resolve({
+              webSocketTransport: {
+                url: fetchedConnectionUrl+wcounter
+              }
+            })
+            : reject("error in createTransport type web_socket");
+        }
+      }); 
+    });
   
     chatClient.createConnectionDetails = jest.fn((function () {
       let counter = 0;
@@ -80,7 +96,7 @@ describe("ConnectionDetailsProvider", () => {
           } })
           : Promise.reject('error');
       };
-    } ()));
+    } )());
   });
 
   describe("with ParticipantToken, IOT", () => {
@@ -487,7 +503,7 @@ describe("ConnectionDetailsProvider", () => {
         const connectionDetails = await connectionDetailsProvider.init();
         expect(connectionDetails).toEqual({
           connectionId: null,
-          preSignedConnectionUrl: 'url2'
+          preSignedConnectionUrl: 'url1'
         });
       });
 
@@ -503,7 +519,7 @@ describe("ConnectionDetailsProvider", () => {
         await connectionDetailsProvider.init();
         expect(connectionDetailsProvider.connectionDetails).toEqual({
           connectionId: null,
-          preSignedConnectionUrl: 'url2'
+          preSignedConnectionUrl: 'url1'
         });
         expect(connectionDetailsProvider.connectionToken).toEqual('token1');
       });
@@ -522,7 +538,7 @@ describe("ConnectionDetailsProvider", () => {
         const connectionDetails = await connectionDetailsProvider.fetchConnectionDetails();
         expect(connectionDetails).toEqual({
           connectionId: null,
-          preSignedConnectionUrl: 'url2'
+          preSignedConnectionUrl: 'url1'
         });
       });
 
@@ -531,9 +547,10 @@ describe("ConnectionDetailsProvider", () => {
         await connectionDetailsProvider.init();
         await connectionDetailsProvider.fetchConnectionDetails();
         const connectionDetails = await connectionDetailsProvider.fetchConnectionDetails();
+        expect(createTransport).toHaveBeenCalledTimes(4);
         expect(connectionDetails).toEqual({
           connectionId: null,
-          preSignedConnectionUrl: 'url4'
+          preSignedConnectionUrl: 'url2'
         })
       });
 
@@ -543,18 +560,15 @@ describe("ConnectionDetailsProvider", () => {
         await connectionDetailsProvider.fetchConnectionDetails();
         expect(connectionDetailsProvider.connectionDetails).toEqual({
           connectionId: null,
-          preSignedConnectionUrl: 'url2'
+          preSignedConnectionUrl: 'url1'
         });
       });
 
       test("Invalid props leads to error", async () => {
-        participantId = null;
-        contactId = null;
-        createTransport = null;
+        var cDP = new ConnectionDetailsProvider(connectionDetails, participantToken, chatClient, createTransport, null, null);
         var error = null;
-        setup();
         try {
-          await connectionDetailsProvider.init();
+          await cDP.init();
         } catch (e) {
           error = e;
         }
@@ -583,10 +597,10 @@ describe("ConnectionDetailsProvider", () => {
         await connectionDetailsProvider.init();
         await connectionDetailsProvider.fetchConnectionToken();
         await connectionDetailsProvider.fetchConnectionToken();
-        expect(connectionDetailsProvider.connectionToken).toBe('token3');
+        expect(connectionDetailsProvider.connectionToken).toBe('token2');
         expect(connectionDetailsProvider.connectionDetails).toEqual({
           connectionId: null,
-          preSignedConnectionUrl: 'url4'
+          preSignedConnectionUrl: 'url2'
         });
       });
     });

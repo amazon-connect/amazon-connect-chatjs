@@ -107,7 +107,7 @@ export default class ConnectionDetailsProvider {
       // for the createTransport "chat_token" API, but it is going to be updated, 
       // so this call will need to be adjusted.
       return this.createTransport({ 
-        transportType: "chat_token" , 
+        transportType: "chat_token", 
         participantId: this.participantId, 
         contactId: this.contactId 
       })
