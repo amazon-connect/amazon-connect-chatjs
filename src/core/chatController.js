@@ -128,7 +128,6 @@ class ChatController {
         this.chatClient,
         this.websocketManager,
         this.createTransport,
-        this.reconnectConfig,
         this.sessionType === SESSION_TYPES.AGENT ? AGENT_RECONNECT_CONFIG : CUSTOMER_RECONNECT_CONFIG
       )
       .then(

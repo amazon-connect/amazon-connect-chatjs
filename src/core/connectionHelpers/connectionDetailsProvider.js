@@ -27,6 +27,8 @@ export default class ConnectionDetailsProvider {
   }
 
   fetchConnectionDetails() {
+    // To not waste the first request we have to make in order to determine IOT vs. LPC
+    // we return the already fetched connectionDetails if this is the first call.
     if (this.firstCall) {
       this.firstCall = false;
       return Promise.resolve(this.connectionDetails);
@@ -38,6 +40,8 @@ export default class ConnectionDetailsProvider {
   }
 
   fetchConnectionToken() {
+    // To not waste the first request we have to make in order to determine IOT vs. LPC
+    // we return the already fetched connectionToken if this is the first call
     if (this.firstCall) {
       this.firstCall = false;
       return Promise.resolve(this.connectionToken);

@@ -32,7 +32,7 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
     this.argsValidator = new ChatServiceArgsValidator();
   }
 
-  createChatSession(sessionType, chatDetails, options, websocketManager=null, createTransport=null) {
+  createChatSession(sessionType, chatDetails, options, websocketManager=null, createTransport) {
     const chatController = this._createChatController(sessionType, chatDetails, options, websocketManager, createTransport);
     if (sessionType === SESSION_TYPES.AGENT) {
       return new AgentChatSession(chatController);
@@ -48,7 +48,6 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
   }
 
   _createChatController(sessionType, chatDetailsInput, options, websocketManager, createTransport) {
-// >>>>>>> websocket-migration-fixes
     var chatDetails = this._normalizeChatDetails(chatDetailsInput);
     var args = {
       sessionType: sessionType,
