@@ -131,7 +131,7 @@ describe("ChatController", () => {
     await chatController.connect();
     const response = await chatController.getTranscript(args);
     expect(chatClient.getTranscript).toHaveBeenCalledWith("token", {
-      IntialContactId: "id",
+      InitialContactId: "id",
       StartKey: {},
       ScanDirection: TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
       SortKey: TRANSCRIPT_DEFAULT_PARAMS.SORT_KEY,

@@ -6,7 +6,7 @@ import LpcConnectionHelper from "./LpcConnectionHelper";
 
 class ConnectionHelperProvider {
 
-  get(contactId, initialContactId, connectionDetails, participantToken, chatClient, websocketManager, reconnectConfig) {
+  get({contactId, initialContactId, connectionDetails, participantToken, chatClient, websocketManager, reconnectConfig}) {
     const connectionDetailsProvider = new ConnectionDetailsProvider(connectionDetails, participantToken, chatClient);
     return connectionDetailsProvider.init().then(() => {
       if (connectionDetailsProvider.connectionType === ConnectionType.LPC) {
