@@ -32,7 +32,7 @@ export default class ConnectionDetailsProvider {
     if (this.firstCall) {
       this.firstCall = false;
       return Promise.resolve(this.connectionDetails);
-    } else if (!this.participantToken && this.connectionType !== ConnectionType.LPC) {
+    } else if (!this.participantToken && this.connectionType === ConnectionType.IOT) {
         return Promise.reject("Fatal: Cannot use static connection details more than once.");
     } else {
       return this._fetchConnectionDetails().then(() => this.connectionDetails);
@@ -45,7 +45,7 @@ export default class ConnectionDetailsProvider {
     if (this.firstCall) {
       this.firstCall = false;
       return Promise.resolve(this.connectionToken);
-    } else if (!this.participantToken && this.connectionType !== ConnectionType.LPC) {
+    } else if (!this.participantToken && this.connectionType === ConnectionType.IOT) {
       return Promise.reject("Fatal: Cannot use static connection details more than once.");
     } else {
       return this._fetchConnectionDetails().then(() => this.connectionToken);

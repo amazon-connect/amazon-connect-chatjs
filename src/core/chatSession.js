@@ -32,7 +32,7 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
     this.argsValidator = new ChatServiceArgsValidator();
   }
 
-  createChatSession(sessionType, chatDetails, options, websocketManager=null, createTransport) {
+  createChatSession(sessionType, chatDetails, options, websocketManager, createTransport) {
     const chatController = this._createChatController(sessionType, chatDetails, options, websocketManager, createTransport);
     if (sessionType === SESSION_TYPES.AGENT) {
       return new AgentChatSession(chatController);
