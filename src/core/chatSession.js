@@ -32,8 +32,8 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
     this.argsValidator = new ChatServiceArgsValidator();
   }
 
-  createChatSession(sessionType, chatDetails, options, websocketManager, createTransport) {
-    const chatController = this._createChatController(sessionType, chatDetails, options, websocketManager, createTransport);
+  createChatSession(sessionType, chatDetails, options, websocketManager, createConnectionToken) {
+    const chatController = this._createChatController(sessionType, chatDetails, options, websocketManager, createConnectionToken);
     if (sessionType === SESSION_TYPES.AGENT) {
       return new AgentChatSession(chatController);
     } else if (sessionType === SESSION_TYPES.CUSTOMER) {
@@ -47,14 +47,14 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
     }
   }
 
-  _createChatController(sessionType, chatDetailsInput, options, websocketManager, createTransport) {
+  _createChatController(sessionType, chatDetailsInput, options, websocketManager, createConnectionToken) {
     var chatDetails = this._normalizeChatDetails(chatDetailsInput);
     var args = {
       sessionType: sessionType,
       chatDetails: chatDetails,
       chatClient: ChatClientFactory.getCachedClient(options),
       websocketManager: websocketManager,
-      createTransport: createTransport
+      createConnectionToken: createConnectionToken
     };
     return new ChatController(args);
   }
@@ -170,7 +170,7 @@ var ChatSessionConstructor = args => {
     args.chatDetails,
     options,
     args.websocketManager,
-    args.createTransport
+    args.createConnectionToken
   );
 };
 

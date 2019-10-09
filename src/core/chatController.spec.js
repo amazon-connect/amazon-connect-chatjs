@@ -28,13 +28,15 @@ describe("ChatController", () => {
   const websocketManager = {};
   let startResponse;
   let endResponse;
+  let createConnectionToken = () => Promise.resolve("response");
 
   function getChatController() {
     return new ChatController({
       sessionType: SESSION_TYPES.AGENT,
       chatDetails: chatDetails,
       chatClient: chatClient,
-      websocketManager: websocketManager
+      websocketManager: websocketManager,
+      createConnectionToken: createConnectionToken
     });
   }
 

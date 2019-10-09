@@ -38,7 +38,7 @@ class ChatController {
     this.chatClient = args.chatClient;
     this.participantToken = args.chatDetails.participantToken;
     this.websocketManager = args.websocketManager;
-    this.createTransport = args.createTransport;
+    this.createConnectionToken = args.createConnectionToken;
     this._participantDisconnected = false;
     this.sessionMetadata = {};
   }
@@ -127,7 +127,7 @@ class ChatController {
         this.participantToken,
         this.chatClient,
         this.websocketManager,
-        this.createTransport,
+        this.createConnectionToken,
         this.sessionType === SESSION_TYPES.AGENT ? AGENT_RECONNECT_CONFIG : CUSTOMER_RECONNECT_CONFIG
       )
       .then(

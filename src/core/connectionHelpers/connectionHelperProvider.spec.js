@@ -25,7 +25,7 @@ describe("ConnectionHelperProvider", () => {
   let participantToken;
   let websocketManager;
   let reconnectConfig;
-  let createTransport;
+  let createConnectionToken;
 
   beforeEach(() => {
     contactId = 'id';
@@ -42,7 +42,7 @@ describe("ConnectionHelperProvider", () => {
   }
 
   function getConnectionHelper() {
-    return connectionHelperProvider.get(contactId, participantId, initialContactId, connectionDetails, participantToken, chatClient, websocketManager, createTransport, reconnectConfig);
+    return connectionHelperProvider.get(contactId, participantId, initialContactId, connectionDetails, participantToken, chatClient, websocketManager, createConnectionToken, reconnectConfig);
   }
 
   test("returns IotConnectionHelper for each call if Connection Url contains .iot.", async () => {

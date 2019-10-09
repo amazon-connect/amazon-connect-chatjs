@@ -3,14 +3,14 @@ import { IllegalArgumentException } from "../exceptions";
 
 export default class ConnectionDetailsProvider {
 
-  constructor(connectionDetails, participantToken, chatClient, createTransport, contactId, participantId) {
+  constructor(connectionDetails, participantToken, chatClient, createConnectionToken, contactId, participantId) {
     this.chatClient = chatClient;
     this.participantToken = participantToken || null;
     this.connectionDetails = connectionDetails || null;
     this.connectionToken = null;
     this.connectionType = null;
     this.firstCall = true;
-    this.createTransport = createTransport || null;
+    this.createConnectionToken = createConnectionToken|| null;
     this.contactId = contactId;
     this.participantId = participantId;
   }
@@ -75,24 +75,13 @@ export default class ConnectionDetailsProvider {
     };
   }
 
-  _handleUrlResponse(connectionUrl) {
-    this.connectionDetails = {
-      connectionId: null,
-      preSignedConnectionUrl: connectionUrl
-    };
-  }
-
   _handleTokenResponse(connectionToken) {
     this.connectionToken = connectionToken;
     this.connectionType = ConnectionType.LPC;
-    return this.createTransport({ transportType : "web_socket" })
-      .then(response => this._handleUrlResponse(response.webSocketTransport.url))
-      .catch(error => {
-        return Promise.reject({
-          reason: "Failed to fetch websocket url via createTransport api",
-          _debug: error
-        });
-      });
+    this.connectionDetails = {
+      connectionId: null,
+      preSignedConnectionUrl: null
+    };
   }
 
   _fetchConnectionDetails() {
@@ -106,26 +95,25 @@ export default class ConnectionDetailsProvider {
             _debug: error
           });
         });
-    } else if (this.createTransport && this.participantId && this.contactId) {
+    } else if (this.createConnectionToken && this.participantId && this.contactId) {
       // Note that chatTokenTransport.participantToken is the current naming scheme 
-      // for the createTransport "chat_token" API, but it is going to be updated, 
+      // for the getConnectionToken "chat_token" API, but it is going to be updated, 
       // so this call will need to be adjusted.
-      return this.createTransport({ 
-        transportType: "chat_token", 
+      return this.createConnectionToken({
         participantId: this.participantId, 
         contactId: this.contactId 
       })
         .then(response => this._handleTokenResponse(response.chatTokenTransport.participantToken))
         .catch(error => {
           return Promise.reject({
-            reason: "Failed to fetch connectionToken via createTransport api",
+            reason: "Failed to fetch connectionToken via createConnectionToken api",
             _debug: error
           });
         });
     } else {
       return Promise.reject({
-        reason: "Failed to fetch connectionDetails: createTransport or its credentials were not present.",
-        _debug: new IllegalArgumentException("createTransport or its credentials were invalid")
+        reason: "Failed to fetch connectionDetails: createConnectionToken or its credentials were not present.",
+        _debug: new IllegalArgumentException("createConnectionToken or its credentials were invalid")
       });
     }
   }
