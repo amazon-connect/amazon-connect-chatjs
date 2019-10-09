@@ -76,40 +76,150 @@ class HttpChatClient extends ChatClient {
     this.logger = LogManager.getLogger({ prefix: "ChatClient" });
   }
 
-  sendMessage(connectionToken, message, type) {
-    console.log(type);
-    var body = {
+  // sendMessage(connectionToken, message, type) {
+  //   console.log(type);
+  //   var body = {
+  //     Message: {
+  //       ContentType: CONTENT_TYPE.textPlain,
+  //       Content: message,
+  //       Persistence: MESSAGE_PERSISTENCE.PERSISTED
+  //     }
+  //   };
+  //   var requestInput = {
+  //     method: HTTP_METHODS.POST,
+  //     headers: {},
+  //     url: this.invokeUrl + RESOURCE_PATH.MESSAGE,
+  //     body: body
+  //   };
+  //   requestInput.headers[CONNECTION_TOKEN_KEY] = connectionToken;
+  //   return this._callHttpClient(requestInput);
+  // }
+
+  sendMessage(connectiontoken, message, messageType, clientToken=""){
+    var legacy_args = {
       Message: {
-        ContentType: CONTENT_TYPE.textPlain,
-        Content: message,
-        Persistence: MESSAGE_PERSISTENCE.PERSISTED
+        ContentType: messageType,
+        Content: message
       }
     };
+    if (clientToken!==null) {
+      legacy_args.Message.ClientToken = clientToken;
+    }
     var requestInput = {
       method: HTTP_METHODS.POST,
       headers: {},
       url: this.invokeUrl + RESOURCE_PATH.MESSAGE,
-      body: body
+      body: legacy_args
     };
     requestInput.headers[CONNECTION_TOKEN_KEY] = connectionToken;
-    return this._callHttpClient(requestInput);
+    var response = this._callHttpClient(requestInput);
+    var new_response = {
+      AbsoluteTime: response.data.Item.Data.CreatedTimestamp,
+      Id: response.data.MessageId
+    };
+    return new_response;
+
   }
 
+  // getTranscript(connectionToken, args) {
+  //   var requestInput = {
+  //     method: HTTP_METHODS.POST,
+  //     headers: {},
+  //     url: this.invokeUrl + RESOURCE_PATH.TRANSCRIPT,
+  //     body: args
+  //   };
+  //   requestInput.headers[CONNECTION_TOKEN_KEY] = connectionToken;
+  //   return this._callHttpClient(requestInput);
+  // }
+
   getTranscript(connectionToken, args) {
+    var legacy_args;
+    if (args.ContactId){
+      legacy_args.ContactId = args.ContactId;
+    }
+    if (args.MaxResults){
+      legacy_args.MaxResults = args.MaxResults;
+    }
+    if (args.NextToken){
+      legacy_args.NextToken = args.NextToken;
+    }
+    if (args.ScanDirection){
+      legacy_args.ScanDirection = args.ScanDirection;
+    }
+    if (args.SortOrder){
+      legacy_args.SortKey = args.SortOrder;
+    }
+    if (args.StartPosition){
+      legacy_args.StartKey = {};
+      if (args.StartPosition.Id){
+        legacy_args.StartKey.ItemId = args.StartPosition.Id;
+      }
+      if (args.StartPosition.MostRecent){
+        legacy_args.StartKey.MostRecent = args.StartPosition.MostRecent;
+      }
+      if (args.StartPosition.AbsoluteTime) {
+        legacy_args.StartKey.Timestamp = args.StartPosition.AbsoluteTime;
+      }
+    }
+    console.log("legacy args for getTranscript: ");
+    console.log(legacy_args);
+
     var requestInput = {
       method: HTTP_METHODS.POST,
       headers: {},
       url: this.invokeUrl + RESOURCE_PATH.TRANSCRIPT,
-      body: args
+      body: legacy_args
     };
     requestInput.headers[CONNECTION_TOKEN_KEY] = connectionToken;
-    return this._callHttpClient(requestInput);
+    var response = this._callHttpClient(requestInput);
+    var new_response = {
+      InitialContactId: "sample initial contact Id",
+      Transcript: [],
+      NextToken: response.data.NextToken
+    };
+
+    var item;
+    for (item of response.data.Items) {
+      var new_item;
+      new_item.Id = item.ContactId;
+      new_item.AbsoluteTime = item.Data.CreatedTimestamp;
+      new_item.Type = item.Data.Type === "MESSAGE" ? "MESSAGE" : "EVENT";
+      new_item.ContentType = new_item.Type === "MESSAGE" ? CONTENT_TYPE.textPlain : "application/vnd.amazonaws.connect.event.typing";
+      new_item.Content = item.Data.Content;
+      new_item.DisplayName = item.SenderDetails.DisplayName;
+      new_item.ParticipantId = item.SenderDetails.ParticipantId;
+      new_item.ParticipantRole = "AGENT"
+      new_response.Transcript.append(new_item);
+    }
+    console.log("new args for getTranscript");
+    console.log(new_args);
+
+    return new_response;
   }
 
-  sendEvent(connectionToken, eventType, messageIds, visibility, persistence) {
+  // sendEvent(connectionToken, eventType, messageIds, visibility, persistence) {
+  //   console.log(messageIds);
+  //   console.log(persistence);
+  //   var body = {
+  //     ParticipantEvent: {
+  //       Visibility: visibility,
+  //       ParticipantEventType: eventType
+  //     }
+  //   };
+  //   var requestInput = {
+  //     method: HTTP_METHODS.POST,
+  //     headers: {},
+  //     url: this.invokeUrl + RESOURCE_PATH.EVENT,
+  //     body: body
+  //   };
+  //   requestInput.headers[CONNECTION_TOKEN_KEY] = connectionToken;
+  //   return this._callHttpClient(requestInput);
+  // }
+
+  sendEvent(connectionToken, contentType, content, clientToken="", eventType, messageIds, visibility, persistence) {
     console.log(messageIds);
     console.log(persistence);
-    var body = {
+    var legacy_args = {
       ParticipantEvent: {
         Visibility: visibility,
         ParticipantEventType: eventType
@@ -119,13 +229,18 @@ class HttpChatClient extends ChatClient {
       method: HTTP_METHODS.POST,
       headers: {},
       url: this.invokeUrl + RESOURCE_PATH.EVENT,
-      body: body
+      body: legacy_args
     };
     requestInput.headers[CONNECTION_TOKEN_KEY] = connectionToken;
-    return this._callHttpClient(requestInput);
+    var response = this._callHttpClient(requestInput);
+    var new_response = {
+      AbsoluteTime: response.data.Item.Data.CreatedTimestamp,
+      Id: response.data.Item.Data.ItemId
+    }
+    return new_response;
   }
 
-  disconnectChat(connectionToken) {
+  disconnectChat(connectionToken, ClientToken="") {
     var requestInput = {
       method: HTTP_METHODS.POST,
       headers: {},
@@ -145,6 +260,47 @@ class HttpChatClient extends ChatClient {
     };
     requestInput.headers[PARTICIPANT_TOKEN_KEY] = participantToken;
     return this._callHttpClient(requestInput);
+  }
+
+  createParticipantConnection(participantToken, list=["WEBOSCKET", "CONNECTION_CREDENTIALS"]) {
+    var requestInput = {
+      method: HTTP_METHODS.POST,
+      headers: {},
+      url: this.invokeUrl + RESOURCE_PATH.CONNECTION_DETAILS,
+      body: {}
+    };
+    requestInput.headers[PARTICIPANT_TOKEN_KEY] = participantToken;
+    var response = this._callHttpClient(requestInput);
+    var new_response;
+    if (list.contains("WEBSOCKET")){
+      if (list.contains("CONNECTION_CREDENTIALS")){
+        new_response = {
+          Websocket: {
+            url: response.data.PreSignedConnectionUrl,
+            ConnectionExpiry: response.data.ParticipantCredentials.Expiry
+          },
+          ConnectionCredentials: {
+            ConnectionToken: response.data.ParticipantCredentials.ConnectionAuthenticationToken,
+            Expiry: response.data.ParticipantCredentials.Expiry
+          }
+        };
+      } else {
+        new_response = {
+          Websocket: {
+            url: response.data.PreSignedConnectionUrl,
+            ConnectionExpiry: response.data.ParticipantCredentials.Expiry
+          }
+        };
+      }
+    } else {
+      new_response = {
+        ConnectionCredentials: {
+          Connectiontoken: response.data.ParticipantCredentials.ConnectionAuthenticationToken,
+          Expiry: response.data.ParticipantCredentials.Expiry
+        }
+      };
+    }
+    return new_response;
   }
 
   _callHttpClient(requestInput) {

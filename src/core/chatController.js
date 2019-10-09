@@ -32,7 +32,7 @@ class ChatController {
 
     this.sessionType = args.sessionType;
     this.connectionDetails = args.chatDetails.connectionDetails;
-    this.intialContactId = args.chatDetails.initialContactId;
+    this.initialContactId = args.chatDetails.initialContactId;
     this.contactId = args.chatDetails.contactId;
     this.participantId = args.chatDetails.participantId;
     this.chatClient = args.chatClient;
@@ -66,26 +66,52 @@ class ChatController {
 
   sendMessage(args) {
     const message = args.message;
-    const type = args.type || CONTENT_TYPE.textPlain;
+    const messageType = args.type || CONTENT_TYPE.textPlain;
     const metadata = args.metadata || null;
-    this.argsValidator.validateSendMessage(message, type);
+    this.argsValidator.validateSendMessage(message, messageType);
     const connectionToken = this.connectionHelper.getConnectionToken();
     return this.chatClient
-      .sendMessage(connectionToken, message, type)
+      .sendMessage(connectionToken, message, messageType)
       .then(this.handleRequestSuccess(metadata, args, "sendMessage"))
       .catch(this.handleRequestFailure(metadata, args, "sendMessage"));
   }
 
+  // sendEvent(args) {
+  //   const metadata = args.metadata || null;
+  //   this.argsValidator.validateSendEvent(args);
+  //   const connectionToken = this.connectionHelper.getConnectionToken();
+  //   const persistenceArgument = args.persistence || PERSISTENCE.PERSISTED;
+  //   const visibilityArgument = args.visibility || VISIBILITY.ALL;
+
+  //   return this.chatClient
+  //     .sendEvent(
+  //       connectionToken,
+  //       args.eventType,
+  //       args.messageIds,
+  //       visibilityArgument,
+  //       persistenceArgument
+  //     )
+  //     .then(this.handleRequestSuccess(metadata, args, "sendEvent"))
+  //     .catch(this.handleRequestFailure(metadata, args, "sendEvent"));
+  // }
+
   sendEvent(args) {
     const metadata = args.metadata || null;
+    console.log(args.contentType);
     this.argsValidator.validateSendEvent(args);
     const connectionToken = this.connectionHelper.getConnectionToken();
     const persistenceArgument = args.persistence || PERSISTENCE.PERSISTED;
     const visibilityArgument = args.visibility || VISIBILITY.ALL;
 
+    var content = args.content || "";
+    var clientToken = args.clientToken || "";
+
     return this.chatClient
       .sendEvent(
         connectionToken,
+        args.contentType,
+        content,
+        clientToken,
         args.eventType,
         args.messageIds,
         visibilityArgument,
@@ -95,15 +121,34 @@ class ChatController {
       .catch(this.handleRequestFailure(metadata, args, "sendEvent"));
   }
 
+  // getTranscript(inputArgs) {
+  //   const metadata = inputArgs.metadata || null;
+  //   const args = {
+  //     InitialContactId: this.initialContactId,
+  //     StartKey: inputArgs.StartKey || {},
+  //     ScanDirection: inputArgs.ScanDirection || TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
+  //     SortKey: inputArgs.SortKey || TRANSCRIPT_DEFAULT_PARAMS.SORT_KEY,
+  //     MaxResults: inputArgs.MaxResults || TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS
+  //   };
+  //   if (inputArgs.NextToken) {
+  //     args.NextToken = inputArgs.NextToken;
+  //   }
+  //   const connectionToken = this.connectionHelper.getConnectionToken();
+  //   return this.chatClient
+  //     .getTranscript(connectionToken, args)
+  //     .then(this.handleRequestSuccess(metadata, args, "getTranscript"))
+  //     .catch(this.handleRequestFailure(metadata, args, "getTranscript"));
+  // }
+
   getTranscript(inputArgs) {
     const metadata = inputArgs.metadata || null;
     const args = {
-      IntialContactId: this.intialContactId,
-      StartKey: inputArgs.StartKey || {},
+      ContactId: this.initialContactId, 
+      StartPosition: inputArgs.StartPosition || {},
       ScanDirection: inputArgs.ScanDirection || TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
-      SortKey: inputArgs.SortKey || TRANSCRIPT_DEFAULT_PARAMS.SORT_KEY,
-      MaxResults: inputArgs.MaxResults || TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS
-    };
+      SortOrder: inputArgs.SortOrder || TRANSCRIPT_DEFAULT_PARAMS.SORT_KEY,
+      MaxResults: inputArgs.MaxResults || TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS,
+    }
     if (inputArgs.NextToken) {
       args.NextToken = inputArgs.NextToken;
     }
@@ -121,7 +166,7 @@ class ChatController {
     return connectionHelperProvider
       .get(
         this.contactId,
-        this.intialContactId,
+        this.initialContactId,
         this.connectionDetails,
         this.participantToken,
         this.chatClient,
@@ -209,7 +254,8 @@ class ChatController {
         eventType: "CONNECTION_ACK",
         messageIds: [],
         visibility: VISIBILITY.ALL,
-        persistence: PERSISTENCE.NON_PERSISTED
+        persistence: PERSISTENCE.NON_PERSISTED,
+        contentType: "application/vnd.amazon.connect.event.connection.acknowledged"
       });
     }
 
@@ -261,7 +307,7 @@ class ChatController {
 
   getChatDetails() {
     return {
-      intialContactId: this.intialContactId,
+      initialContactId: this.initialContactId,
       contactId: this.contactId,
       participantId: this.participantId,
       participantToken: this.participantToken,

@@ -35,6 +35,7 @@ class ChatControllerArgsValidator {
   }
 
   validateSendEvent(args) {
+    //legacy. Delete soon
     Utils.assertIsNonEmptyString(args.eventType, "eventType");
     if (args.messageIds !== undefined) {
       Utils.assertIsList(args.messageIds);
@@ -53,6 +54,8 @@ class ChatControllerArgsValidator {
         "persistence"
       );
     }
+    //New, keep.
+    Utils.assertIsNonEmptyString(args.contentType, "contentType");
   }
 
   // TODO: Not sure about this API.

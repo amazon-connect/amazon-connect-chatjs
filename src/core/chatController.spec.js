@@ -113,12 +113,14 @@ describe("ChatController", () => {
     const args = {
       metadata: "metadata",
       eventType: "event",
-      messageIds: []
+      messageIds: [],
+      contentType: "some_event"
     };
     const chatController = getChatController();
     await chatController.connect();
+    console.log(args.contentType);
     const response = await chatController.sendEvent(args);
-    expect(chatClient.sendEvent).toHaveBeenCalledWith("token", "event", [], VISIBILITY.ALL, PERSISTENCE.PERSISTED);
+    expect(chatClient.sendEvent).toHaveBeenCalledWith("token", "some_event", "", "", "event", [], VISIBILITY.ALL, PERSISTENCE.PERSISTED);
     expect(response.metadata).toBe("metadata");
     expect(response.testField).toBe("test");
   });
@@ -131,10 +133,10 @@ describe("ChatController", () => {
     await chatController.connect();
     const response = await chatController.getTranscript(args);
     expect(chatClient.getTranscript).toHaveBeenCalledWith("token", {
-      IntialContactId: "id",
-      StartKey: {},
+      ContactId: "id",
+      StartPosition: {},
       ScanDirection: TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
-      SortKey: TRANSCRIPT_DEFAULT_PARAMS.SORT_KEY,
+      SortOrder: TRANSCRIPT_DEFAULT_PARAMS.SORT_KEY,
       MaxResults: TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS
     });
     expect(response.metadata).toBe("metadata");
