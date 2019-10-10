@@ -104,14 +104,13 @@ class ChatController {
     const visibilityArgument = args.visibility || VISIBILITY.ALL;
 
     var content = args.content || "";
-    var clientToken = args.clientToken || "";
+    // var clientToken = args.clientToken || "";
 
     return this.chatClient
       .sendEvent(
         connectionToken,
         args.contentType,
         content,
-        clientToken,
         args.eventType,
         args.messageIds,
         visibilityArgument,
@@ -148,7 +147,7 @@ class ChatController {
       ScanDirection: inputArgs.ScanDirection || TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
       SortOrder: inputArgs.SortOrder || TRANSCRIPT_DEFAULT_PARAMS.SORT_KEY,
       MaxResults: inputArgs.MaxResults || TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS,
-    }
+    };
     if (inputArgs.NextToken) {
       args.NextToken = inputArgs.NextToken;
     }
@@ -217,6 +216,10 @@ class ChatController {
       const eventType = {
         TYPING: CHAT_EVENTS.INCOMING_TYPING
       }[incomingData.Data.Type] || CHAT_EVENTS.INCOMING_MESSAGE;
+      var item;
+      item.Id = incomingData.data.Data.ItemId;
+      item.Type = incomingData.data.Data.Type!=="MESSAGE" ? "EVENT" : "MESSAGE";
+      item.ContentType = "sample_event";
       this._forwardChatEvent(eventType, {
         data: incomingData,
         chatDetails: this.getChatDetails()

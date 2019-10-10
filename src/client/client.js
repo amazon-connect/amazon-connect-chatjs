@@ -3,10 +3,10 @@ import { makeHttpRequest } from "./XmlHttpClient";
 import { GlobalConfig } from "../globalConfig";
 import {
   RESOURCE_PATH,
+  MESSAGE_PERSISTENCE,
   HTTP_METHODS,
   REGION_CONFIG,
   CONTENT_TYPE,
-  MESSAGE_PERSISTENCE,
   CONNECTION_TOKEN_KEY,
   PARTICIPANT_TOKEN_KEY,
   REGIONS
@@ -95,16 +95,14 @@ class HttpChatClient extends ChatClient {
   //   return this._callHttpClient(requestInput);
   // }
 
-  sendMessage(connectiontoken, message, messageType, clientToken=""){
+  sendMessage(connectionToken, message, messageType){
     var legacy_args = {
       Message: {
         ContentType: messageType,
-        Content: message
+        Content: message,
+        Persistence: MESSAGE_PERSISTENCE.PERSISTED
       }
     };
-    if (clientToken!==null) {
-      legacy_args.Message.ClientToken = clientToken;
-    }
     var requestInput = {
       method: HTTP_METHODS.POST,
       headers: {},
@@ -112,12 +110,19 @@ class HttpChatClient extends ChatClient {
       body: legacy_args
     };
     requestInput.headers[CONNECTION_TOKEN_KEY] = connectionToken;
-    var response = this._callHttpClient(requestInput);
-    var new_response = {
-      AbsoluteTime: response.data.Item.Data.CreatedTimestamp,
-      Id: response.data.MessageId
-    };
-    return new_response;
+    var response = this._callHttpClient(requestInput)
+      .then(response => {
+        return new Promise(resolve => {
+          resolve({
+            data: {
+              AbsoluteTime: response.data.Item.Data.CreatedTimestamp,
+              Id: response.data.MessageId
+            }
+          });
+        });
+      });
+    console.log(response);
+    return response;
 
   }
 
@@ -171,30 +176,33 @@ class HttpChatClient extends ChatClient {
       body: legacy_args
     };
     requestInput.headers[CONNECTION_TOKEN_KEY] = connectionToken;
-    var response = this._callHttpClient(requestInput);
-    var new_response = {
-      InitialContactId: "sample initial contact Id",
-      Transcript: [],
-      NextToken: response.data.NextToken
-    };
-
-    var item;
-    for (item of response.data.Items) {
-      var new_item;
-      new_item.Id = item.ContactId;
-      new_item.AbsoluteTime = item.Data.CreatedTimestamp;
-      new_item.Type = item.Data.Type === "MESSAGE" ? "MESSAGE" : "EVENT";
-      new_item.ContentType = new_item.Type === "MESSAGE" ? CONTENT_TYPE.textPlain : "application/vnd.amazonaws.connect.event.typing";
-      new_item.Content = item.Data.Content;
-      new_item.DisplayName = item.SenderDetails.DisplayName;
-      new_item.ParticipantId = item.SenderDetails.ParticipantId;
-      new_item.ParticipantRole = "AGENT"
-      new_response.Transcript.append(new_item);
-    }
-    console.log("new args for getTranscript");
-    console.log(new_args);
-
-    return new_response;
+    var response = this._callHttpClient(requestInput)
+      .then(response => {
+        return new Promise(resolve => {
+          var new_response = {data:{}};
+          new_response.data = {
+            InitialContactId: "sample initial contact Id",
+            Transcript: [],
+            NextToken: response.data.NextToken
+          };
+          var item;
+          for (item of response.data.Items) {
+            var new_item;
+            new_item.Id = item.ContactId;
+            new_item.AbsoluteTime = item.Data.CreatedTimestamp;
+            new_item.Type = item.Data.Type === "MESSAGE" ? "MESSAGE" : "EVENT";
+            new_item.ContentType = new_item.Type === "MESSAGE" ? CONTENT_TYPE.textPlain : "application/vnd.amazonaws.connect.event.typing";
+            new_item.Content = item.Data.Content;
+            new_item.DisplayName = item.SenderDetails.DisplayName;
+            new_item.ParticipantId = item.SenderDetails.ParticipantId;
+            new_item.ParticipantRole = "AGENT";
+            new_response.data.Transcript.append(new_item);
+          }
+          resolve(new_response);
+        });
+      });
+    console.log(response);
+    return response;
   }
 
   // sendEvent(connectionToken, eventType, messageIds, visibility, persistence) {
@@ -216,7 +224,7 @@ class HttpChatClient extends ChatClient {
   //   return this._callHttpClient(requestInput);
   // }
 
-  sendEvent(connectionToken, contentType, content, clientToken="", eventType, messageIds, visibility, persistence) {
+  sendEvent(connectionToken, contentType, content, eventType, messageIds, visibility, persistence) {
     console.log(messageIds);
     console.log(persistence);
     var legacy_args = {
@@ -232,15 +240,22 @@ class HttpChatClient extends ChatClient {
       body: legacy_args
     };
     requestInput.headers[CONNECTION_TOKEN_KEY] = connectionToken;
-    var response = this._callHttpClient(requestInput);
-    var new_response = {
-      AbsoluteTime: response.data.Item.Data.CreatedTimestamp,
-      Id: response.data.Item.Data.ItemId
-    }
+    var new_response = this._callHttpClient(requestInput)
+      .then(response => {
+        return new Promise(resolve => {
+          resolve({
+            data: {
+              AbsoluteTime: response.data.Item.Data.CreatedTimestamp,
+              Id: response.data.Item.Data.ItemId
+            }
+          });
+        });
+      });
+    console.log(new_response);
     return new_response;
   }
 
-  disconnectChat(connectionToken, ClientToken="") {
+  disconnectChat(connectionToken) {
     var requestInput = {
       method: HTTP_METHODS.POST,
       headers: {},
@@ -270,37 +285,43 @@ class HttpChatClient extends ChatClient {
       body: {}
     };
     requestInput.headers[PARTICIPANT_TOKEN_KEY] = participantToken;
-    var response = this._callHttpClient(requestInput);
-    var new_response;
-    if (list.contains("WEBSOCKET")){
-      if (list.contains("CONNECTION_CREDENTIALS")){
-        new_response = {
-          Websocket: {
-            url: response.data.PreSignedConnectionUrl,
-            ConnectionExpiry: response.data.ParticipantCredentials.Expiry
-          },
-          ConnectionCredentials: {
-            ConnectionToken: response.data.ParticipantCredentials.ConnectionAuthenticationToken,
-            Expiry: response.data.ParticipantCredentials.Expiry
+    var response = this._callHttpClient(requestInput)
+      .then(response => {
+        return new Promise(resolve => {
+          var new_response = {data: {}};
+          if (list.contains("WEBSOCKET")){
+            if (list.contains("CONNECTION_CREDENTIALS")){
+              new_response.data = {
+                Websocket: {
+                  url: response.data.PreSignedConnectionUrl,
+                  ConnectionExpiry: response.data.ParticipantCredentials.Expiry
+                },
+                ConnectionCredentials: {
+                  ConnectionToken: response.data.ParticipantCredentials.ConnectionAuthenticationToken,
+                  Expiry: response.data.ParticipantCredentials.Expiry
+                }
+              };
+            } else {
+              new_response.data = {
+                Websocket: {
+                  url: response.data.PreSignedConnectionUrl,
+                  ConnectionExpiry: response.data.ParticipantCredentials.Expiry
+                }
+              };
+            }
+          } else {
+            new_response.data = {
+              ConnectionCredentials: {
+                Connectiontoken: response.data.ParticipantCredentials.ConnectionAuthenticationToken,
+                Expiry: response.data.ParticipantCredentials.Expiry
+              }
+            };
           }
-        };
-      } else {
-        new_response = {
-          Websocket: {
-            url: response.data.PreSignedConnectionUrl,
-            ConnectionExpiry: response.data.ParticipantCredentials.Expiry
-          }
-        };
-      }
-    } else {
-      new_response = {
-        ConnectionCredentials: {
-          Connectiontoken: response.data.ParticipantCredentials.ConnectionAuthenticationToken,
-          Expiry: response.data.ParticipantCredentials.Expiry
-        }
-      };
-    }
-    return new_response;
+          resolve(new_response);
+        });
+      });
+    console.log(response);
+    return response;
   }
 
   _callHttpClient(requestInput) {
