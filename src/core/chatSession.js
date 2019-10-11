@@ -48,7 +48,7 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
   }
 
   _createChatController(sessionType, chatDetailsInput, options, websocketManager, createConnectionToken) {
-    var chatDetails = this._normalizeChatDetails(chatDetailsInput);
+    var chatDetails = this.argsValidator.normalizeChatDetails(chatDetailsInput);
     var args = {
       sessionType: sessionType,
       chatDetails: chatDetails,
@@ -57,38 +57,6 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
       createConnectionToken: createConnectionToken
     };
     return new ChatController(args);
-  }
-
-  _normalizeChatDetails(chatDetailsInput) {
-    var chatDetails = {};
-    if (chatDetailsInput.participantToken || chatDetailsInput.ParticipantToken) {
-      chatDetails.participantId = chatDetailsInput.ParticipantId || chatDetailsInput.participantId;
-      chatDetails.contactId = chatDetailsInput.ContactId || chatDetailsInput.contactId;
-      chatDetails.initialContactId = chatDetailsInput.InitialContactId || chatDetailsInput.initialContactId || chatDetails.contactId;
-      chatDetails.participantToken = chatDetailsInput.ParticipantToken || chatDetailsInput.participantToken;
-      this.argsValidator.validateChatDetails(chatDetails);
-      return chatDetails;
-    } else if (
-      chatDetailsInput.ChatConnectionAttributes &&
-      chatDetailsInput.ChatConnectionAttributes.ParticipantCredentials
-    ) {
-      this.argsValidator.validateInitiateChatResponse(chatDetailsInput);
-      var connectionDetails = {};
-      connectionDetails.connectionToken =
-        chatDetailsInput.ChatConnectionAttributes.ParticipantCredentials.ConnectionAuthenticationToken;
-      connectionDetails.ConnectionId =
-        chatDetailsInput.ChatConnectionAttributes.ConnectionId;
-      connectionDetails.PreSignedConnectionUrl =
-        chatDetailsInput.ChatConnectionAttributes.PreSignedConnectionUrl;
-      chatDetails.connectionDetails = connectionDetails;
-      chatDetails.participantId = chatDetailsInput.ParticipantId;
-      chatDetails.contactId = chatDetailsInput.ContactId;
-      chatDetails.initialContactId = chatDetailsInput.ContactId;
-      return chatDetails;
-    } else {
-      this.argsValidator.validateChatDetails(chatDetailsInput);
-      return chatDetailsInput;
-    }
   }
 }
 

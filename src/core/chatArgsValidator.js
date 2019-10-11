@@ -91,7 +91,7 @@ class ChatServiceArgsValidator extends ChatControllerArgsValidator {
         chatDetails.connectionDetails.connectionToken,
         "chatDetails.connectionDetails.connectionToken"
       );
-    } else {
+    } else if (chatDetails.participantToken){
       Utils.assertIsNonEmptyString(
         chatDetails.participantToken,
         "chatDetails.participantToken"
@@ -101,6 +101,36 @@ class ChatServiceArgsValidator extends ChatControllerArgsValidator {
 
   validateInitiateChatResponse() {
     return true;
+  }
+
+  normalizeChatDetails(chatDetailsInput) {
+    var chatDetails = {};
+    chatDetails.contactId = chatDetailsInput.ContactId || chatDetailsInput.contactId;
+    chatDetails.participantId = chatDetailsInput.ParticipantId || chatDetailsInput.participantId;
+    chatDetails.initialContactId = chatDetailsInput.InitialContactId || chatDetailsInput.initialContactId || chatDetails.contactId || chatDetails.ContactId;
+
+    if (chatDetailsInput.participantToken || chatDetailsInput.ParticipantToken) {
+      chatDetails.participantToken = chatDetailsInput.ParticipantToken || chatDetailsInput.participantToken;
+      this.validateChatDetails(chatDetails);
+      return chatDetails;
+    } else if (
+      chatDetailsInput.ChatConnectionAttributes &&
+      chatDetailsInput.ChatConnectionAttributes.ParticipantCredentials
+    ) {
+      this.validateInitiateChatResponse(chatDetailsInput);
+      var connectionDetails = {};
+      connectionDetails.connectionToken =
+        chatDetailsInput.ChatConnectionAttributes.ParticipantCredentials.ConnectionAuthenticationToken;
+      connectionDetails.ConnectionId =
+        chatDetailsInput.ChatConnectionAttributes.ConnectionId;
+      connectionDetails.PreSignedConnectionUrl =
+        chatDetailsInput.ChatConnectionAttributes.PreSignedConnectionUrl;
+      chatDetails.connectionDetails = connectionDetails;
+      return chatDetails;
+    } else {
+      this.validateChatDetails(chatDetails);
+      return chatDetails;
+    }
   }
 }
 
