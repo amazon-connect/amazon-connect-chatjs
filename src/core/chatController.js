@@ -163,15 +163,15 @@ class ChatController {
     this.argsValidator.validateConnectChat(args);
 
     return connectionHelperProvider
-      .get(
-        this.contactId,
-        this.initialContactId,
-        this.connectionDetails,
-        this.participantToken,
-        this.chatClient,
-        this.websocketManager,
-        this.sessionType === SESSION_TYPES.AGENT ? AGENT_RECONNECT_CONFIG : CUSTOMER_RECONNECT_CONFIG
-      )
+      .get({
+        contactId: this.contactId,
+        initialContactId: this.initialContactId,
+        connectionDetails: this.connectionDetails,
+        participantToken: this.participantToken,
+        chatClient: this.chatClient,
+        websocketManager: this.websocketManager,
+        reconnectConfig: this.sessionType === SESSION_TYPES.AGENT ? AGENT_RECONNECT_CONFIG : CUSTOMER_RECONNECT_CONFIG
+      })
       .then(
         this._initConnectionHelper.bind(this)
       )
@@ -254,7 +254,7 @@ class ChatController {
 
     if (this._shouldAcknowledgeContact()) {
       this.sendEvent({
-        eventType: "CONNECTION_ACK",
+        eventType: CHAT_EVENTS.CONNECTION_ACK,
         messageIds: [],
         visibility: VISIBILITY.ALL,
         persistence: PERSISTENCE.NON_PERSISTED,

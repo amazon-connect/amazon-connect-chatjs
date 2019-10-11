@@ -39,7 +39,7 @@ describe("ConnectionHelperProvider", () => {
   }
 
   function getConnectionHelper() {
-    return connectionHelperProvider.get(contactId, initialContactId, connectionDetails, participantToken, chatClient, websocketManager, reconnectConfig);
+    return connectionHelperProvider.get({contactId, initialContactId, connectionDetails, participantToken, chatClient, websocketManager, reconnectConfig});
   }
 
   test("returns IotConnectionHelper for each call if ConnectionId !== null", async () => {
