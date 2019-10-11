@@ -32,7 +32,7 @@ class ChatController {
 
     this.sessionType = args.sessionType;
     this.connectionDetails = args.chatDetails.connectionDetails;
-    this.intialContactId = args.chatDetails.initialContactId;
+    this.initialContactId = args.chatDetails.initialContactId;
     this.contactId = args.chatDetails.contactId;
     this.participantId = args.chatDetails.participantId;
     this.chatClient = args.chatClient;
@@ -98,7 +98,7 @@ class ChatController {
   getTranscript(inputArgs) {
     const metadata = inputArgs.metadata || null;
     const args = {
-      IntialContactId: this.intialContactId,
+      InitialContactId: this.initialContactId,
       StartKey: inputArgs.StartKey || {},
       ScanDirection: inputArgs.ScanDirection || TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
       SortKey: inputArgs.SortKey || TRANSCRIPT_DEFAULT_PARAMS.SORT_KEY,
@@ -119,17 +119,17 @@ class ChatController {
     this.argsValidator.validateConnectChat(args);
 
     return connectionHelperProvider
-      .get(
-        this.contactId,
-        this.participantId,
-        this.intialContactId,
-        this.connectionDetails,
-        this.participantToken,
-        this.chatClient,
-        this.websocketManager,
-        this.createConnectionToken,
-        this.sessionType === SESSION_TYPES.AGENT ? AGENT_RECONNECT_CONFIG : CUSTOMER_RECONNECT_CONFIG
-      )
+      .get({
+        contactId: this.contactId,
+        participantId: this.participantId,
+        initialContactId: this.initialContactId,
+        connectionDetails: this.connectionDetails,
+        participantToken: this.participantToken,
+        chatClient: this.chatClient,
+        websocketManager: this.websocketManager,
+        createConnectionToken: this.createConnectionToken,
+        reconnectConfig: this.sessionType === SESSION_TYPES.AGENT ? AGENT_RECONNECT_CONFIG : CUSTOMER_RECONNECT_CONFIG
+      })
       .then(
         this._initConnectionHelper.bind(this)
       )
@@ -208,7 +208,7 @@ class ChatController {
 
     if (this._shouldAcknowledgeContact()) {
       this.sendEvent({
-        eventType: "CONNECTION_ACK",
+        eventType: CHAT_EVENTS.CONNECTION_ACK,
         messageIds: [],
         visibility: VISIBILITY.ALL,
         persistence: PERSISTENCE.NON_PERSISTED
@@ -263,7 +263,7 @@ class ChatController {
 
   getChatDetails() {
     return {
-      intialContactId: this.intialContactId,
+      initialContactId: this.initialContactId,
       contactId: this.contactId,
       participantId: this.participantId,
       participantToken: this.participantToken,

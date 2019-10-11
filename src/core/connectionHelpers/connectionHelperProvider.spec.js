@@ -42,7 +42,17 @@ describe("ConnectionHelperProvider", () => {
   }
 
   function getConnectionHelper() {
-    return connectionHelperProvider.get(contactId, participantId, initialContactId, connectionDetails, participantToken, chatClient, websocketManager, createConnectionToken, reconnectConfig);
+    return connectionHelperProvider.get({
+      contactId: contactId, 
+      participantId: participantId, 
+      initialContactId: initialContactId, 
+      connectionDetails: connectionDetails, 
+      participantToken: participantToken, 
+      chatClient: chatClient, 
+      websocketManager: websocketManager,
+      createConnectionToken: createConnectionToken,
+      reconnectConfig: reconnectConfig
+    });
   }
 
   test("returns IotConnectionHelper for each call if Connection Url contains .iot.", async () => {
