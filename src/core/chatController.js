@@ -216,15 +216,54 @@ class ChatController {
       const eventType = {
         TYPING: CHAT_EVENTS.INCOMING_TYPING
       }[incomingData.Data.Type] || CHAT_EVENTS.INCOMING_MESSAGE;
-      var item;
-      item.Id = incomingData.data.Data.ItemId;
-      item.Type = incomingData.data.Data.Type!=="MESSAGE" ? "EVENT" : "MESSAGE";
-      item.ContentType = "sample_event";
+      var item = {};
+      item.Content = incomingData.Data.Content || incomingData.Content || null;
+      item.Id = incomingData.Data.ItemId || incomingData.Id;
+      item.Type = incomingData.Data.Type 
+        ? incomingData.Data.Type!=="MESSAGE" ? "EVENT" : "MESSAGE"
+        : incomingData.Type;
+      switch (incomingData.Data.Type) {
+        case "PARTICIPANT_LEFT":
+          item.ContentType = "application/vnd.amazonaws.connect.participant.left";
+          break;
+        case "PARTICIPANT_JOINED":
+          item.ContentType = "application/vnd.amazonaws.connection.participant.joined";
+          break;
+        case "TYPING":
+          item.ContentType = "application/vnd.amazonaws.connect.event.typing";
+          break;
+        case "TRANSFER_SUCCEEDED":
+          item.ContentType = "application/vnd.amazonaws.connect.transfer.succeed";
+          break;
+        case "TRANSFER_FAILED":
+          item.ContentType = "application/vnd.amazonaws.connect.transfer.failed";
+          break;
+        case "CONNECTION_ACKNOWLEDGED":
+          item.ContentType = "application/vnd.amazonaws.connect.connection.acknowledged";
+          break;
+        case "CHAT_ENDED":
+          item.ContentType = "application/vnd.amazonaws.connect.chat.ended";
+          break;
+        default:
+          item.ContentType = "text/plain";
+      }
+      item.AbsoluteTime = incomingData.Data.CreatedTimestamp || incomingData.AbsoluteTime;
+      item.InitialContactId = incomingData.InitialContactId || incomingData.InitialContactId;
+      if (incomingData.SenderDetails) {
+        item.DisplayName = incomingData.SenderDetails.DisplayName || null;
+        item.ParticipantId = incomingData.SenderDetails.ParticipantId || null;
+      }
+      else {
+        item.DisplayName = incomingData.DisplayName || null;
+        item.ParticipantId = incomingData.ParticipantId || null;
+      }
+      item.ParticipantRole = incomingData.ParticipantRole || null;
       this._forwardChatEvent(eventType, {
-        data: incomingData,
+        data: item,
         chatDetails: this.getChatDetails()
       });
     } catch (e) {
+      console.log(e);
       this.logger.error(
         "Error occured while handling message from Connection. eventData: ",
         incomingData,

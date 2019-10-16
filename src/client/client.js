@@ -138,7 +138,8 @@ class HttpChatClient extends ChatClient {
   // }
 
   getTranscript(connectionToken, args) {
-    var legacy_args;
+    
+    var legacy_args = {};
     if (args.ContactId){
       legacy_args.ContactId = args.ContactId;
     }
@@ -181,14 +182,14 @@ class HttpChatClient extends ChatClient {
         return new Promise(resolve => {
           var new_response = {data:{}};
           new_response.data = {
-            InitialContactId: "sample initial contact Id",
+            InitialContactId: response.data.Items[0].Data.InitialContactId,
             Transcript: [],
             NextToken: response.data.NextToken
           };
           var item;
           for (item of response.data.Items) {
-            var new_item;
-            new_item.Id = item.ContactId;
+            var new_item = {};
+            new_item.Id = item.Data.ItemId;
             new_item.AbsoluteTime = item.Data.CreatedTimestamp;
             new_item.Type = item.Data.Type === "MESSAGE" ? "MESSAGE" : "EVENT";
             new_item.ContentType = new_item.Type === "MESSAGE" ? CONTENT_TYPE.textPlain : "application/vnd.amazonaws.connect.event.typing";
@@ -196,7 +197,7 @@ class HttpChatClient extends ChatClient {
             new_item.DisplayName = item.SenderDetails.DisplayName;
             new_item.ParticipantId = item.SenderDetails.ParticipantId;
             new_item.ParticipantRole = "AGENT";
-            new_response.data.Transcript.append(new_item);
+            new_response.data.Transcript.push(new_item);
           }
           resolve(new_response);
         });
