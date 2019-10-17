@@ -76,25 +76,6 @@ class ChatController {
       .catch(this.handleRequestFailure(metadata, args, "sendMessage"));
   }
 
-  // sendEvent(args) {
-  //   const metadata = args.metadata || null;
-  //   this.argsValidator.validateSendEvent(args);
-  //   const connectionToken = this.connectionHelper.getConnectionToken();
-  //   const persistenceArgument = args.persistence || PERSISTENCE.PERSISTED;
-  //   const visibilityArgument = args.visibility || VISIBILITY.ALL;
-
-  //   return this.chatClient
-  //     .sendEvent(
-  //       connectionToken,
-  //       args.eventType,
-  //       args.messageIds,
-  //       visibilityArgument,
-  //       persistenceArgument
-  //     )
-  //     .then(this.handleRequestSuccess(metadata, args, "sendEvent"))
-  //     .catch(this.handleRequestFailure(metadata, args, "sendEvent"));
-  // }
-
   sendEvent(args) {
     const metadata = args.metadata || null;
     console.log(args.contentType);
@@ -119,25 +100,6 @@ class ChatController {
       .then(this.handleRequestSuccess(metadata, args, "sendEvent"))
       .catch(this.handleRequestFailure(metadata, args, "sendEvent"));
   }
-
-  // getTranscript(inputArgs) {
-  //   const metadata = inputArgs.metadata || null;
-  //   const args = {
-  //     InitialContactId: this.initialContactId,
-  //     StartKey: inputArgs.StartKey || {},
-  //     ScanDirection: inputArgs.ScanDirection || TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
-  //     SortKey: inputArgs.SortKey || TRANSCRIPT_DEFAULT_PARAMS.SORT_KEY,
-  //     MaxResults: inputArgs.MaxResults || TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS
-  //   };
-  //   if (inputArgs.NextToken) {
-  //     args.NextToken = inputArgs.NextToken;
-  //   }
-  //   const connectionToken = this.connectionHelper.getConnectionToken();
-  //   return this.chatClient
-  //     .getTranscript(connectionToken, args)
-  //     .then(this.handleRequestSuccess(metadata, args, "getTranscript"))
-  //     .catch(this.handleRequestFailure(metadata, args, "getTranscript"));
-  // }
 
   getTranscript(inputArgs) {
     const metadata = inputArgs.metadata || null;
@@ -215,37 +177,45 @@ class ChatController {
     try {
       const eventType = {
         TYPING: CHAT_EVENTS.INCOMING_TYPING
-      }[incomingData.Data.Type] || CHAT_EVENTS.INCOMING_MESSAGE;
+      }[incomingData.Data.Type] 
+      || {
+        "application/vnd.amazonaws.connect.event.typing": CHAT_EVENTS.INCOMING_TYPING
+      }[incomingData.ContentType]
+      || CHAT_EVENTS.INCOMING_MESSAGE;
       var item = {};
       item.Content = incomingData.Data.Content || incomingData.Content || null;
       item.Id = incomingData.Data.ItemId || incomingData.Id;
       item.Type = incomingData.Data.Type 
         ? incomingData.Data.Type!=="MESSAGE" ? "EVENT" : "MESSAGE"
         : incomingData.Type;
-      switch (incomingData.Data.Type) {
-        case "PARTICIPANT_LEFT":
-          item.ContentType = "application/vnd.amazonaws.connect.participant.left";
-          break;
-        case "PARTICIPANT_JOINED":
-          item.ContentType = "application/vnd.amazonaws.connection.participant.joined";
-          break;
-        case "TYPING":
-          item.ContentType = "application/vnd.amazonaws.connect.event.typing";
-          break;
-        case "TRANSFER_SUCCEEDED":
-          item.ContentType = "application/vnd.amazonaws.connect.transfer.succeed";
-          break;
-        case "TRANSFER_FAILED":
-          item.ContentType = "application/vnd.amazonaws.connect.transfer.failed";
-          break;
-        case "CONNECTION_ACKNOWLEDGED":
-          item.ContentType = "application/vnd.amazonaws.connect.connection.acknowledged";
-          break;
-        case "CHAT_ENDED":
-          item.ContentType = "application/vnd.amazonaws.connect.chat.ended";
-          break;
-        default:
-          item.ContentType = "text/plain";
+      if (incomingData.ContentType){
+        item.ContentType = incomingData.ContentType;
+      } else {
+        switch (incomingData.Data.Type) {
+          case "PARTICIPANT_LEFT":
+            item.ContentType = "application/vnd.amazonaws.connect.participant.left";
+            break;
+          case "PARTICIPANT_JOINED":
+            item.ContentType = "application/vnd.amazonaws.connect.participant.joined";
+            break;
+          case "TYPING":
+            item.ContentType = "application/vnd.amazonaws.connect.event.typing";
+            break;
+          case "TRANSFER_SUCCEEDED":
+            item.ContentType = "application/vnd.amazonaws.connect.transfer.succeed";
+            break;
+          case "TRANSFER_FAILED":
+            item.ContentType = "application/vnd.amazonaws.connect.transfer.failed";
+            break;
+          case "CONNECTION_ACKNOWLEDGED":
+            item.ContentType = "application/vnd.amazonaws.connect.connection.acknowledged";
+            break;
+          case "CHAT_ENDED":
+            item.ContentType = "application/vnd.amazonaws.connect.chat.ended";
+            break;
+          default:
+            item.ContentType = "text/plain";
+        }
       }
       item.AbsoluteTime = incomingData.Data.CreatedTimestamp || incomingData.AbsoluteTime;
       item.InitialContactId = incomingData.InitialContactId || incomingData.InitialContactId;
