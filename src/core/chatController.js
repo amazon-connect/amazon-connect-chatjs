@@ -78,14 +78,12 @@ class ChatController {
 
   sendEvent(args) {
     const metadata = args.metadata || null;
-    console.log(args.contentType);
     this.argsValidator.validateSendEvent(args);
     const connectionToken = this.connectionHelper.getConnectionToken();
     const persistenceArgument = args.persistence || PERSISTENCE.PERSISTED;
     const visibilityArgument = args.visibility || VISIBILITY.ALL;
 
     var content = args.content || "";
-    // var clientToken = args.clientToken || "";
 
     return this.chatClient
       .sendEvent(
@@ -233,7 +231,6 @@ class ChatController {
         chatDetails: this.getChatDetails()
       });
     } catch (e) {
-      console.log(e);
       this.logger.error(
         "Error occured while handling message from Connection. eventData: ",
         incomingData,
