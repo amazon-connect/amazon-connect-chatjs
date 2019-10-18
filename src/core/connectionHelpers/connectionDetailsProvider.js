@@ -99,10 +99,7 @@ export default class ConnectionDetailsProvider {
       // Note that chatTokenTransport.participantToken is the current naming scheme 
       // for the getConnectionToken "chat_token" API, but it is going to be updated, 
       // so this call will need to be adjusted.
-      return this.createConnectionToken({
-        participantId: this.participantId, 
-        contactId: this.contactId 
-      })
+      return this.createConnectionToken(this.contactId, this.participantId)
         .then(response => this._handleTokenResponse(response.chatTokenTransport.participantToken))
         .catch(error => {
           return Promise.reject({
