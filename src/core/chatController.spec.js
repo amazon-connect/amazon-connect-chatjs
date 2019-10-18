@@ -99,7 +99,8 @@ describe("ChatController", () => {
   test("sendMessage works as expected", async () => {
     const args = {
       metadata: "metadata",
-      message: "message"
+      message: "message",
+      contentType: CONTENT_TYPE.textPlain
     };
     const chatController = getChatController();
     await chatController.connect();
@@ -118,9 +119,8 @@ describe("ChatController", () => {
     };
     const chatController = getChatController();
     await chatController.connect();
-    console.log(args.contentType);
     const response = await chatController.sendEvent(args);
-    expect(chatClient.sendEvent).toHaveBeenCalledWith("token", "some_event", "", "event", [], VISIBILITY.ALL, PERSISTENCE.PERSISTED);
+    expect(chatClient.sendEvent).toHaveBeenCalledWith("token", "some_event", null);
     expect(response.metadata).toBe("metadata");
     expect(response.testField).toBe("test");
   });

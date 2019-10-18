@@ -4,7 +4,6 @@ import {
   VISIBILITY,
   CHAT_EVENTS,
   TRANSCRIPT_DEFAULT_PARAMS,
-  CONTENT_TYPE,
   AGENT_RECONNECT_CONFIG,
   CUSTOMER_RECONNECT_CONFIG,
   SESSION_TYPES
@@ -66,12 +65,11 @@ class ChatController {
 
   sendMessage(args) {
     const message = args.message;
-    const messageType = args.type || CONTENT_TYPE.textPlain;
     const metadata = args.metadata || null;
-    this.argsValidator.validateSendMessage(message, messageType);
+    this.argsValidator.validateSendMessage(args);
     const connectionToken = this.connectionHelper.getConnectionToken();
     return this.chatClient
-      .sendMessage(connectionToken, message, messageType)
+      .sendMessage(connectionToken, message, args.contentType)
       .then(this.handleRequestSuccess(metadata, args, "sendMessage"))
       .catch(this.handleRequestFailure(metadata, args, "sendMessage"));
   }
@@ -80,20 +78,12 @@ class ChatController {
     const metadata = args.metadata || null;
     this.argsValidator.validateSendEvent(args);
     const connectionToken = this.connectionHelper.getConnectionToken();
-    const persistenceArgument = args.persistence || PERSISTENCE.PERSISTED;
-    const visibilityArgument = args.visibility || VISIBILITY.ALL;
-
-    var content = args.content || "";
-
+    var content = args.content || null;
     return this.chatClient
       .sendEvent(
         connectionToken,
         args.contentType,
-        content,
-        args.eventType,
-        args.messageIds,
-        visibilityArgument,
-        persistenceArgument
+        content
       )
       .then(this.handleRequestSuccess(metadata, args, "sendEvent"))
       .catch(this.handleRequestFailure(metadata, args, "sendEvent"));

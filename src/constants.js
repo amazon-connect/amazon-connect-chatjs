@@ -6,13 +6,19 @@ export const CHAT_CONFIGURATIONS = {
 
 export const CONNECTION_TOKEN_KEY = "x-amzn-connect-connection-token";
 export const PARTICIPANT_TOKEN_KEY = "x-amzn-connect-participant-token";
+export const NEW_HEADER_VALUE = "X-Amz-Bearer";
 
 export const RESOURCE_PATH = {
   MESSAGE: "/contact/chat/participant/message",
   TRANSCRIPT: "/contact/chat/participant/transcript",
   EVENT: "/contact/chat/participant/event",
   DISCONNECT: "/contact/chat/participant/disconnect",
-  CONNECTION_DETAILS: "/contact/chat/participant/connection-details"
+  CONNECTION_DETAILS: "/contact/chat/participant/connection-details",
+  NEW_MESSAGE: "/participant/message",
+  NEW_TRANSCRIPT: "/participant/transcript",
+  NEW_EVENT: "/participant/event",
+  NEW_DISCONNECT: "/participant/disconnect",
+  PARTICIPANT_CONNECTION: "/participant/connection"
 };
 
 export const HTTP_METHODS = {

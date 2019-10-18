@@ -46,7 +46,6 @@ Utils.randomId = function() {
 };
 
 Utils.assertIsNonEmptyString = function(value, key) {
-  console.log(value);
   if (!value || typeof value !== "string") {
     throw new IllegalArgumentException(key + " is not a non-empty string!");
   }

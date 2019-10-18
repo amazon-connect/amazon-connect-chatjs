@@ -1,5 +1,5 @@
 import Utils from "../utils";
-import { CONTENT_TYPE, VISIBILITY, PERSISTENCE } from "../constants";
+import { PERSISTENCE } from "../constants";
 import { IllegalArgumentException } from "./exceptions";
 
 class ChatControllerArgsValidator {
@@ -9,11 +9,11 @@ class ChatControllerArgsValidator {
   }
   /*eslint-enable no-unused-vars*/
 
-  validateSendMessage(message, type) {
-    if (!Utils.isString(message)) {
-      Utils.assertIsObject(message, "message");
+  validateSendMessage(args) {
+    if (!Utils.isString(args.message)) {
+      Utils.assertIsObject(args.message, "message");
     }
-    Utils.assertIsEnum(type, Object.values(CONTENT_TYPE), "type");
+    Utils.assertIsNonEmptyString(args.contentType, "contentType");
   }
 
   /*eslint-disable no-unused-vars*/
@@ -35,18 +35,6 @@ class ChatControllerArgsValidator {
   }
 
   validateSendEvent(args) {
-    //legacy. Delete soon
-    Utils.assertIsNonEmptyString(args.eventType, "eventType");
-    if (args.messageIds !== undefined) {
-      Utils.assertIsList(args.messageIds);
-    }
-    if (args.visibility !== undefined) {
-      Utils.assertIsEnum(
-        args.visibility,
-        Object.values(VISIBILITY),
-        "visibility"
-      );
-    }
     if (args.persistence !== undefined) {
       Utils.assertIsEnum(
         args.persistence,
