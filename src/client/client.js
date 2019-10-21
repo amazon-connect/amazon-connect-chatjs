@@ -6,7 +6,7 @@ import {
   HTTP_METHODS,
   REGION_CONFIG,
   REGIONS,
-  NEW_HEADER_VALUE,
+  HEADER,
   PARTICIPANT_TOKEN_KEY
 } from "../constants";
 import { LogManager } from "../log";
@@ -82,10 +82,10 @@ class HttpChatClient extends ChatClient {
     var requestInput = {
       method: HTTP_METHODS.POST,
       headers: {},
-      url: this.invokeUrl + RESOURCE_PATH.NEW_MESSAGE,
+      url: this.invokeUrl + RESOURCE_PATH.MESSAGE,
       body: body
     };
-    requestInput.headers[NEW_HEADER_VALUE] = connectionToken;
+    requestInput.headers[HEADER] = connectionToken;
     return this._callHttpClient(requestInput);
   }
 
@@ -93,10 +93,10 @@ class HttpChatClient extends ChatClient {
     var requestInput = {
       method: HTTP_METHODS.POST,
       headers: {},
-      url: this.invokeUrl + RESOURCE_PATH.NEW_TRANSCRIPT,
+      url: this.invokeUrl + RESOURCE_PATH.TRANSCRIPT,
       body: args
     };
-    requestInput.headers[NEW_HEADER_VALUE] = connectionToken;
+    requestInput.headers[HEADER] = connectionToken;
     return this._callHttpClient(requestInput);
   }
 
@@ -110,10 +110,10 @@ class HttpChatClient extends ChatClient {
     var requestInput = {
       method: HTTP_METHODS.POST,
       headers: {},
-      url: this.invokeUrl + RESOURCE_PATH.NEW_EVENT,
+      url: this.invokeUrl + RESOURCE_PATH.EVENT,
       body: body
     };
-    requestInput.headers[NEW_HEADER_VALUE] = connectionToken;
+    requestInput.headers[HEADER] = connectionToken;
     return this._callHttpClient(requestInput);
   }
 
@@ -121,10 +121,10 @@ class HttpChatClient extends ChatClient {
     var requestInput = {
       method: HTTP_METHODS.POST,
       headers: {},
-      url: this.invokeUrl + RESOURCE_PATH.NEW_DISCONNECT,
+      url: this.invokeUrl + RESOURCE_PATH.DISCONNECT,
       body: {}
     };
-    requestInput.headers[NEW_HEADER_VALUE] = connectionToken;
+    requestInput.headers[HEADER] = connectionToken;
     return this._callHttpClient(requestInput);
   }
 
@@ -146,7 +146,7 @@ class HttpChatClient extends ChatClient {
       url: this.invokeUrl + RESOURCE_PATH.PARTICIPANT_CONNECTION,
       body: {}
     };
-    requestInput.headers[NEW_HEADER_VALUE] = participantToken;
+    requestInput.headers[HEADER] = participantToken;
     return this._callHttpClient(requestInput);
   }
 

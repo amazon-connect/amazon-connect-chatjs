@@ -1,33 +1,22 @@
-import Utils from "./utils";
 //Placeholder
 export const CHAT_CONFIGURATIONS = {
   CONCURRENT_CHATS: 10
 };
 
-export const CONNECTION_TOKEN_KEY = "x-amzn-connect-connection-token";
 export const PARTICIPANT_TOKEN_KEY = "x-amzn-connect-participant-token";
-export const NEW_HEADER_VALUE = "X-Amz-Bearer";
+export const HEADER = "X-Amz-Bearer";
 
 export const RESOURCE_PATH = {
-  MESSAGE: "/contact/chat/participant/message",
-  TRANSCRIPT: "/contact/chat/participant/transcript",
-  EVENT: "/contact/chat/participant/event",
-  DISCONNECT: "/contact/chat/participant/disconnect",
   CONNECTION_DETAILS: "/contact/chat/participant/connection-details",
-  NEW_MESSAGE: "/participant/message",
-  NEW_TRANSCRIPT: "/participant/transcript",
-  NEW_EVENT: "/participant/event",
-  NEW_DISCONNECT: "/participant/disconnect",
+  MESSAGE: "/participant/message",
+  TRANSCRIPT: "/participant/transcript",
+  EVENT: "/participant/event",
+  DISCONNECT: "/participant/disconnect",
   PARTICIPANT_CONNECTION: "/participant/connection"
 };
 
 export const HTTP_METHODS = {
   POST: "post"
-};
-
-export const MESSAGE_PERSISTENCE = {
-  PERSISTED: "PERSISTED",
-  NON_PERSISTED: "NON_PERSISTED"
 };
 
 export const CONTENT_TYPE = {
@@ -40,16 +29,6 @@ export const CONTENT_TYPE = {
   transferFailed: "application/vnd.amazonaws.connect.event.transfer.failed",
   chatEnded: "application/vnd.amazonaws.connect.event.chat.ended"
 };
-
-export const VISIBILITY = Utils.makeEnum([
-  "ALL",
-  "MANAGER",
-  "AGENT",
-  "CUSTOMER",
-  "THIRDPARTY"
-]);
-
-export const PERSISTENCE = Utils.makeEnum(["PERSISTED", "NON_PERSISTED"]);
 
 export const REGION_CONFIG = {
   "us-west-2": {

@@ -1,7 +1,5 @@
 import { ConnectionHelperStatus } from "./connectionHelpers/baseConnectionHelper";
 import {
-  PERSISTENCE,
-  VISIBILITY,
   CHAT_EVENTS,
   TRANSCRIPT_DEFAULT_PARAMS,
   AGENT_RECONNECT_CONFIG,
@@ -78,7 +76,7 @@ class ChatController {
     const metadata = args.metadata || null;
     this.argsValidator.validateSendEvent(args);
     const connectionToken = this.connectionHelper.getConnectionToken();
-    var content = args.content || null;
+    const content = args.content || null;
     return this.chatClient
       .sendEvent(
         connectionToken,
@@ -250,10 +248,6 @@ class ChatController {
 
     if (this._shouldAcknowledgeContact()) {
       this.sendEvent({
-        eventType: CHAT_EVENTS.CONNECTION_ACK,
-        messageIds: [],
-        visibility: VISIBILITY.ALL,
-        persistence: PERSISTENCE.NON_PERSISTED,
         contentType: "application/vnd.amazon.connect.event.connection.acknowledged"
       });
     }

@@ -1,5 +1,4 @@
 import Utils from "../utils";
-import { PERSISTENCE } from "../constants";
 import { IllegalArgumentException } from "./exceptions";
 
 class ChatControllerArgsValidator {
@@ -35,14 +34,6 @@ class ChatControllerArgsValidator {
   }
 
   validateSendEvent(args) {
-    if (args.persistence !== undefined) {
-      Utils.assertIsEnum(
-        args.persistence,
-        Object.values(PERSISTENCE),
-        "persistence"
-      );
-    }
-    //New, keep.
     Utils.assertIsNonEmptyString(args.contentType, "contentType");
   }
 
