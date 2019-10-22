@@ -26,7 +26,6 @@ class ChatController {
     });
     this.argsValidator = new ChatServiceArgsValidator();
     this.pubsub = new EventBus();
-
     this.sessionType = args.sessionType;
     this.connectionDetails = args.chatDetails.connectionDetails;
     this.initialContactId = args.chatDetails.initialContactId;
@@ -35,7 +34,6 @@ class ChatController {
     this.chatClient = args.chatClient;
     this.participantToken = args.chatDetails.participantToken;
     this.websocketManager = args.websocketManager;
-
     this._participantDisconnected = false;
     this.sessionMetadata = {};
   }
