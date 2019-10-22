@@ -1,4 +1,4 @@
-import { ConnectionType } from "./baseConnectionHelper";
+import { ConnectionType, ConnectionInfoType } from "./baseConnectionHelper";
 
 export default class ConnectionDetailsProvider {
 
@@ -59,8 +59,21 @@ export default class ConnectionDetailsProvider {
     };
   }
 
-  _handleResponse(connectionDetails) {
-    this.connectionType = connectionDetails.ConnectionId ? ConnectionType.IOT : ConnectionType.LPC;
+  _handleCreateParticipantConnectionDetailsResponse(connectionDetails) {
+    this.connectionType = ConnectionType.LPC;
+    this.connectionToken = connectionDetails.ConnectionCredentials.ConnectionToken;
+    this.connectionDetails = {
+      connectionId: null,
+      preSignedConnectionUrl: connectionDetails.Websocket.Url
+    };
+  }
+
+  _handleCreateConnectionDetailsResponse(connectionDetails) {
+    if (connectionDetails.PreSignedConnectionUrl) {
+      this.connectionType = connectionDetails.PreSignedConnectionUrl.includes(".iot.") ? ConnectionType.IOT : ConnectionType.LPC;
+    } else {
+      this.connectionType = connectionDetails.connectionId ? ConnectionType.IOT : ConnectionType.LPC;
+    }
     this.connectionToken = connectionDetails.ParticipantCredentials.ConnectionAuthenticationToken;
     this.connectionDetails = {
       connectionId: connectionDetails.ConnectionId,
@@ -69,13 +82,43 @@ export default class ConnectionDetailsProvider {
   }
 
   _fetchConnectionDetails() {
+    // return this.chatClient
+    //   .createConnectionDetails(this.participantToken)
+    //   .then(response => this._handleCreateConnectionDetailsResponse(response.data))
+    //   .catch(error => {
+    //     return Promise.reject({
+    //       reason: "Failed to fetch connectionDetails",
+    //       _debug: error
+    //     });
+    //   });
+
+    //If we are using LPC, ping the new API. Otherwise, need to use the old API to retrieve connectionId.
     return this.chatClient
-      .createConnectionDetails(this.participantToken)
-      .then(response => this._handleResponse(response.data))
-      .catch(error => {
-        return Promise.reject({
-          reason: "Failed to fetch connectionDetails",
-          _debug: error
+      .createParticipantConnection(this.participantToken, [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS] )
+      .then((response) => {
+        if (!response.data.Websocket.Url || response.data.Websocket.Url.includes(".iot.") || !response.data.ConnectionCredentials.ConnectionToken) {
+          return this.chatClient
+            .createConnectionDetails(this.participantToken)
+            .then(response => this._handleCreateConnectionDetailsResponse(response.data))
+            .catch(error => {
+              return Promise.reject({
+                reason: "Failed to fetch connectionDetails with createConnectionDetails",
+                _debug: error
+              });
+            });
+        } else {
+          return this._handleCreateParticipantConnectionDetailsResponse(response.data);
+        }
+      })
+      .catch(() => {
+        return this.chatClient
+        .createConnectionDetails(this.participantToken)
+        .then(response => this._handleCreateConnectionDetailsResponse(response.data))
+        .catch(error => {
+          return Promise.reject({
+            reason: "Failed to fetch connectionDetails with createConnectionDetails",
+            _debug: error
+          });
         });
       });
   }

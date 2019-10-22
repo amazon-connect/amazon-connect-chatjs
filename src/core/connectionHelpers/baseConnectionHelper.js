@@ -20,6 +20,11 @@ const ConnectionType = {
   LPC: 'LPC'
 };
 
+const ConnectionInfoType = {
+  WEBSOCKET: "WEBSOCKET",
+  CONNECTION_CREDENTIALS: "CONNECTION_CREDENTIALS"
+};
+
 export default class BaseConnectionHelper {
   constructor(connectionDetailsProvider) {
     this.connectionDetailsProvider = connectionDetailsProvider;
@@ -52,5 +57,6 @@ export default class BaseConnectionHelper {
 export {
   ConnectionHelperStatus,
   ConnectionHelperEvents,
-  ConnectionType
+  ConnectionType,
+  ConnectionInfoType
 };

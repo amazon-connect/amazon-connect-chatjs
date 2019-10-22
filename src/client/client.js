@@ -56,7 +56,11 @@ class ChatClient {
   }
 
   createConnectionDetails(participantToken) {
-    throw new UnImplementedMethodException("reconnectChat in ChatClient");
+    throw new UnImplementedMethodException("reconnectChat (createConnectionDetails) in ChatClient");
+  }
+
+  createParticipantConnection(participantToken) {
+    throw new UnImplementedMethodException("reconnectChat (createParticipantConnection) in ChatClient")
   }
 }
 /*eslint-enable*/
@@ -139,14 +143,17 @@ class HttpChatClient extends ChatClient {
     return this._callHttpClient(requestInput);
   }
 
-  createParticipantConnection(participantToken) {
+  createParticipantConnection(participantToken, list) {
     var requestInput = {
       method: HTTP_METHODS.POST,
       headers: {},
       url: this.invokeUrl + RESOURCE_PATH.PARTICIPANT_CONNECTION,
-      body: {}
+      body: {
+        Type: list
+      }
     };
     requestInput.headers[HEADER] = participantToken;
+    console.log(requestInput);
     return this._callHttpClient(requestInput);
   }
 
