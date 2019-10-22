@@ -15,12 +15,14 @@ jest.mock("./connectionHelpers/connectionHelperProvider");
 
 describe("ChatController", () => {
 
+  let createConnectionToken = () => Promise.resolve("response");
   const chatDetails = {
     contactId: "id",
     initialContactId: "id",
     connectionDetails: {},
     participantId: "pid",
-    participantToken: "token"
+    participantToken: "token",
+    getConnectionToken: createConnectionToken
   };
   let chatClient = {
     createConnectionDetails: () => {}
@@ -28,15 +30,13 @@ describe("ChatController", () => {
   const websocketManager = {};
   let startResponse;
   let endResponse;
-  let createConnectionToken = () => Promise.resolve("response");
 
   function getChatController() {
     return new ChatController({
       sessionType: SESSION_TYPES.AGENT,
       chatDetails: chatDetails,
       chatClient: chatClient,
-      websocketManager: websocketManager,
-      createConnectionToken: createConnectionToken
+      websocketManager: websocketManager
     });
   }
 

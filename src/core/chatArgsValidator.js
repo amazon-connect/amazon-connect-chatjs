@@ -66,6 +66,12 @@ class ChatControllerArgsValidator {
 class ChatServiceArgsValidator extends ChatControllerArgsValidator {
   validateChatDetails(chatDetails) {
     Utils.assertIsObject(chatDetails, "chatDetails");
+    if (chatDetails.getConnectionToken && !Utils.isFunction(chatDetails.getConnectionToken)) {
+      throw new IllegalArgumentException(
+        "getConnectionToken was not a function", 
+        chatDetails.getConnectionToken
+      );
+    }
     Utils.assertIsNonEmptyString(
       chatDetails.contactId,
       "chatDetails.contactId"
@@ -104,11 +110,12 @@ class ChatServiceArgsValidator extends ChatControllerArgsValidator {
   }
 
   normalizeChatDetails(chatDetailsInput) {
-    var chatDetails = {};
+    let chatDetails = {};
+    chatDetails.getConnectionToken = chatDetailsInput.getConnectionToken || null;
     chatDetails.contactId = chatDetailsInput.ContactId || chatDetailsInput.contactId;
     chatDetails.participantId = chatDetailsInput.ParticipantId || chatDetailsInput.participantId;
-    chatDetails.initialContactId = chatDetailsInput.InitialContactId || chatDetailsInput.initialContactId || chatDetails.contactId || chatDetails.ContactId;
-
+    chatDetails.initialContactId = chatDetailsInput.InitialContactId || chatDetailsInput.initialContactId
+    || chatDetails.contactId || chatDetails.ContactId;
     if (chatDetailsInput.participantToken || chatDetailsInput.ParticipantToken) {
       chatDetails.participantToken = chatDetailsInput.ParticipantToken || chatDetailsInput.participantToken;
       this.validateChatDetails(chatDetails);
