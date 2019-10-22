@@ -1,5 +1,4 @@
 import { ConnectionType, ConnectionInfoType } from "./baseConnectionHelper";
-import { LogManager } from "../../log";
 
 export default class ConnectionDetailsProvider {
 
