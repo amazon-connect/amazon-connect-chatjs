@@ -120,7 +120,6 @@ class ChatController {
     return connectionHelperProvider
       .get({
         contactId: this.contactId,
-        participantId: this.participantId,
         initialContactId: this.initialContactId,
         connectionDetails: this.connectionDetails,
         participantToken: this.participantToken,

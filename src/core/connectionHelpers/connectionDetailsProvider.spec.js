@@ -16,14 +16,10 @@ describe("ConnectionDetailsProvider", () => {
   let fetchedConnectionDetails;
   let createConnectionToken;
   let fetchedConnectionToken;
-  let fetchedConnectionUrl;
-  let contactId;
-  let participantId;
 
   function setup() {
-    connectionDetailsProvider = new ConnectionDetailsProvider(connectionDetails, participantToken, chatClient, createConnectionToken, contactId, participantId);
+    connectionDetailsProvider = new ConnectionDetailsProvider(connectionDetails, participantToken, chatClient, createConnectionToken);
   }
-
 
   beforeEach(() => {
     connectionDetails = {
@@ -40,13 +36,7 @@ describe("ConnectionDetailsProvider", () => {
     };
 
     fetchedConnectionToken = 'token';
-
-    fetchedConnectionUrl = 'url';
-
     participantToken = 'ptoken';
-
-    contactId = 'cid';
-    participantId = 'pid';
 
     createConnectionToken = jest.fn((function() {
       let counter = 0;
@@ -545,18 +535,6 @@ describe("ConnectionDetailsProvider", () => {
           preSignedConnectionUrl: null
         });
       });
-
-      test("Invalid props leads to error", async () => {
-        var cDP = new ConnectionDetailsProvider(connectionDetails, participantToken, chatClient, createConnectionToken, null, null);
-        var error = null;
-        try {
-          await cDP.init();
-        } catch (e) {
-          error = e;
-        }
-        expect(error).not.toBe(null);
-
-      })
     });
 
     describe(".fetchConnectionToken()", () => {

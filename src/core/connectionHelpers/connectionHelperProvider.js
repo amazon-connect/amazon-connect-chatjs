@@ -5,8 +5,8 @@ import IotConnectionHelper from "./IotConnectionHelper";
 import LpcConnectionHelper from "./LpcConnectionHelper";
 
 class ConnectionHelperProvider {
-  get({contactId, participantId, initialContactId, connectionDetails, participantToken, chatClient, websocketManager, createConnectionToken, reconnectConfig}) {
-    const connectionDetailsProvider = new ConnectionDetailsProvider(connectionDetails, participantToken, chatClient, createConnectionToken, contactId, participantId);
+  get({contactId, initialContactId, connectionDetails, participantToken, chatClient, websocketManager, createConnectionToken, reconnectConfig}) {
+    const connectionDetailsProvider = new ConnectionDetailsProvider(connectionDetails, participantToken, chatClient, createConnectionToken);
     return connectionDetailsProvider.init().then(() => {
       if (connectionDetailsProvider.connectionType === ConnectionType.LPC) {
         return new LpcConnectionHelper(initialContactId, connectionDetailsProvider, websocketManager);

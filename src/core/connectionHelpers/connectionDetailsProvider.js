@@ -3,16 +3,14 @@ import { IllegalArgumentException } from "../exceptions";
 
 export default class ConnectionDetailsProvider {
 
-  constructor(connectionDetails, participantToken, chatClient, createConnectionToken, contactId, participantId) {
+  constructor(connectionDetails, participantToken, chatClient, createConnectionToken) {
     this.chatClient = chatClient;
     this.participantToken = participantToken || null;
     this.connectionDetails = connectionDetails || null;
     this.connectionToken = null;
     this.connectionType = null;
     this.firstCall = true;
-    this.createConnectionToken = createConnectionToken|| null;
-    this.contactId = contactId;
-    this.participantId = participantId;
+    this.createConnectionToken = createConnectionToken || null;
   }
 
   init() {
@@ -95,11 +93,11 @@ export default class ConnectionDetailsProvider {
             _debug: error
           });
         });
-    } else if (this.createConnectionToken && this.participantId && this.contactId) {
+    } else if (this.createConnectionToken) {
       // Note that chatTokenTransport.participantToken is the current naming scheme 
       // for the getConnectionToken "chat_token" API, but it is going to be updated, 
       // so this call will need to be adjusted.
-      return this.createConnectionToken(this.contactId, this.participantId)
+      return this.createConnectionToken()
         .then(response => this._handleTokenResponse(response.chatTokenTransport.participantToken))
         .catch(error => {
           return Promise.reject({

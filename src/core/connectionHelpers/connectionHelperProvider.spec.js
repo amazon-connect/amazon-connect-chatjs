@@ -19,7 +19,6 @@ describe("ConnectionHelperProvider", () => {
   };
 
   let contactId;
-  let participantId;
   let initialContactId;
   let connectionDetails;
   let participantToken;
@@ -29,7 +28,6 @@ describe("ConnectionHelperProvider", () => {
 
   beforeEach(() => {
     contactId = 'id';
-    participantId = 'id';
     initialContactId = 'id';
     connectionDetails = {};
     participantToken = 'token';
@@ -44,7 +42,6 @@ describe("ConnectionHelperProvider", () => {
   function getConnectionHelper() {
     return connectionHelperProvider.get({
       contactId: contactId, 
-      participantId: participantId, 
       initialContactId: initialContactId, 
       connectionDetails: connectionDetails, 
       participantToken: participantToken, 
