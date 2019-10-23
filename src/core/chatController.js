@@ -89,7 +89,6 @@ class ChatController {
   getTranscript(inputArgs) {
     const metadata = inputArgs.metadata || null;
     const args = {
-      ContactId: this.initialContactId, 
       StartPosition: inputArgs.StartPosition || {},
       ScanDirection: inputArgs.ScanDirection || TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
       SortOrder: inputArgs.SortOrder || TRANSCRIPT_DEFAULT_PARAMS.SORT_KEY,
