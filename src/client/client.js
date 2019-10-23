@@ -6,7 +6,7 @@ import {
   HTTP_METHODS,
   REGION_CONFIG,
   REGIONS,
-  HEADER,
+  AUTH_HEADER,
   PARTICIPANT_TOKEN_KEY
 } from "../constants";
 import { LogManager } from "../log";
@@ -89,7 +89,7 @@ class HttpChatClient extends ChatClient {
       url: this.invokeUrl + RESOURCE_PATH.MESSAGE,
       body: body
     };
-    requestInput.headers[HEADER] = connectionToken;
+    requestInput.headers[AUTH_HEADER] = connectionToken;
     return this._callHttpClient(requestInput);
   }
 
@@ -100,7 +100,7 @@ class HttpChatClient extends ChatClient {
       url: this.invokeUrl + RESOURCE_PATH.TRANSCRIPT,
       body: args
     };
-    requestInput.headers[HEADER] = connectionToken;
+    requestInput.headers[AUTH_HEADER] = connectionToken;
     return this._callHttpClient(requestInput);
   }
 
@@ -117,7 +117,7 @@ class HttpChatClient extends ChatClient {
       url: this.invokeUrl + RESOURCE_PATH.EVENT,
       body: body
     };
-    requestInput.headers[HEADER] = connectionToken;
+    requestInput.headers[AUTH_HEADER] = connectionToken;
     return this._callHttpClient(requestInput);
   }
 
@@ -128,7 +128,7 @@ class HttpChatClient extends ChatClient {
       url: this.invokeUrl + RESOURCE_PATH.DISCONNECT,
       body: {}
     };
-    requestInput.headers[HEADER] = connectionToken;
+    requestInput.headers[AUTH_HEADER] = connectionToken;
     return this._callHttpClient(requestInput);
   }
 
@@ -143,16 +143,16 @@ class HttpChatClient extends ChatClient {
     return this._callHttpClient(requestInput);
   }
 
-  createParticipantConnection(participantToken, list) {
+  createParticipantConnection(participantToken, connectionTypes) {
     var requestInput = {
       method: HTTP_METHODS.POST,
       headers: {},
       url: this.invokeUrl + RESOURCE_PATH.PARTICIPANT_CONNECTION,
       body: {
-        Type: list
+        Type: connectionTypes
       }
     };
-    requestInput.headers[HEADER] = participantToken;
+    requestInput.headers[AUTH_HEADER] = participantToken;
     console.log(requestInput);
     return this._callHttpClient(requestInput);
   }

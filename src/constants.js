@@ -4,7 +4,7 @@ export const CHAT_CONFIGURATIONS = {
 };
 
 export const PARTICIPANT_TOKEN_KEY = "x-amzn-connect-participant-token";
-export const HEADER = "X-Amz-Bearer";
+export const AUTH_HEADER = "X-Amz-Bearer";
 
 export const RESOURCE_PATH = {
   CONNECTION_DETAILS: "/contact/chat/participant/connection-details",
@@ -17,17 +17,6 @@ export const RESOURCE_PATH = {
 
 export const HTTP_METHODS = {
   POST: "post"
-};
-
-export const CONTENT_TYPE = {
-  textPlain: "text/plain",
-  connectionAcknowledged: "application/vnd.amazon.connect.event.connection.acknowledged",
-  typing: "application/vnd.amazonaws.connect.event.typing",
-  participantJoined: "application/vnd.amazonaws.connect.event.participant.joined",
-  participantLeft: "application/vnd.amazonaws.connect.event.participant.left",
-  transferSucceeded: "application/vnd.amazonaws.connect.event.transfer.succeed",
-  transferFailed: "application/vnd.amazonaws.connect.event.transfer.failed",
-  chatEnded: "application/vnd.amazonaws.connect.event.chat.ended"
 };
 
 export const REGION_CONFIG = {
@@ -68,6 +57,20 @@ export const CHAT_EVENTS = {
   CONNECTION_BROKEN: "CONNECTION_BROKEN",
   CONNECTION_ACK: "CONNECTION_ACK"
 };
+
+export const CONTENT_TYPE = {
+  textPlain: "text/plain",
+  connectionAcknowledged: "application/vnd.amazon.connect.event.connection.acknowledged",
+  typing: "application/vnd.amazonaws.connect.event.typing",
+  participantJoined: "application/vnd.amazonaws.connect.event.participant.joined",
+  participantLeft: "application/vnd.amazonaws.connect.event.participant.left",
+  transferSucceeded: "application/vnd.amazonaws.connect.event.transfer.succeed",
+  transferFailed: "application/vnd.amazonaws.connect.event.transfer.failed",
+  chatEnded: "application/vnd.amazonaws.connect.event.chat.ended"
+};
+
+export const EVENT = "EVENT";
+export const MESSAGE = "MESSAGE";
 
 export const TRANSCRIPT_DEFAULT_PARAMS = {
   MAX_RESULTS: 15,

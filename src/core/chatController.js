@@ -4,7 +4,8 @@ import {
   TRANSCRIPT_DEFAULT_PARAMS,
   AGENT_RECONNECT_CONFIG,
   CUSTOMER_RECONNECT_CONFIG,
-  SESSION_TYPES
+  SESSION_TYPES,
+  CONTENT_TYPE
 } from "../constants";
 import { LogManager } from "../log";
 import { EventBus } from "./eventbus";
@@ -159,61 +160,9 @@ class ChatController {
 
   _handleIncomingMessage(incomingData) {
     try {
-      const eventType = {
-        TYPING: CHAT_EVENTS.INCOMING_TYPING
-      }[incomingData.Data.Type] 
-      || {
-        "application/vnd.amazonaws.connect.event.typing": CHAT_EVENTS.INCOMING_TYPING
-      }[incomingData.ContentType]
-      || CHAT_EVENTS.INCOMING_MESSAGE;
-      var item = {};
-      item.Content = incomingData.Data.Content || incomingData.Content || null;
-      item.Id = incomingData.Data.ItemId || incomingData.Id;
-      item.Type = incomingData.Data.Type 
-        ? incomingData.Data.Type!=="MESSAGE" ? "EVENT" : "MESSAGE"
-        : incomingData.Type;
-      if (incomingData.ContentType){
-        item.ContentType = incomingData.ContentType;
-      } else {
-        switch (incomingData.Data.Type) {
-          case "PARTICIPANT_LEFT":
-            item.ContentType = "application/vnd.amazonaws.connect.participant.left";
-            break;
-          case "PARTICIPANT_JOINED":
-            item.ContentType = "application/vnd.amazonaws.connect.participant.joined";
-            break;
-          case "TYPING":
-            item.ContentType = "application/vnd.amazonaws.connect.event.typing";
-            break;
-          case "TRANSFER_SUCCEEDED":
-            item.ContentType = "application/vnd.amazonaws.connect.transfer.succeed";
-            break;
-          case "TRANSFER_FAILED":
-            item.ContentType = "application/vnd.amazonaws.connect.transfer.failed";
-            break;
-          case "CONNECTION_ACKNOWLEDGED":
-            item.ContentType = "application/vnd.amazonaws.connect.connection.acknowledged";
-            break;
-          case "CHAT_ENDED":
-            item.ContentType = "application/vnd.amazonaws.connect.chat.ended";
-            break;
-          default:
-            item.ContentType = "text/plain";
-        }
-      }
-      item.AbsoluteTime = incomingData.Data.CreatedTimestamp || incomingData.AbsoluteTime;
-      item.InitialContactId = incomingData.InitialContactId || incomingData.InitialContactId;
-      if (incomingData.SenderDetails) {
-        item.DisplayName = incomingData.SenderDetails.DisplayName || null;
-        item.ParticipantId = incomingData.SenderDetails.ParticipantId || null;
-      }
-      else {
-        item.DisplayName = incomingData.DisplayName || null;
-        item.ParticipantId = incomingData.ParticipantId || null;
-      }
-      item.ParticipantRole = incomingData.ParticipantRole || null;
+      const eventType = incomingData.ContentType === CONTENT_TYPE.typing ? CHAT_EVENTS.INCOMING_TYPING : CHAT_EVENTS.INCOMING_MESSAGE;
       this._forwardChatEvent(eventType, {
-        data: item,
+        data: incomingData,
         chatDetails: this.getChatDetails()
       });
     } catch (e) {
@@ -246,7 +195,7 @@ class ChatController {
 
     if (this._shouldAcknowledgeContact()) {
       this.sendEvent({
-        contentType: "application/vnd.amazon.connect.event.connection.acknowledged"
+        contentType: CONTENT_TYPE.connectionAcknowledged
       });
     }
 

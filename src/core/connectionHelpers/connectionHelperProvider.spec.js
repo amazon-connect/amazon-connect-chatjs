@@ -1,5 +1,4 @@
 import connectionHelperProvider from "./connectionHelperProvider";
-
 import IotConnectionHelper from "./IotConnectionHelper";
 import LpcConnectionHelper from "./LpcConnectionHelper";
 jest.mock("./IotConnectionHelper");
@@ -20,7 +19,7 @@ describe("ConnectionHelperProvider", () => {
   };
   const fetchedParticipantConnection = {
     Websocket: {
-      url: "url"
+      Url: ".iot."
     },
     ConnectionCredentials: {
       ConnectionToken: "token"
@@ -60,9 +59,10 @@ describe("ConnectionHelperProvider", () => {
     expect(helper2).toBeInstanceOf(IotConnectionHelper);
   });
 
-  test("returns LpcConnectionHelper for each call if ConnectionId === null and the url does not contain '.io.'", async () => {
+  test("returns LpcConnectionHelper for each call if ConnectionId === null and the url does not contain '.iot.'", async () => {
     fetchedConnectionDetails.ConnectionId = null;
     fetchedConnectionDetails.PreSignedConnectionUrl = "url";
+    fetchedParticipantConnection.Websocket.Url = null;
     setup();
     const helper1 = await getConnectionHelper();
     expect(helper1).toBeInstanceOf(LpcConnectionHelper);

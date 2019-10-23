@@ -1,7 +1,6 @@
 import ConnectionDetailsProvider from "./connectionDetailsProvider";
 import { ConnectionType, ConnectionInfoType } from "./baseConnectionHelper";
 
-
 describe("ConnectionDetailsProvider", () => {
 
   const chatClient = {
@@ -16,7 +15,6 @@ describe("ConnectionDetailsProvider", () => {
   function setup() {
     connectionDetailsProvider = new ConnectionDetailsProvider(connectionDetails, participantToken, chatClient);
   }
-
 
   beforeEach(() => {
     connectionDetails = {
@@ -224,7 +222,7 @@ describe("ConnectionDetailsProvider", () => {
         const connectionDetails = await connectionDetailsProvider.init();
         expect(connectionDetails).toEqual({
           connectionId: null,
-          preSignedConnectionUrl: null
+          preSignedConnectionUrl: "url1"
         });
       });
 
@@ -239,7 +237,7 @@ describe("ConnectionDetailsProvider", () => {
         await connectionDetailsProvider.init();
         expect(connectionDetailsProvider.connectionDetails).toEqual({
           connectionId: null,
-          preSignedConnectionUrl: null
+          preSignedConnectionUrl: "url1"
         });
         expect(connectionDetailsProvider.connectionToken).toEqual('token1');
       });
@@ -258,7 +256,7 @@ describe("ConnectionDetailsProvider", () => {
         const connectionDetails = await connectionDetailsProvider.fetchConnectionDetails();
         expect(connectionDetails).toEqual({
           connectionId: null,
-          preSignedConnectionUrl: null
+          preSignedConnectionUrl: "url1"
         });
       });
 
@@ -269,7 +267,7 @@ describe("ConnectionDetailsProvider", () => {
         const connectionDetails = await connectionDetailsProvider.fetchConnectionDetails();
         expect(connectionDetails).toEqual({
           connectionId: null,
-          preSignedConnectionUrl: null
+          preSignedConnectionUrl: "url2"
         });
       });
 
@@ -279,7 +277,7 @@ describe("ConnectionDetailsProvider", () => {
         await connectionDetailsProvider.fetchConnectionDetails();
         expect(connectionDetailsProvider.connectionDetails).toEqual({
           connectionId: null,
-          preSignedConnectionUrl: null
+          preSignedConnectionUrl: "url1"
         });
       });
 
@@ -290,7 +288,7 @@ describe("ConnectionDetailsProvider", () => {
         await connectionDetailsProvider.fetchConnectionDetails();
         expect(connectionDetailsProvider.connectionDetails).toEqual({
           connectionId: null,
-          preSignedConnectionUrl: null
+          preSignedConnectionUrl: "url2"
         });
       });
 

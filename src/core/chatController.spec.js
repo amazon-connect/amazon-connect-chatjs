@@ -1,10 +1,10 @@
 import {
-  PERSISTENCE,
-  VISIBILITY,
   CHAT_EVENTS,
   TRANSCRIPT_DEFAULT_PARAMS,
   CONTENT_TYPE,
-  SESSION_TYPES
+  SESSION_TYPES,
+  MESSAGE,
+  EVENT
 } from "../constants";
 import Utils from "../utils";
 import { ChatController } from "./chatController";
@@ -55,17 +55,15 @@ describe("ChatController", () => {
       getConnectionToken: () => "token",
       $simulateMessage: (message) => {
         messageHandlers.forEach(f => f({
-          Data: {
-            Type: "INCOMING_MESSAGE",
-            Message: message
-          }
+          Type: MESSAGE,
+          ContentType: CONTENT_TYPE.textPlain,
+          Message: message
         }));
       },
       $simulateTyping: () => {
         messageHandlers.forEach(f => f({
-          Data: {
-            Type: "TYPING"
-          }
+          Type: EVENT,
+          ContentType: CONTENT_TYPE.typing
         }));
       }
     });

@@ -59,12 +59,12 @@ export default class ConnectionDetailsProvider {
     };
   }
 
-  _handleCreateParticipantConnectionDetailsResponse(connectionDetails) {
+  _handleCreateParticipantConnectionResponse(connectionDetails) {
     this.connectionType = ConnectionType.LPC;
     this.connectionToken = connectionDetails.ConnectionCredentials.ConnectionToken;
     this.connectionDetails = {
       connectionId: null,
-      preSignedConnectionUrl: null
+      preSignedConnectionUrl: connectionDetails.Websocket.Url
     };
   }
 
@@ -86,7 +86,7 @@ export default class ConnectionDetailsProvider {
     return this.chatClient
       .createParticipantConnection(this.participantToken, [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS] )
       .then((response) => {
-        if ((response.data.Websocket.Url!==null && response.data.Websocket.Url.includes(".iot.")) || !response.data.ConnectionCredentials.ConnectionToken) {
+        if (response.data.Websocket.Url!==null && response.data.Websocket.Url.includes(".iot.")) {
           return this.chatClient
             .createConnectionDetails(this.participantToken)
             .then(response => this._handleCreateConnectionDetailsResponse(response.data))
@@ -97,18 +97,13 @@ export default class ConnectionDetailsProvider {
               });
             });
         } else {
-          return this._handleCreateParticipantConnectionDetailsResponse(response.data);
+          return this._handleCreateParticipantConnectionResponse(response.data);
         }
       })
-      .catch(() => {
-        return this.chatClient
-        .createConnectionDetails(this.participantToken)
-        .then(response => this._handleCreateConnectionDetailsResponse(response.data))
-        .catch(error => {
-          return Promise.reject({
-            reason: "Failed to fetch connectionDetails with createConnectionDetails",
-            _debug: error
-          });
+      .catch(error => {
+        return Promise.reject({
+          reason: "Failed to fetch connectionDetails with createParticipantConnection",
+          _debug: error
         });
       });
   }
