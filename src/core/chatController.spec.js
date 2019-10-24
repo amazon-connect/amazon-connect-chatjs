@@ -111,14 +111,12 @@ describe("ChatController", () => {
   test("sendEvent works as expected", async () => {
     const args = {
       metadata: "metadata",
-      eventType: "event",
-      messageIds: [],
-      contentType: "some_event"
+      contentType: CONTENT_TYPE.participantJoined
     };
     const chatController = getChatController();
     await chatController.connect();
     const response = await chatController.sendEvent(args);
-    expect(chatClient.sendEvent).toHaveBeenCalledWith("token", "some_event", null);
+    expect(chatClient.sendEvent).toHaveBeenCalledWith("token", CONTENT_TYPE.participantJoined, null);
     expect(response.metadata).toBe("metadata");
     expect(response.testField).toBe("test");
   });
@@ -133,7 +131,7 @@ describe("ChatController", () => {
     expect(chatClient.getTranscript).toHaveBeenCalledWith("token", {
       StartPosition: {},
       ScanDirection: TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
-      SortOrder: TRANSCRIPT_DEFAULT_PARAMS.SORT_KEY,
+      SortOrder: TRANSCRIPT_DEFAULT_PARAMS.SORT_ORDER,
       MaxResults: TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS
     });
     expect(response.metadata).toBe("metadata");

@@ -1,5 +1,6 @@
 import Utils from "../utils";
 import { IllegalArgumentException } from "./exceptions";
+import { CONTENT_TYPE } from "../constants";
 
 class ChatControllerArgsValidator {
   /*eslint-disable no-unused-vars*/
@@ -10,9 +11,16 @@ class ChatControllerArgsValidator {
 
   validateSendMessage(args) {
     if (!Utils.isString(args.message)) {
-      Utils.assertIsObject(args.message, "message");
+      throw new IllegalArgumentException(args.message + "is not a valid message");
     }
-    Utils.assertIsNonEmptyString(args.contentType, "contentType");
+    this.validateContentType(args.contentType);
+  }
+
+  validateContentType(contentType) {
+    Utils.assertIsNonEmptyString(contentType, "contentType");
+    if (Object.values(CONTENT_TYPE).indexOf(contentType) === -1){
+      throw new IllegalArgumentException(contentType + "is not a valid contentType");
+    }
   }
 
   /*eslint-disable no-unused-vars*/
@@ -34,7 +42,7 @@ class ChatControllerArgsValidator {
   }
 
   validateSendEvent(args) {
-    Utils.assertIsNonEmptyString(args.contentType, "contentType");
+    this.validateContentType(args.contentType);
   }
 
   // TODO: Not sure about this API.

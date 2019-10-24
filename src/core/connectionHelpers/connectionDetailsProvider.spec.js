@@ -459,6 +459,3 @@ describe("ConnectionDetailsProvider", () => {
     });
   });
 });
-
-
-

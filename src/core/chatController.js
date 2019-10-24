@@ -61,12 +61,11 @@ class ChatController {
   }
 
   sendMessage(args) {
-    const message = args.message;
     const metadata = args.metadata || null;
     this.argsValidator.validateSendMessage(args);
     const connectionToken = this.connectionHelper.getConnectionToken();
     return this.chatClient
-      .sendMessage(connectionToken, message, args.contentType)
+      .sendMessage(connectionToken, args.message, args.contentType)
       .then(this.handleRequestSuccess(metadata, args, "sendMessage"))
       .catch(this.handleRequestFailure(metadata, args, "sendMessage"));
   }
@@ -91,7 +90,7 @@ class ChatController {
     const args = {
       StartPosition: inputArgs.StartPosition || {},
       ScanDirection: inputArgs.ScanDirection || TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
-      SortOrder: inputArgs.SortOrder || TRANSCRIPT_DEFAULT_PARAMS.SORT_KEY,
+      SortOrder: inputArgs.SortOrder || TRANSCRIPT_DEFAULT_PARAMS.SORT_ORDER,
       MaxResults: inputArgs.MaxResults || TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS,
     };
     if (inputArgs.NextToken) {
