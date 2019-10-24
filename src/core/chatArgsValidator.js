@@ -17,10 +17,7 @@ class ChatControllerArgsValidator {
   }
 
   validateContentType(contentType) {
-    Utils.assertIsNonEmptyString(contentType, "contentType");
-    if (Object.values(CONTENT_TYPE).indexOf(contentType) === -1){
-      throw new IllegalArgumentException(contentType + "is not a valid contentType");
-    }
+    Utils.assertIsEnum(contentType, Object.values(CONTENT_TYPE), "contentType"); 
   }
 
   /*eslint-disable no-unused-vars*/

@@ -3,7 +3,7 @@ export const CHAT_CONFIGURATIONS = {
   CONCURRENT_CHATS: 10
 };
 
-export const PARTICIPANT_TOKEN_KEY = "x-amzn-connect-participant-token";
+export const PARTICIPANT_TOKEN_HEADER = "x-amzn-connect-participant-token";
 export const AUTH_HEADER = "X-Amz-Bearer";
 
 export const RESOURCE_PATH = {

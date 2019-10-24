@@ -6,10 +6,10 @@ import {
   HTTP_METHODS,
   REGION_CONFIG,
   REGIONS,
-  PARTICIPANT_TOKEN_KEY
+  PARTICIPANT_TOKEN_HEADER
 } from "../constants";
 import { LogManager } from "../log";
-import { AWS } from "./aws-client";
+import { ConnectParticipant } from "./aws-client";
 
 class ChatClientFactoryImpl {
   constructor() {
@@ -52,7 +52,7 @@ class ChatClient {
     throw new UnImplementedMethodException("disconnectChat in ChatClient");
   }
 
-  sendEvent(eventType, messageIds, visibility, persistence) {
+  sendEvent(connectionToken, contentType, content) {
     throw new UnImplementedMethodException("sendEvent in ChatClient");
   }
 
@@ -60,7 +60,7 @@ class ChatClient {
     throw new UnImplementedMethodException("reconnectChat in ChatClient");
   }
 
-  createParticipantConnection(type, participantToken) {
+  createParticipantConnection(participantToken, type) {
     throw new UnImplementedMethodException("createConnection in ChatClient");
   }
 }
@@ -74,7 +74,7 @@ var createDefaultHeaders = () => ({
 class AWSChatClient extends ChatClient {
   constructor(args) {
     super();
-    var creds = new AWS.Credentials({});
+    var creds = new AWS.Credentials('','');
     var config = new AWS.Config({
       region: args.region,
       endpoint: args.endpoint,
@@ -84,32 +84,30 @@ class AWSChatClient extends ChatClient {
     this.callHttpClient = makeHttpRequest;
     this.invokeUrl = args.endpoint;
     this.logger = LogManager.getLogger({ prefix: "ChatClient" });
-    console.log(this.chatClient);
   }
 
   createParticipantConnection(participantToken, type) {
     let self = this;
-    return new Promise((reject) => {
       var params = {
         Type: type,
         ParticipantToken: participantToken
       };
+      console.log(params);
       var createParticipantConnectionRequest = self.chatClient.createParticipantConnection(
         params
       );
-      self.sendRequest(createParticipantConnectionRequest).then((res) => {
-        self.logger.info("successfully create participant connection");
+      return self._sendRequest(createParticipantConnectionRequest).then((res) => {
+        self.logger.info("successfully create connection request");
         return res;
       }).catch((err) => {
-        self.logger.error("error when create participant connection");
-        reject(err);
+        console.log(err);
+        self.logger.error("error when creating connection request");
+        return Promise.reject(err);
       });
-    });
   }
 
   disconnectParticipant(connectionToken) {
     let self = this;
-    return new Promise((reject) => {
       var params = {
         ConnectionToken: connectionToken
       };
@@ -117,82 +115,77 @@ class AWSChatClient extends ChatClient {
       var disconnectParticipantRequest = self.chatClient.disconnectParticipant(
         params
       );
-      self.sendRequest(disconnectParticipantRequest).then((res) => {
-        self.logger.info("successfully disconnect participant connection");
+      return self._sendRequest(disconnectParticipantRequest).then((res) => {
+        self.logger.info("successfully disconnect participant");
         return res;
       }).catch((err) => {
-        self.logger.error("error when disconnect participant connection");
-        reject(err);
+        self.logger.error("error when disconnecting participant");
+        return Promise.reject(err);
       });
-    });
   }
 
   getTranscript(connectionToken, args) {
     let self = this;
-    return new Promise((reject) => {
-      var params = {
-        ContactId: args.IntialContactId,
-        MaxResults: args.MaxResults,
-        NextToken: args.NextToken,
-        ScanDirection: args.ScanDirection,
-        SortOrder: args.SortOrder,
-        StartPosition: {
-          Id: args.StartPosition.Id,
-          AbsoluteTime: args.StartPosition.AbsoluteTime,
-          MostRecent: args.StartPosition.MostRecent
-        },
-        ConnectionToken: connectionToken
-      };
-      var getTranscriptRequest = self.chatClient.getTranscript(params);
-      self.sendRequest(getTranscriptRequest).then((res) => {
-        self.logger.info("successfully get transcript");
-        return res;
-      }).catch((err) => {
-        self.logger.error("error when get transcript");
-        reject(err);
-      });
+    var params = {
+    MaxResults: args.MaxResults,
+    NextToken: args.NextToken,
+    ScanDirection: args.ScanDirection,
+    SortOrder: args.SortOrder,
+    StartPosition: {
+      Id: args.StartPosition.Id,
+      AbsoluteTime: args.StartPosition.AbsoluteTime,
+      MostRecent: args.StartPosition.MostRecent
+    },
+    ConnectionToken: connectionToken
+    };
+    if (args.ContactId) {
+      params.ContactId = args.ContactId;
+    }
+    var getTranscriptRequest = self.chatClient.getTranscript(params);
+    return self._sendRequest(getTranscriptRequest).then((res) => {
+      self.logger.info("successfully get transcript");
+      return res;
+    }).catch((err) => {
+      self.logger.error("error when getting transcript");
+      return Promise.reject(err);
     });
   }
 
   sendMessage(connectionToken, content, contentType) {
     let self = this;
-    return new Promise((reject) => {
       var params = {
         Content: content,
         ContentType: contentType,
         ConnectionToken: connectionToken
       };
       var sendMessageRequest = self.chatClient.sendMessage(params);
-      self.sendRequest(sendMessageRequest).then((res) => {
+      return self._sendRequest(sendMessageRequest).then((res) => {
         self.logger.info("successfully send message");
         return res;
       }).catch((err) => {
-        self.logger.error("error when send message");
-        reject(err);
+        self.logger.error("error when sending message");
+        return Promise.reject(err);
       });
-    });
   }
 
   sendEvent(connectionToken, contentType, content) {
     let self = this;
-    return new Promise((reject) => {
       var params = {
         ConnectionToken: connectionToken,
         ContentType: contentType,
         Content: content
       };
       var sendEventRequest = self.chatClient.sendEvent(params);
-      self.sendRequest(sendEventRequest).then((res) => {
+      return self._sendRequest(sendEventRequest).then((res) => {
         self.logger.info("successfully send event");
         return res;
       }).catch((err) => {
-        self.logger.error("error when send event");
-        reject(err);
+        self.logger.error("error when sending event");
+        return Promise.reject(err);
       });
-    });
   }
 
-  sendRequest(request) {
+  _sendRequest(request) {
     return new Promise((resolve, reject) => {
       request
         .on("success", function(res) {
@@ -212,7 +205,7 @@ class AWSChatClient extends ChatClient {
       url: this.invokeUrl + RESOURCE_PATH.CONNECTION_DETAILS,
       body: {}
     };
-    requestInput.headers[PARTICIPANT_TOKEN_KEY] = participantToken;
+    requestInput.headers[PARTICIPANT_TOKEN_HEADER] = participantToken;
     return this._callHttpClient(requestInput);
   }
 
