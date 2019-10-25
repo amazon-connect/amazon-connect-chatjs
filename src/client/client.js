@@ -92,7 +92,6 @@ class AWSChatClient extends ChatClient {
         Type: type,
         ParticipantToken: participantToken
       };
-      console.log(params);
       var createParticipantConnectionRequest = self.chatClient.createParticipantConnection(
         params
       );
@@ -100,7 +99,6 @@ class AWSChatClient extends ChatClient {
         self.logger.info("successfully create connection request");
         return res;
       }).catch((err) => {
-        console.log(err);
         self.logger.error("error when creating connection request");
         return Promise.reject(err);
       });
@@ -127,19 +125,19 @@ class AWSChatClient extends ChatClient {
   getTranscript(connectionToken, args) {
     let self = this;
     var params = {
-    MaxResults: args.MaxResults,
-    NextToken: args.NextToken,
-    ScanDirection: args.ScanDirection,
-    SortOrder: args.SortOrder,
+    MaxResults: args.maxResults,
+    NextToken: args.nextToken,
+    ScanDirection: args.scanDirection,
+    SortOrder: args.sortOrder,
     StartPosition: {
-      Id: args.StartPosition.Id,
-      AbsoluteTime: args.StartPosition.AbsoluteTime,
-      MostRecent: args.StartPosition.MostRecent
+      Id: args.startPosition.id,
+      AbsoluteTime: args.startPosition.absoluteTime,
+      MostRecent: args.startPosition.mostRecent
     },
     ConnectionToken: connectionToken
     };
-    if (args.ContactId) {
-      params.ContactId = args.ContactId;
+    if (args.contactId) {
+      params.ContactId = args.contactId;
     }
     var getTranscriptRequest = self.chatClient.getTranscript(params);
     return self._sendRequest(getTranscriptRequest).then((res) => {
