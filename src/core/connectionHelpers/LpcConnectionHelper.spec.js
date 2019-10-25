@@ -1,6 +1,5 @@
 import LpcConnectionHelper from "./LpcConnectionHelper";
 
-
 describe("LpcConnectionHelper", () => {
 
   let connectionDetailsProvider = {

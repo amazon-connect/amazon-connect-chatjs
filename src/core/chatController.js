@@ -1,13 +1,11 @@
 import { ConnectionHelperStatus } from "./connectionHelpers/baseConnectionHelper";
 import {
-  PERSISTENCE,
-  VISIBILITY,
   CHAT_EVENTS,
   TRANSCRIPT_DEFAULT_PARAMS,
-  CONTENT_TYPE,
   AGENT_RECONNECT_CONFIG,
   CUSTOMER_RECONNECT_CONFIG,
-  SESSION_TYPES
+  SESSION_TYPES,
+  CONTENT_TYPE
 } from "../constants";
 import { LogManager } from "../log";
 import { EventBus } from "./eventbus";
@@ -29,7 +27,6 @@ class ChatController {
     });
     this.argsValidator = new ChatServiceArgsValidator();
     this.pubsub = new EventBus();
-
     this.sessionType = args.sessionType;
     this.connectionDetails = args.chatDetails.connectionDetails;
     this.initialContactId = args.chatDetails.initialContactId;
@@ -38,7 +35,6 @@ class ChatController {
     this.chatClient = args.chatClient;
     this.participantToken = args.chatDetails.participantToken;
     this.websocketManager = args.websocketManager;
-
     this._participantDisconnected = false;
     this.sessionMetadata = {};
   }
@@ -65,13 +61,11 @@ class ChatController {
   }
 
   sendMessage(args) {
-    const message = args.message;
-    const type = args.type || CONTENT_TYPE.textPlain;
     const metadata = args.metadata || null;
-    this.argsValidator.validateSendMessage(message, type);
+    this.argsValidator.validateSendMessage(args);
     const connectionToken = this.connectionHelper.getConnectionToken();
     return this.chatClient
-      .sendMessage(connectionToken, message, type)
+      .sendMessage(connectionToken, args.message, args.contentType)
       .then(this.handleRequestSuccess(metadata, args, "sendMessage"))
       .catch(this.handleRequestFailure(metadata, args, "sendMessage"));
   }
@@ -80,16 +74,12 @@ class ChatController {
     const metadata = args.metadata || null;
     this.argsValidator.validateSendEvent(args);
     const connectionToken = this.connectionHelper.getConnectionToken();
-    const persistenceArgument = args.persistence || PERSISTENCE.PERSISTED;
-    const visibilityArgument = args.visibility || VISIBILITY.ALL;
-
+    const content = args.content || null;
     return this.chatClient
       .sendEvent(
         connectionToken,
-        args.eventType,
-        args.messageIds,
-        visibilityArgument,
-        persistenceArgument
+        args.contentType,
+        content
       )
       .then(this.handleRequestSuccess(metadata, args, "sendEvent"))
       .catch(this.handleRequestFailure(metadata, args, "sendEvent"));
@@ -98,11 +88,10 @@ class ChatController {
   getTranscript(inputArgs) {
     const metadata = inputArgs.metadata || null;
     const args = {
-      InitialContactId: this.initialContactId,
-      StartKey: inputArgs.StartKey || {},
+      StartPosition: inputArgs.StartPosition || {},
       ScanDirection: inputArgs.ScanDirection || TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
-      SortKey: inputArgs.SortKey || TRANSCRIPT_DEFAULT_PARAMS.SORT_KEY,
-      MaxResults: inputArgs.MaxResults || TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS
+      SortOrder: inputArgs.SortOrder || TRANSCRIPT_DEFAULT_PARAMS.SORT_ORDER,
+      MaxResults: inputArgs.MaxResults || TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS,
     };
     if (inputArgs.NextToken) {
       args.NextToken = inputArgs.NextToken;
@@ -169,9 +158,7 @@ class ChatController {
 
   _handleIncomingMessage(incomingData) {
     try {
-      const eventType = {
-        TYPING: CHAT_EVENTS.INCOMING_TYPING
-      }[incomingData.Data.Type] || CHAT_EVENTS.INCOMING_MESSAGE;
+      const eventType = incomingData.ContentType === CONTENT_TYPE.typing ? CHAT_EVENTS.INCOMING_TYPING : CHAT_EVENTS.INCOMING_MESSAGE;
       this._forwardChatEvent(eventType, {
         data: incomingData,
         chatDetails: this.getChatDetails()
@@ -206,10 +193,7 @@ class ChatController {
 
     if (this._shouldAcknowledgeContact()) {
       this.sendEvent({
-        eventType: CHAT_EVENTS.CONNECTION_ACK,
-        messageIds: [],
-        visibility: VISIBILITY.ALL,
-        persistence: PERSISTENCE.NON_PERSISTED
+        contentType: CONTENT_TYPE.connectionAcknowledged
       });
     }
 

@@ -1,42 +1,23 @@
-import Utils from "./utils";
 //Placeholder
 export const CHAT_CONFIGURATIONS = {
   CONCURRENT_CHATS: 10
 };
 
-export const CONNECTION_TOKEN_KEY = "x-amzn-connect-connection-token";
-export const PARTICIPANT_TOKEN_KEY = "x-amzn-connect-participant-token";
+export const PARTICIPANT_TOKEN_HEADER = "x-amzn-connect-participant-token";
+export const AUTH_HEADER = "X-Amz-Bearer";
 
 export const RESOURCE_PATH = {
-  MESSAGE: "/contact/chat/participant/message",
-  TRANSCRIPT: "/contact/chat/participant/transcript",
-  EVENT: "/contact/chat/participant/event",
-  DISCONNECT: "/contact/chat/participant/disconnect",
-  CONNECTION_DETAILS: "/contact/chat/participant/connection-details"
+  CONNECTION_DETAILS: "/contact/chat/participant/connection-details",
+  MESSAGE: "/participant/message",
+  TRANSCRIPT: "/participant/transcript",
+  EVENT: "/participant/event",
+  DISCONNECT: "/participant/disconnect",
+  PARTICIPANT_CONNECTION: "/participant/connection"
 };
 
 export const HTTP_METHODS = {
   POST: "post"
 };
-
-export const MESSAGE_PERSISTENCE = {
-  PERSISTED: "PERSISTED",
-  NON_PERSISTED: "NON_PERSISTED"
-};
-
-export const CONTENT_TYPE = {
-  textPlain: "text/plain"
-};
-
-export const VISIBILITY = Utils.makeEnum([
-  "ALL",
-  "MANAGER",
-  "AGENT",
-  "CUSTOMER",
-  "THIRDPARTY"
-]);
-
-export const PERSISTENCE = Utils.makeEnum(["PERSISTED", "NON_PERSISTED"]);
 
 export const REGION_CONFIG = {
   "us-west-2": {
@@ -77,9 +58,23 @@ export const CHAT_EVENTS = {
   CONNECTION_ACK: "CONNECTION_ACK"
 };
 
+export const CONTENT_TYPE = {
+  textPlain: "text/plain",
+  connectionAcknowledged: "application/vnd.amazon.connect.event.connection.acknowledged",
+  typing: "application/vnd.amazonaws.connect.event.typing",
+  participantJoined: "application/vnd.amazonaws.connect.event.participant.joined",
+  participantLeft: "application/vnd.amazonaws.connect.event.participant.left",
+  transferSucceeded: "application/vnd.amazonaws.connect.event.transfer.succeed",
+  transferFailed: "application/vnd.amazonaws.connect.event.transfer.failed",
+  chatEnded: "application/vnd.amazonaws.connect.event.chat.ended"
+};
+
+export const EVENT = "EVENT";
+export const MESSAGE = "MESSAGE";
+
 export const TRANSCRIPT_DEFAULT_PARAMS = {
   MAX_RESULTS: 15,
-  SORT_KEY: "ASCENDING",
+  SORT_ORDER: "ASCENDING",
   SCAN_DIRECTION: "BACKWARD"
 };
 

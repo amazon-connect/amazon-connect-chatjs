@@ -5,13 +5,11 @@ import {
   RESOURCE_PATH,
   HTTP_METHODS,
   REGION_CONFIG,
-  CONTENT_TYPE,
-  MESSAGE_PERSISTENCE,
-  CONNECTION_TOKEN_KEY,
-  PARTICIPANT_TOKEN_KEY,
-  REGIONS
+  REGIONS,
+  PARTICIPANT_TOKEN_HEADER
 } from "../constants";
 import { LogManager } from "../log";
+import { ConnectParticipant } from "./aws-client";
 
 class ChatClientFactoryImpl {
   constructor() {
@@ -25,20 +23,21 @@ class ChatClientFactoryImpl {
     if (this.clientCache[region]) {
       return this.clientCache[region];
     }
-    var client = this._createClient(options);
+    var client = this._createAwsClient(options);
     this.clientCache[region] = client;
     return client;
   }
 
-  _createClient(options) {
+  _createAwsClient(options) {
     var region = options.region;
     var endpointOverride = GlobalConfig.getEndpointOverride();
     var stageConfig = REGION_CONFIG[region];
     if (endpointOverride) {
       stageConfig.invokeUrl = endpointOverride;
     }
-    return new HttpChatClient({
-      stageConfig: stageConfig
+    return new AWSChatClient({
+      endpoint: stageConfig.invokeUrl,
+      region: region
     });
   }
 }
@@ -53,12 +52,16 @@ class ChatClient {
     throw new UnImplementedMethodException("disconnectChat in ChatClient");
   }
 
-  sendEvent(eventType, messageIds, visibility, persistence) {
+  sendEvent(connectionToken, contentType, content) {
     throw new UnImplementedMethodException("sendEvent in ChatClient");
   }
 
   createConnectionDetails(participantToken) {
     throw new UnImplementedMethodException("reconnectChat in ChatClient");
+  }
+
+  createParticipantConnection(participantToken, type) {
+    throw new UnImplementedMethodException("createConnection in ChatClient");
   }
 }
 /*eslint-enable*/
@@ -68,72 +71,131 @@ var createDefaultHeaders = () => ({
   Accept: "application/json"
 });
 
-class HttpChatClient extends ChatClient {
+class AWSChatClient extends ChatClient {
   constructor(args) {
     super();
-    this.invokeUrl = args.stageConfig.invokeUrl;
+    var creds = new AWS.Credentials('','');
+    var config = new AWS.Config({
+      region: args.region,
+      endpoint: args.endpoint,
+      credentials: creds
+    });
+    this.chatClient = new AWS.ConnectParticipant(config);
     this.callHttpClient = makeHttpRequest;
+    this.invokeUrl = args.endpoint;
     this.logger = LogManager.getLogger({ prefix: "ChatClient" });
   }
 
-  sendMessage(connectionToken, message, type) {
-    console.log(type);
-    var body = {
-      Message: {
-        ContentType: CONTENT_TYPE.textPlain,
-        Content: message,
-        Persistence: MESSAGE_PERSISTENCE.PERSISTED
-      }
-    };
-    var requestInput = {
-      method: HTTP_METHODS.POST,
-      headers: {},
-      url: this.invokeUrl + RESOURCE_PATH.MESSAGE,
-      body: body
-    };
-    requestInput.headers[CONNECTION_TOKEN_KEY] = connectionToken;
-    return this._callHttpClient(requestInput);
+  createParticipantConnection(participantToken, type) {
+    let self = this;
+      var params = {
+        Type: type,
+        ParticipantToken: participantToken
+      };
+      console.log(params);
+      var createParticipantConnectionRequest = self.chatClient.createParticipantConnection(
+        params
+      );
+      return self._sendRequest(createParticipantConnectionRequest).then((res) => {
+        self.logger.info("successfully create connection request");
+        return res;
+      }).catch((err) => {
+        console.log(err);
+        self.logger.error("error when creating connection request");
+        return Promise.reject(err);
+      });
+  }
+
+  disconnectParticipant(connectionToken) {
+    let self = this;
+      var params = {
+        ConnectionToken: connectionToken
+      };
+
+      var disconnectParticipantRequest = self.chatClient.disconnectParticipant(
+        params
+      );
+      return self._sendRequest(disconnectParticipantRequest).then((res) => {
+        self.logger.info("successfully disconnect participant");
+        return res;
+      }).catch((err) => {
+        self.logger.error("error when disconnecting participant");
+        return Promise.reject(err);
+      });
   }
 
   getTranscript(connectionToken, args) {
-    var requestInput = {
-      method: HTTP_METHODS.POST,
-      headers: {},
-      url: this.invokeUrl + RESOURCE_PATH.TRANSCRIPT,
-      body: args
+    let self = this;
+    var params = {
+    MaxResults: args.MaxResults,
+    NextToken: args.NextToken,
+    ScanDirection: args.ScanDirection,
+    SortOrder: args.SortOrder,
+    StartPosition: {
+      Id: args.StartPosition.Id,
+      AbsoluteTime: args.StartPosition.AbsoluteTime,
+      MostRecent: args.StartPosition.MostRecent
+    },
+    ConnectionToken: connectionToken
     };
-    requestInput.headers[CONNECTION_TOKEN_KEY] = connectionToken;
-    return this._callHttpClient(requestInput);
+    if (args.ContactId) {
+      params.ContactId = args.ContactId;
+    }
+    var getTranscriptRequest = self.chatClient.getTranscript(params);
+    return self._sendRequest(getTranscriptRequest).then((res) => {
+      self.logger.info("successfully get transcript");
+      return res;
+    }).catch((err) => {
+      self.logger.error("error when getting transcript");
+      return Promise.reject(err);
+    });
   }
 
-  sendEvent(connectionToken, eventType, messageIds, visibility, persistence) {
-    console.log(messageIds);
-    console.log(persistence);
-    var body = {
-      ParticipantEvent: {
-        Visibility: visibility,
-        ParticipantEventType: eventType
-      }
-    };
-    var requestInput = {
-      method: HTTP_METHODS.POST,
-      headers: {},
-      url: this.invokeUrl + RESOURCE_PATH.EVENT,
-      body: body
-    };
-    requestInput.headers[CONNECTION_TOKEN_KEY] = connectionToken;
-    return this._callHttpClient(requestInput);
+  sendMessage(connectionToken, content, contentType) {
+    let self = this;
+      var params = {
+        Content: content,
+        ContentType: contentType,
+        ConnectionToken: connectionToken
+      };
+      var sendMessageRequest = self.chatClient.sendMessage(params);
+      return self._sendRequest(sendMessageRequest).then((res) => {
+        self.logger.info("successfully send message");
+        return res;
+      }).catch((err) => {
+        self.logger.error("error when sending message");
+        return Promise.reject(err);
+      });
   }
 
-  disconnectChat(connectionToken) {
-    var requestInput = {
-      method: HTTP_METHODS.POST,
-      headers: {},
-      url: this.invokeUrl + RESOURCE_PATH.DISCONNECT,
-      body: {}
-    };
-    requestInput.headers[CONNECTION_TOKEN_KEY] = connectionToken;
-    return this._callHttpClient(requestInput);
+  sendEvent(connectionToken, contentType, content) {
+    let self = this;
+      var params = {
+        ConnectionToken: connectionToken,
+        ContentType: contentType,
+        Content: content
+      };
+      var sendEventRequest = self.chatClient.sendEvent(params);
+      return self._sendRequest(sendEventRequest).then((res) => {
+        self.logger.info("successfully send event");
+        return res;
+      }).catch((err) => {
+        self.logger.error("error when sending event");
+        return Promise.reject(err);
+      });
+  }
+
+  _sendRequest(request) {
+    return new Promise((resolve, reject) => {
+      request
+        .on("success", function(res) {
+          resolve(res);
+        })
+        .on("error", function(err) {
+          reject(err);
+        })
+        .send();
+    });
   }
 
   createConnectionDetails(participantToken) {
@@ -143,7 +205,7 @@ class HttpChatClient extends ChatClient {
       url: this.invokeUrl + RESOURCE_PATH.CONNECTION_DETAILS,
       body: {}
     };
-    requestInput.headers[PARTICIPANT_TOKEN_KEY] = participantToken;
+    requestInput.headers[PARTICIPANT_TOKEN_HEADER] = participantToken;
     return this._callHttpClient(requestInput);
   }
 

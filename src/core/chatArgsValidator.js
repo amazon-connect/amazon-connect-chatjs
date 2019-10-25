@@ -1,6 +1,6 @@
 import Utils from "../utils";
-import { CONTENT_TYPE, VISIBILITY, PERSISTENCE } from "../constants";
 import { IllegalArgumentException } from "./exceptions";
+import { CONTENT_TYPE } from "../constants";
 
 class ChatControllerArgsValidator {
   /*eslint-disable no-unused-vars*/
@@ -9,11 +9,15 @@ class ChatControllerArgsValidator {
   }
   /*eslint-enable no-unused-vars*/
 
-  validateSendMessage(message, type) {
-    if (!Utils.isString(message)) {
-      Utils.assertIsObject(message, "message");
+  validateSendMessage(args) {
+    if (!Utils.isString(args.message)) {
+      throw new IllegalArgumentException(args.message + "is not a valid message");
     }
-    Utils.assertIsEnum(type, Object.values(CONTENT_TYPE), "type");
+    this.validateContentType(args.contentType);
+  }
+
+  validateContentType(contentType) {
+    Utils.assertIsEnum(contentType, Object.values(CONTENT_TYPE), "contentType"); 
   }
 
   /*eslint-disable no-unused-vars*/
@@ -35,24 +39,7 @@ class ChatControllerArgsValidator {
   }
 
   validateSendEvent(args) {
-    Utils.assertIsNonEmptyString(args.eventType, "eventType");
-    if (args.messageIds !== undefined) {
-      Utils.assertIsList(args.messageIds);
-    }
-    if (args.visibility !== undefined) {
-      Utils.assertIsEnum(
-        args.visibility,
-        Object.values(VISIBILITY),
-        "visibility"
-      );
-    }
-    if (args.persistence !== undefined) {
-      Utils.assertIsEnum(
-        args.persistence,
-        Object.values(PERSISTENCE),
-        "persistence"
-      );
-    }
+    this.validateContentType(args.contentType);
   }
 
   // TODO: Not sure about this API.
