@@ -88,13 +88,16 @@ class ChatController {
   getTranscript(inputArgs) {
     const metadata = inputArgs.metadata || null;
     const args = {
-      StartPosition: inputArgs.StartPosition || {},
-      ScanDirection: inputArgs.ScanDirection || TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
-      SortOrder: inputArgs.SortOrder || TRANSCRIPT_DEFAULT_PARAMS.SORT_ORDER,
-      MaxResults: inputArgs.MaxResults || TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS,
+      startPosition: inputArgs.startPosition || {},
+      scanDirection: inputArgs.scanDirection || TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
+      sortOrder: inputArgs.sortOrder || TRANSCRIPT_DEFAULT_PARAMS.SORT_ORDER,
+      maxResults: inputArgs.maxResults || TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS,
     };
-    if (inputArgs.NextToken) {
-      args.NextToken = inputArgs.NextToken;
+    if (inputArgs.nextToken) {
+      args.nextToken = inputArgs.nextToken;
+    }
+    if (inputArgs.contactId) {
+      args.contactId = inputArgs.contactId;
     }
     const connectionToken = this.connectionHelper.getConnectionToken();
     return this.chatClient

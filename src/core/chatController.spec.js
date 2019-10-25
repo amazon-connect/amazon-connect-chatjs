@@ -129,10 +129,10 @@ describe("ChatController", () => {
     await chatController.connect();
     const response = await chatController.getTranscript(args);
     expect(chatClient.getTranscript).toHaveBeenCalledWith("token", {
-      StartPosition: {},
-      ScanDirection: TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
-      SortOrder: TRANSCRIPT_DEFAULT_PARAMS.SORT_ORDER,
-      MaxResults: TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS
+      startPosition: {},
+      scanDirection: TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
+      sortOrder: TRANSCRIPT_DEFAULT_PARAMS.SORT_ORDER,
+      maxResults: TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS
     });
     expect(response.metadata).toBe("metadata");
     expect(response.testField).toBe("test");
