@@ -48,8 +48,8 @@ class ChatClient {
     throw new UnImplementedMethodException("sendTextMessage in ChatClient");
   }
 
-  disconnectChat(participantToken) {
-    throw new UnImplementedMethodException("disconnectChat in ChatClient");
+  disconnectParticipant(participantToken) {
+    throw new UnImplementedMethodException("disconnectParticipant in ChatClient");
   }
 
   sendEvent(connectionToken, contentType, content) {

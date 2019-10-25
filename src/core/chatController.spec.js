@@ -71,7 +71,7 @@ describe("ChatController", () => {
       sendMessage: jest.fn(() => Promise.resolve({ testField: "test" })),
       sendEvent: jest.fn(() => Promise.resolve({ testField: "test" })),
       getTranscript: jest.fn(() => Promise.resolve({ testField: "test" })),
-      disconnectChat: jest.fn(() => Promise.resolve({ testField: "test" }))
+      disconnectParticipant: jest.fn(() => Promise.resolve({ testField: "test" }))
     };
   });
 
@@ -142,7 +142,7 @@ describe("ChatController", () => {
     const chatController = getChatController();
     await chatController.connect();
     const response = await chatController.disconnectParticipant();
-    expect(chatClient.disconnectChat).toHaveBeenCalledWith("token");
+    expect(chatClient.disconnectParticipant).toHaveBeenCalledWith("token");
     expect(response.testField).toBe("test");
   });
   

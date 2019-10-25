@@ -230,7 +230,7 @@ class ChatController {
   disconnectParticipant() {
     const connectionToken = this.connectionHelper.getConnectionToken();
     return this.chatClient
-      .disconnectChat(connectionToken)
+      .disconnectParticipant(connectionToken)
       .then(response => {
         this.logger.info("disconnect participant successful");
         this._participantDisconnected = true;
