@@ -1,5 +1,5 @@
-import { ConnectionType } from "./baseConnectionHelper";
 import { IllegalArgumentException } from "../exceptions";
+import { ConnectionType, ConnectionInfoType } from "./baseConnectionHelper";
 
 export default class ConnectionDetailsProvider {
 
@@ -59,12 +59,20 @@ export default class ConnectionDetailsProvider {
     };
   }
 
-  _handleDetailsResponse(connectionDetails) {
-    if (connectionDetails.PreSignedConnectionUrl){
-      this.connectionType = connectionDetails.PreSignedConnectionUrl.includes(".iot.") 
-        ? ConnectionType.IOT : ConnectionType.LPC;
+  _handleCreateParticipantConnectionResponse(connectionDetails) {
+    this.connectionType = ConnectionType.LPC;
+    this.connectionToken = connectionDetails.ConnectionCredentials.ConnectionToken;
+    this.connectionDetails = {
+      connectionId: null,
+      preSignedConnectionUrl: connectionDetails.Websocket.Url
+    };
+  }
+
+  _handleCreateConnectionDetailsResponse(connectionDetails) {
+    if (connectionDetails.PreSignedConnectionUrl) {
+      this.connectionType = connectionDetails.PreSignedConnectionUrl.includes(".iot.") ? ConnectionType.IOT : ConnectionType.LPC;
     } else {
-      this.connectionType = ConnectionType.LPC;
+      this.connectionType = connectionDetails.connectionId ? ConnectionType.IOT : ConnectionType.LPC;
     }
     this.connectionToken = connectionDetails.ParticipantCredentials.ConnectionAuthenticationToken;
     this.connectionDetails = {
@@ -83,20 +91,32 @@ export default class ConnectionDetailsProvider {
   }
 
   _fetchConnectionDetails() {
+    //If we are using LPC, ping the new API. Otherwise, need to use the old API to retrieve connectionId.
     if (this.participantToken) {
       return this.chatClient
-        .createConnectionDetails(this.participantToken)
-        .then(response => this._handleDetailsResponse(response.data))
+        .createParticipantConnection(this.participantToken, [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS] )
+        .then((response) => {
+          if (response.data.Websocket.Url!==null && response.data.Websocket.Url.includes(".iot.")) {
+            return this.chatClient
+              .createConnectionDetails(this.participantToken)
+              .then(response => this._handleCreateConnectionDetailsResponse(response.data))
+              .catch(error => {
+                return Promise.reject({
+                  reason: "Failed to fetch connectionDetails with createConnectionDetails",
+                  _debug: error
+                });
+              });
+          } else {
+            return this._handleCreateParticipantConnectionResponse(response.data);
+          }
+        })
         .catch(error => {
           return Promise.reject({
-            reason: "Failed to fetch connectionDetails",
+            reason: "Failed to fetch connectionDetails with createParticipantConnection",
             _debug: error
           });
         });
     } else if (this.createConnectionToken) {
-      // Note that chatTokenTransport.participantToken is the current naming scheme 
-      // for the getConnectionToken "chat_token" API, but it is going to be updated, 
-      // so this call will need to be adjusted.
       return this.createConnectionToken()
         .then(response => this._handleTokenResponse(response.chatTokenTransport.participantToken))
         .catch(error => {
@@ -105,7 +125,8 @@ export default class ConnectionDetailsProvider {
             _debug: error
           });
         });
-    } else {
+    }
+    else {
       return Promise.reject({
         reason: "Failed to fetch connectionDetails: createConnectionToken or its credentials were not present.",
         _debug: new IllegalArgumentException("createConnectionToken or its credentials were invalid")

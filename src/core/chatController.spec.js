@@ -1,10 +1,10 @@
 import {
-  PERSISTENCE,
-  VISIBILITY,
   CHAT_EVENTS,
   TRANSCRIPT_DEFAULT_PARAMS,
   CONTENT_TYPE,
-  SESSION_TYPES
+  SESSION_TYPES,
+  MESSAGE,
+  EVENT
 } from "../constants";
 import Utils from "../utils";
 import { ChatController } from "./chatController";
@@ -57,17 +57,15 @@ describe("ChatController", () => {
       getConnectionToken: () => "token",
       $simulateMessage: (message) => {
         messageHandlers.forEach(f => f({
-          Data: {
-            Type: "INCOMING_MESSAGE",
-            Message: message
-          }
+          Type: MESSAGE,
+          ContentType: CONTENT_TYPE.textPlain,
+          Message: message
         }));
       },
       $simulateTyping: () => {
         messageHandlers.forEach(f => f({
-          Data: {
-            Type: "TYPING"
-          }
+          Type: EVENT,
+          ContentType: CONTENT_TYPE.typing
         }));
       }
     });
@@ -75,7 +73,7 @@ describe("ChatController", () => {
       sendMessage: jest.fn(() => Promise.resolve({ testField: "test" })),
       sendEvent: jest.fn(() => Promise.resolve({ testField: "test" })),
       getTranscript: jest.fn(() => Promise.resolve({ testField: "test" })),
-      disconnectChat: jest.fn(() => Promise.resolve({ testField: "test" }))
+      disconnectParticipant: jest.fn(() => Promise.resolve({ testField: "test" }))
     };
   });
 
@@ -101,7 +99,8 @@ describe("ChatController", () => {
   test("sendMessage works as expected", async () => {
     const args = {
       metadata: "metadata",
-      message: "message"
+      message: "message",
+      contentType: CONTENT_TYPE.textPlain
     };
     const chatController = getChatController();
     await chatController.connect();
@@ -114,13 +113,12 @@ describe("ChatController", () => {
   test("sendEvent works as expected", async () => {
     const args = {
       metadata: "metadata",
-      eventType: "event",
-      messageIds: []
+      contentType: CONTENT_TYPE.participantJoined
     };
     const chatController = getChatController();
     await chatController.connect();
     const response = await chatController.sendEvent(args);
-    expect(chatClient.sendEvent).toHaveBeenCalledWith("token", "event", [], VISIBILITY.ALL, PERSISTENCE.PERSISTED);
+    expect(chatClient.sendEvent).toHaveBeenCalledWith("token", CONTENT_TYPE.participantJoined, null);
     expect(response.metadata).toBe("metadata");
     expect(response.testField).toBe("test");
   });
@@ -133,11 +131,10 @@ describe("ChatController", () => {
     await chatController.connect();
     const response = await chatController.getTranscript(args);
     expect(chatClient.getTranscript).toHaveBeenCalledWith("token", {
-      InitialContactId: "id",
-      StartKey: {},
-      ScanDirection: TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
-      SortKey: TRANSCRIPT_DEFAULT_PARAMS.SORT_KEY,
-      MaxResults: TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS
+      startPosition: {},
+      scanDirection: TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
+      sortOrder: TRANSCRIPT_DEFAULT_PARAMS.SORT_ORDER,
+      maxResults: TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS
     });
     expect(response.metadata).toBe("metadata");
     expect(response.testField).toBe("test");
@@ -147,7 +144,7 @@ describe("ChatController", () => {
     const chatController = getChatController();
     await chatController.connect();
     const response = await chatController.disconnectParticipant();
-    expect(chatClient.disconnectChat).toHaveBeenCalledWith("token");
+    expect(chatClient.disconnectParticipant).toHaveBeenCalledWith("token");
     expect(response.testField).toBe("test");
   });
   

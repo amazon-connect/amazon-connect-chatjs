@@ -233,5 +233,4 @@ class IotConnectionHelper extends BaseConnectionHelper {
   }
 }
 
-
 export default IotConnectionHelper;
