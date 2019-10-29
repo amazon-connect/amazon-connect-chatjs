@@ -81,7 +81,7 @@ export default class ConnectionDetailsProvider {
     };
   }
 
-  _handleTokenResponse(connectionToken) {
+  _handleCreateConnectionTokenResponse(connectionToken) {
     this.connectionToken = connectionToken;
     this.connectionType = ConnectionType.LPC;
     this.connectionDetails = {
@@ -118,7 +118,7 @@ export default class ConnectionDetailsProvider {
         });
     } else if (this.createConnectionToken) {
       return this.createConnectionToken()
-        .then(response => this._handleTokenResponse(response.chatTokenTransport.participantToken))
+        .then(response => this._handleCreateConnectionTokenResponse(response.chatTokenTransport.participantToken))
         .catch(error => {
           return Promise.reject({
             reason: "Failed to fetch connectionToken via createConnectionToken api",
