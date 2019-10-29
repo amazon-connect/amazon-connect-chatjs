@@ -46,6 +46,7 @@ describe("ConnectionHelperProvider", () => {
   function setup() {
     chatClient.createConnectionDetails = jest.fn(() => Promise.resolve({ data: fetchedConnectionDetails }));
     chatClient.createParticipantConnection = jest.fn(() => Promise.resolve({ data: fetchedParticipantConnection }));
+    createConnectionToken = jest.fn(() => Promise.resolve({ chatTokenTransport: 'token'}));
   }
 
   function getConnectionHelper() {

@@ -91,7 +91,7 @@ export default class ConnectionDetailsProvider {
   }
 
   _fetchConnectionDetails() {
-    //If we are using LPC, ping the new API. Otherwise, need to use the old API to retrieve connectionId.
+    // If we are using LPC, ping the new API. Otherwise, need to use the old API to retrieve connectionId.
     if (this.participantToken) {
       return this.chatClient
         .createParticipantConnection(this.participantToken, [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS] )
@@ -128,8 +128,8 @@ export default class ConnectionDetailsProvider {
     }
     else {
       return Promise.reject({
-        reason: "Failed to fetch connectionDetails: createConnectionToken or its credentials were not present.",
-        _debug: new IllegalArgumentException("createConnectionToken or its credentials were invalid")
+        reason: "Failed to fetch connectionDetails: a valid createConnectionToken was not supplied.",
+        _debug: new IllegalArgumentException("createConnectionToken was invalid")
       });
     }
   }

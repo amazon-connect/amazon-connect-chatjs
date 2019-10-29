@@ -35,6 +35,8 @@ class ChatController {
     this.chatClient = args.chatClient;
     this.participantToken = args.chatDetails.participantToken;
     this.websocketManager = args.websocketManager;
+    
+    //from StreamsJS' ChatConnection.prototype.getConnectionToken API
     this.createConnectionToken = args.chatDetails.getConnectionToken;
     this._participantDisconnected = false;
     this.sessionMetadata = {};
