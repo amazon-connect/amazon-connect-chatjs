@@ -64,7 +64,7 @@ export const CONTENT_TYPE = {
   typing: "application/vnd.amazonaws.connect.event.typing",
   participantJoined: "application/vnd.amazonaws.connect.event.participant.joined",
   participantLeft: "application/vnd.amazonaws.connect.event.participant.left",
-  transferSucceeded: "application/vnd.amazonaws.connect.event.transfer.succeed",
+  transferSucceeded: "application/vnd.amazonaws.connect.event.transfer.succeeded",
   transferFailed: "application/vnd.amazonaws.connect.event.transfer.failed",
   chatEnded: "application/vnd.amazonaws.connect.event.chat.ended"
 };
