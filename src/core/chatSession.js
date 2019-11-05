@@ -112,6 +112,10 @@ class ChatSession {
     this.controller.subscribe(CHAT_EVENTS.CONNECTION_ESTABLISHED, callback);
   }
 
+  onEnded(callback) {
+    this.controller.subscribe(CHAT_EVENTS.CHAT_ENDED, callback);
+  }
+
   sendMessage(args) {
     return this.controller.sendMessage(args);
   }
