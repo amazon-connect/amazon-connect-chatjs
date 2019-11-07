@@ -91,7 +91,9 @@ export default class ConnectionDetailsProvider {
   }
 
   _fetchConnectionDetails() {
-    // If we are using LPC, ping the new API. Otherwise, need to use the old API to retrieve connectionId.
+    // If we are using LPC, use the new createParticipantConnection Chat API. 
+    // Otherwise, use the old createConnectionDetails API 
+    // (createParticipantConnection does not give us connectionId, which is mandatory for IOT connection establishment.)
     if (this.participantToken) {
       return this.chatClient
         .createParticipantConnection(this.participantToken, [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS] )

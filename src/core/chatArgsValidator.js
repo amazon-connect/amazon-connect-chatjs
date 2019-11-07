@@ -53,7 +53,7 @@ class ChatControllerArgsValidator {
 class ChatServiceArgsValidator extends ChatControllerArgsValidator {
   validateChatDetails(chatDetails) {
     Utils.assertIsObject(chatDetails, "chatDetails");
-    if (chatDetails.getConnectionToken && !Utils.isFunction(chatDetails.getConnectionToken)) {
+    if (!chatDetails.participantToken && !Utils.isFunction(chatDetails.getConnectionToken)) {
       throw new IllegalArgumentException(
         "getConnectionToken was not a function", 
         chatDetails.getConnectionToken
