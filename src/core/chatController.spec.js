@@ -67,6 +67,12 @@ describe("ChatController", () => {
           Type: EVENT,
           ContentType: CONTENT_TYPE.typing
         }));
+      },
+      $simulateEnding: () => {
+        messageHandlers.forEach(f => f({
+          Type: EVENT,
+          ContentType: CONTENT_TYPE.chatEnded
+        }));
       }
     });
     chatClient = {
@@ -164,6 +170,16 @@ describe("ChatController", () => {
     const messageHandler = jest.fn();
     chatController.subscribe(CHAT_EVENTS.INCOMING_TYPING, messageHandler);
     chatController.connectionHelper.$simulateTyping();
+    await Utils.delay(1);
+    expect(messageHandler).toHaveBeenCalledTimes(1);
+  });
+
+  test("ended event receive works as expected", async () => {
+    const chatController = getChatController();
+    await chatController.connect();
+    const messageHandler = jest.fn();
+    chatController.subscribe(CHAT_EVENTS.CHAT_ENDED, messageHandler);
+    chatController.connectionHelper.$simulateEnding();
     await Utils.delay(1);
     expect(messageHandler).toHaveBeenCalledTimes(1);
   });

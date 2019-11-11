@@ -17,6 +17,7 @@ class LpcConnectionHelper extends BaseConnectionHelper {
       LpcConnectionHelper.baseInstance = new LPCConnectionHelperBase(connectionDetailsProvider, websocketManager);
     }
     this.initialContactId = initialContactId;
+    this.status = null;
     this.eventBus = new EventBus();
     this.subscriptions = [
       LpcConnectionHelper.baseInstance.onEnded(this.handleEnded.bind(this)),
@@ -35,6 +36,7 @@ class LpcConnectionHelper extends BaseConnectionHelper {
     super.end();
     this.eventBus.unsubscribeAll();
     this.subscriptions.forEach(f => f());
+    this.status = ConnectionHelperStatus.Ended;
     if (LpcConnectionHelper.baseInstance && this.cleanUpBaseInstance) {
       LpcConnectionHelper.baseInstance.end();
       LpcConnectionHelper.baseInstance = null;
@@ -42,7 +44,7 @@ class LpcConnectionHelper extends BaseConnectionHelper {
   }
 
   getStatus() {
-    return LpcConnectionHelper.baseInstance.getStatus();
+    return this.status || LpcConnectionHelper.baseInstance.getStatus();
   }
 
   onEnded(handler) {

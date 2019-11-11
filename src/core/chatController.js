@@ -170,6 +170,13 @@ class ChatController {
         data: incomingData,
         chatDetails: this.getChatDetails()
       });
+      if (incomingData.ContentType === CONTENT_TYPE.chatEnded) {
+        this._forwardChatEvent(CHAT_EVENTS.CHAT_ENDED, {
+          data: null,
+          chatDetails: this.getChatDetails()
+        });
+        this.breakConnection();
+      }
     } catch (e) {
       this.logger.error(
         "Error occured while handling message from Connection. eventData: ",

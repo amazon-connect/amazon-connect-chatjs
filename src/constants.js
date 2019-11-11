@@ -55,12 +55,13 @@ export const CHAT_EVENTS = {
   CONNECTION_ESTABLISHED: "CONNECTION_ESTABLISHED",
   CONNECTION_LOST: "CONNECTION_LOST",
   CONNECTION_BROKEN: "CONNECTION_BROKEN",
-  CONNECTION_ACK: "CONNECTION_ACK"
+  CONNECTION_ACK: "CONNECTION_ACK",
+  CHAT_ENDED: "CHAT_ENDED"
 };
 
 export const CONTENT_TYPE = {
   textPlain: "text/plain",
-  connectionAcknowledged: "application/vnd.amazon.connect.event.connection.acknowledged",
+  connectionAcknowledged: "application/vnd.amazonaws.connect.event.connection.acknowledged",
   typing: "application/vnd.amazonaws.connect.event.typing",
   participantJoined: "application/vnd.amazonaws.connect.event.participant.joined",
   participantLeft: "application/vnd.amazonaws.connect.event.participant.left",
