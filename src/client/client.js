@@ -190,7 +190,12 @@ class AWSChatClient extends ChatClient {
           resolve(res);
         })
         .on("error", function(err) {
-          reject(err);
+          const errObj = {
+            type: err.code,
+            message: err.message,
+            stack: err.stack ? err.stack.split('\n') : [],
+          }
+          reject(errObj);
         })
         .send();
     });

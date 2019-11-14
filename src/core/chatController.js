@@ -19,6 +19,8 @@ var NetworkLinkStatus = {
   Broken: "Broken"
 };
 
+var ACCESS_DENIED_EXCEPTION = "AccessDeniedException";
+
 class ChatController {
 
   constructor(args) {
@@ -89,6 +91,9 @@ class ChatController {
   }
 
   getTranscript(inputArgs) {
+    if (this.connectionHelper.getStatus() === ConnectionHelperStatus.Ended) {
+      return Promise.reject(ACCESS_DENIED_EXCEPTION);
+    }
     const metadata = inputArgs.metadata || null;
     const args = {
       startPosition: inputArgs.startPosition || {},
