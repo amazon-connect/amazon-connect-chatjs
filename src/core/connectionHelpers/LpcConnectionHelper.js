@@ -169,6 +169,10 @@ class LPCConnectionHelperBase {
       this.logger.error(`Wrong message format: `, message);
     }
   }
+
+  getStatus() {
+    return this.status;
+  }
 }
 
 export default LpcConnectionHelper;
