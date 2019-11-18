@@ -13,7 +13,6 @@ class LpcConnectionHelper extends BaseConnectionHelper {
   constructor(initialContactId, connectionDetailsProvider, websocketManager) {
     super(connectionDetailsProvider);
     this.cleanUpBaseInstance = !websocketManager;
-    this.tryCleanup();
     if (!LpcConnectionHelper.baseInstance) {
       LpcConnectionHelper.baseInstance = new LPCConnectionHelperBase(connectionDetailsProvider, websocketManager);
     }
@@ -38,10 +37,6 @@ class LpcConnectionHelper extends BaseConnectionHelper {
     this.eventBus.unsubscribeAll();
     this.subscriptions.forEach(f => f());
     this.status = ConnectionHelperStatus.Ended;
-    this.tryCleanup();
-  }
-
-  tryCleanup() {
     if (LpcConnectionHelper.baseInstance && this.cleanUpBaseInstance) {
       LpcConnectionHelper.baseInstance.end();
       LpcConnectionHelper.baseInstance = null;
@@ -111,16 +106,12 @@ class LPCConnectionHelperBase {
     if (!websocketManager) {
       this.websocketManager.init(
         () => connectionDetailsProvider.fetchConnectionDetails()
-          .then(connectionDetails => {
-            const expiry = new Date();
-            expiry.setSeconds(expiry.getSeconds() + TRANSPORT_LIFETIME_IN_SECONDS);
-            return {
-              webSocketTransport: {
-                url: connectionDetails.preSignedConnectionUrl,
-                expiry: expiry.toISOString()
-              }
-            };
-          })
+          .then(connectionDetails => ({
+            webSocketTransport: {
+              url: connectionDetails.preSignedConnectionUrl,
+              transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS
+            }
+          }))
       );
     }
   }
