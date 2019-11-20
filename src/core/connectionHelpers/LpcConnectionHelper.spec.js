@@ -60,8 +60,8 @@ describe("LpcConnectionHelper", () => {
     global.connect.WebSocketManager = { create: initWebsocketManager };
   });
 
-  function getLpcConnectionHelper(initialContactId) {
-    return new LpcConnectionHelper(initialContactId, connectionDetailsProvider, websocketManager);
+  function getLpcConnectionHelper(contactId) {
+    return new LpcConnectionHelper(contactId, connectionDetailsProvider, websocketManager);
   }
 
   describe("with provided websocketManager", () => {
@@ -109,12 +109,12 @@ describe("LpcConnectionHelper", () => {
       const onMessageHandler2 = jest.fn();
       getLpcConnectionHelper("id1").onMessage(onMessageHandler1);
       getLpcConnectionHelper("id2").onMessage(onMessageHandler2);
-      websocketManager.$simulateMessage({ content: JSON.stringify({ InitialContactId: "id1" }) });
-      websocketManager.$simulateMessage({ content: JSON.stringify({ InitialContactId: "id2" }) });
+      websocketManager.$simulateMessage({ content: JSON.stringify({ ContactId: "id1" }) });
+      websocketManager.$simulateMessage({ content: JSON.stringify({ ContactId: "id2" }) });
       expect(onMessageHandler1).toHaveBeenCalledTimes(1);
-      expect(onMessageHandler1).toHaveBeenCalledWith({ InitialContactId: "id1" }, expect.anything(), expect.anything());
+      expect(onMessageHandler1).toHaveBeenCalledWith({ ContactId: "id1" }, expect.anything(), expect.anything());
       expect(onMessageHandler2).toHaveBeenCalledTimes(1);
-      expect(onMessageHandler2).toHaveBeenCalledWith({ InitialContactId: "id2" }, expect.anything(), expect.anything());
+      expect(onMessageHandler2).toHaveBeenCalledWith({ ContactId: "id2" }, expect.anything(), expect.anything());
     });
   });
 
