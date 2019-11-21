@@ -28,7 +28,7 @@ $ git clone https://github.com/amazon-connect/amazon-connect-chatjs
     2. Open the URL printed out by connect task, it looks like "Started connect web server on <https://localhost:3000>"
     3. Click **demo** folder
 
-Find build artifacts in **release** directory -  This will generate a file called `amazon-connect-chat.js` and the minified version of the same `amazon-connect-chatjs-min.js` - this is the full Connect Streams API which you will want to include in your page.
+Find build artifacts in **dist** directory -  This will generate a file called `amazon-connect-chat.js` - this is the full Connect Streams API which you will want to include in your page.
 
 ## API Definition
 
