@@ -1,5 +1,5 @@
 {
-  "name": "@amzn/amazon-connect-chatjs",
+  "name": "amazon-connect-chatjs",
   "version": "1.0.0",
   "main": "dist/amazon-connect-chat.js",
   "description": "Provides chat support to AmazonConnect customers",
@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "ssh://git.amazon.com:2222/pkg/AmazonConnectChatJS"
+    "url":"git+https://github.com/amazon-connect/amazon-connect-chatjs.git"
   },
   "keywords": [
     "amazon",
@@ -41,9 +41,6 @@
   },
   "author": "Amazon Web Services",
   "license": "Apache-2.0",
-  "npm-pretty-much": {
-    "runRelease": "always"
-  },
   "devDependencies": {
     "@babel/core": "^7.1.6",
     "@babel/preset-env": "^7.1.6",
