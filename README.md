@@ -15,15 +15,18 @@ the [Amazon Connect User Guide](https://docs.aws.amazon.com/connect/latest/userg
 $ git clone https://github.com/amazon-connect/amazon-connect-chatjs
 ```
 
-### Build your own with NPM
-Install latest LTS version of [NodeJS](https://nodejs.org)
-
-```
-$ git clone https://github.com/amazon-connect/amazon-connect-chatjs
-$ cd amazon-connect-chatjs
-$ npm install
-$ gulp 
-```
+1. Install latest LTS version of [NodeJS](https://nodejs.org)
+2. Checkout this package into workspace and navigate to root folder
+3. `npm install`
+4. To build:
+    1. `npm run dev`
+    2. Find build artifacts in **dist** directory
+6. To run unit tests:
+    1. `npm run test`
+7. To run demo page:
+    1. `npm run showcase`
+    2. Open the URL printed out by connect task, it looks like "Started connect web server on <https://localhost:3000>"
+    3. Click **demo** folder
 
 Find build artifacts in **release** directory -  This will generate a file called `amazon-connect-chat.js` and the minified version of the same `amazon-connect-chatjs-min.js` - this is the full Connect Streams API which you will want to include in your page.
 
