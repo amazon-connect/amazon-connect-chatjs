@@ -7,20 +7,8 @@ For your reference, please refer to the [Chat UI reference implementation](https
 To learn more about Amazon Connect and its capabilities, please check out
 the [Amazon Connect User Guide](https://docs.aws.amazon.com/connect/latest/userguide/).
 
-# Chat Deep Dive
-With the release of chat 
-
-# Usage
-Run the Makefile to generate `amazon-connect-chat.js`, then copy this file
-into your application or host it in an Amazon S3 bucket behind Amazon Cloudfront.
-
-```
-$ make
-```
 
 ## Getting Started
-### Whitelisting
-
 
 ### Downloading ChatJS
 
@@ -37,7 +25,7 @@ $ make
 
 This will generate a file called `amazon-connect-chat.js`, this is the full
 Connect Chat API which you will want to include in your page.  You can serve
-`amazon-connect-chatjs.js` with your web application.
+`amazon-connect-chat.js` with your web application.
 
 ### Build your own with NPM
 Install latest LTS version of [NodeJS](https://nodejs.org)
