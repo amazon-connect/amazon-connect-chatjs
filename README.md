@@ -18,17 +18,20 @@ $ git clone https://github.com/amazon-connect/amazon-connect-chatjs
 1. Install latest LTS version of [NodeJS](https://nodejs.org)
 2. Checkout this package into workspace and navigate to root folder
 3. `npm install`
-4. To build:
-    1. `npm run dev`
-    2. Find build artifacts in **dist** directory
+4. To build (non-minified):
+    1. `npm run dev` for a non-minified build.
+    2. Find build artifacts in **dist** directory.
+5. To build (minified):
+    1. `npm run release` for a minified build.
+    2. Find build artifacts in **dist** directory.
 6. To run unit tests:
     1. `npm run test`
-7. To run demo page:
-    1. `npm run showcase`
-    2. Open the URL printed out by connect task, it looks like "Started connect web server on <https://localhost:3000>"
-    3. Click **demo** folder
+7. To clean node_modules:
+    1. `npm run clean`
+8. To make webpack watch all files:
+    1. `npm run watch`
 
-Find build artifacts in **dist** directory -  This will generate a file called `amazon-connect-chat.js` - this is the full Connect Streams API which you will want to include in your page.
+Find build artifacts in **dist** directory -  This will generate a file called `amazon-connect-chat.js` - this is the full Connect ChatJS API which you will want to include in your page.
 
 ## API Definition
 
