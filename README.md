@@ -7,7 +7,7 @@ There is a [Chat UI reference implementation](https://github.com/amazon-connect/
 To learn more about Amazon Connect and its capabilities, please check out
 the [Amazon Connect User Guide](https://docs.aws.amazon.com/connect/latest/userguide/).
 
-## Getting Started
+# Getting Started
 
 ### Downloading ChatJS
 
@@ -32,6 +32,86 @@ $ git clone https://github.com/amazon-connect/amazon-connect-chatjs
     1. `npm run watch`
 
 Find build artifacts in **dist** directory -  This will generate a file called `amazon-connect-chat.js` - this is the full Connect ChatJS API which you will want to include in your page.
+
+# Initialization
+Setup the globalConfig and logger for ChatJS to use.
+```
+var logger = {
+  debug: (data) => {console.debug(data);},
+  info: (data) => {console.info(data);},
+  warn: (data) => {console.warn(data);},
+  error: (data) => {console.error(data);}
+}
+
+var globalConfig = {
+  loggerConfig: {
+    logger: logger,
+    // There are four levels available - DEBUG, INFO, WARN, ERROR. Default is INFO.
+    level: connect.ChatSession.LogLevel.INFO,
+  },
+  region: "us-west-2" // "us-west-2" is the default value.
+};
+
+connect.ChatSession.setGlobalConfig(globalConfig);
+```
+
+### `connect.ChatSession.create`
+`Method param:` args
+```
+args = {
+    "chatDetails": chatDetails,
+    "type": sessionType,//two types of sesstionType: 
+                        //connect.ChatSession.SessionTypes.CUSTOMER 
+                        //connect.ChatSession.SessionTypes.AGENT
+    "options": options,
+    "websocketManager": WebSocketManager
+};
+
+chatDetails = {
+  "ContactId": "<>",
+  "ParticipantId": "<>",
+  "ParticipantToken": "<>"
+};
+
+
+var chatSession = connect.ChatSession.create(inputForChatSession);
+```
+
+Use the chatSession object to subscribe to the following callbacks. Example - The onMessage callback is used to handle any messages sent from one of the participants or the chat service.
+
+```
+chatSession.onConnectionBroken(data => {console.log("connection broken with server")});
+chatSession.onTyping(data => {console.log("someone is typing! details:", data)});
+chatSession.onMessage(data => {console.log("there  is message! details:", data)});
+chatSession.onConnectionEstablished(data => {console.log("connection established with server")});
+chatSession.onEnded(() => {console.log("chat has ended")})
+```
+# USAGE:
+
+### `connect.ChatSession.connect`
+`Method param:` args
+```
+args = {
+    "metadata": metadata //required: no
+}
+```
+Establish the connection with the back end by calling the *connect* function of the chatSession. It returns a Promise object.
+```
+chatSession.connect().
+    then((response) => console.log("Chat is connected!")).
+    catch((error) => console.log("Could not connect."));
+```
+
+### `connect.ChatSession.disconnectParticipant`
+`Method param:` args
+
+```
+// Below method is not available on the agentChatController. 
+// It is present only on the customerChatController.
+// This disconnected the customer. No action can be permformed on this chat anymore by the customer.
+// Once this method is called the chatSession is obsolete and cannot be used anymore.
+chatSession.disconnectParticipant();
+```
 
 ## API Definition
 
