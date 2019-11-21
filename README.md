@@ -1,7 +1,7 @@
 # About
-The Amazon Connect Chat javascript library (ChatJS) gives you the power to build your own chat widget to customize the chat experience. This can be used for both the Agent User Interface, in conjunction with StreamsJS <LINK HERE> and for the customer chat interface. 
+The Amazon Connect Chat javascript library (ChatJS) gives you the power to build your own chat widget to customize the chat experience. This can be used for both the end customer chat interface and the agent user interface, in conjunction with [Amazon Connect Streams](https://github.com/aws/amazon-connect-streams).
 
-There is a [Chat UI reference implementation](https://github.com/amazon-connect/amazon-connect-chat-ui-examples) here. This will help you deploy an API Gateway and Lambda function for initiating chat from your webpage. From there you can use the ChatJS library to build a custom widget,
+For your reference, please refer to the [Chat UI reference implementation](https://github.com/amazon-connect/amazon-connect-chat-ui-examples). This will help you deploy an API Gateway and Lambda function for initiating chat from your webpage. From there you can use the ChatJS library to build a custom widget,
 
 # Learn More
 To learn more about Amazon Connect and its capabilities, please check out
