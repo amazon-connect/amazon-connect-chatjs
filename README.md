@@ -14,7 +14,7 @@ the [Amazon Connect User Guide](https://docs.aws.amazon.com/connect/latest/userg
 ```
 $ git clone https://github.com/amazon-connect/amazon-connect-chatjs
 ```
-
+### Building ChatJS
 1. Install latest LTS version of [NodeJS](https://nodejs.org)
 2. Checkout this package into workspace and navigate to root folder
 3. `npm install`
