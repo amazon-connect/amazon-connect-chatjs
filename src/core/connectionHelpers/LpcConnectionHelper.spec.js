@@ -61,7 +61,7 @@ describe("LpcConnectionHelper", () => {
   });
 
   function getLpcConnectionHelper(contactId) {
-    return new LpcConnectionHelper(contactId, connectionDetailsProvider, websocketManager);
+    return new LpcConnectionHelper(contactId, contactId, connectionDetailsProvider, websocketManager);
   }
 
   describe("with provided websocketManager", () => {

@@ -10,7 +10,7 @@ import BaseConnectionHelper from "./baseConnectionHelper";
 
 class LpcConnectionHelper extends BaseConnectionHelper {
 
-  constructor(contactId, connectionDetailsProvider, websocketManager) {
+  constructor(contactId, initialContactId, connectionDetailsProvider, websocketManager) {
     super(connectionDetailsProvider);
     this.cleanUpBaseInstance = !websocketManager;
     this.tryCleanup();
@@ -18,6 +18,7 @@ class LpcConnectionHelper extends BaseConnectionHelper {
       LpcConnectionHelper.baseInstance = new LPCConnectionHelperBase(connectionDetailsProvider, websocketManager);
     }
     this.contactId = contactId;
+    this.initialContactId = initialContactId;
     this.status = null;
     this.eventBus = new EventBus();
     this.subscriptions = [
@@ -81,7 +82,7 @@ class LpcConnectionHelper extends BaseConnectionHelper {
   }
 
   handleMessage(message) {
-    if (message.ContactId === this.contactId) {
+    if (message.InitialContactId === this.initialContactId || message.ContactId === this.contactId) {
       this.eventBus.trigger(ConnectionHelperEvents.IncomingMessage, message);
     }
   }
