@@ -1,6 +1,6 @@
 import { IllegalArgumentException } from "../exceptions";
 import { ConnectionType, ConnectionInfoType } from "./baseConnectionHelper";
-import { CONNECTION_TOKEN_POLLING_INTERVAL } from "../../constants";
+import { CONNECTION_TOKEN_POLLING_INTERVAL_IN_MS } from "../../constants";
 
 
 export default class ConnectionDetailsProvider {
@@ -68,7 +68,11 @@ export default class ConnectionDetailsProvider {
   _handlePresetConnectionDetails() {
     this.connectionType = ConnectionType.IOT;
     this.connectionToken = this.connectionDetails.connectionToken;
-    this.connectionTokenExpiry = CONNECTION_TOKEN_POLLING_INTERVAL;
+    this.connectionTokenExpiry = (
+        new Date(
+          new Date().getTime() + CONNECTION_TOKEN_POLLING_INTERVAL_IN_MS
+        )
+      ).toISOString();
     this.connectionDetails = {
       connectionId: this.connectionDetails.ConnectionId,
       preSignedConnectionUrl: this.connectionDetails.PreSignedConnectionUrl
