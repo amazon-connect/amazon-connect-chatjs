@@ -47,15 +47,19 @@ jest.mock("../../client/pahoMqttClient", () => {
 describe("IotConnectionHelper", () => {
   
   let connectionDetailsProvider = {
-    fetchConnectionDetails: () => {}
+    fetchConnectionDetails: () => {},
+    fetchConnectionToken: () => {},
+    getConnectionTokenExpiry: () => {}
   };
   let reconnectConfig = {};
   let preSignedConnectionUrl;
   let connectionId;
+  let connectionToken;
 
   beforeEach(() => {
     preSignedConnectionUrl = "url";
     connectionId = "id";
+    connectionToken = "token";
     connectionDetailsProvider.fetchConnectionDetails = jest.fn(() => {
       connectionDetailsProvider.connectionDetails = {
         connectionId: connectionId
@@ -65,6 +69,12 @@ describe("IotConnectionHelper", () => {
         connectionId: connectionId
       });
     });
+    connectionDetailsProvider.fetchConnectionToken = jest.fn(() => {
+      connectionDetailsProvider.connectionToken = connectionToken;
+      return Promise.resolve(connectionToken);
+    });
+    connectionDetailsProvider.getConnectionTokenExpiry = jest.fn(() => 100000000);
+
     reconnectConfig = {
       interval: 1,
       maxRetries: 1

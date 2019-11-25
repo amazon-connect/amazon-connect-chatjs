@@ -4,11 +4,13 @@ describe("BaseConnectionHelper", () => {
 
   let baseConnectionHelper;
   const connectionDetailsProvider = {
-    fetchConnectionToken: () => {}
+    fetchConnectionToken: () => {},
+    getConnectionTokenExpiry: () => {}
   };
 
   beforeEach(() => {
     connectionDetailsProvider.fetchConnectionToken = jest.fn();
+    connectionDetailsProvider.getConnectionTokenExpiry = jest.fn(() => 100000);
     baseConnectionHelper = new BaseConnectionHelper(connectionDetailsProvider);
     jest.useFakeTimers();
     jest.clearAllTimers()

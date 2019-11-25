@@ -3,7 +3,9 @@ import LpcConnectionHelper from "./LpcConnectionHelper";
 describe("LpcConnectionHelper", () => {
 
   let connectionDetailsProvider = {
-    fetchConnectionDetails: () => {}
+    fetchConnectionDetails: () => {},
+    fetchConnectionToken: () => {},
+    getConnectionTokenExpiry: () => {}
   };
   let websocketManager;
 
@@ -54,6 +56,10 @@ describe("LpcConnectionHelper", () => {
     connectionDetailsProvider.fetchConnectionDetails = jest.fn(() => Promise.resolve({
       preSignedConnectionUrl: "url"
     }));
+    connectionDetailsProvider.fetchConnectionToken = jest.fn(() => 
+      Promise.resolve("token")
+    );
+    connectionDetailsProvider.getConnectionTokenExpiry = jest.fn(() => 100000000);
     LpcConnectionHelper.baseInstance = null;
     initWebsocketManager();
     global.connect = global.connect || {};

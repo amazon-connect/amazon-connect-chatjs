@@ -1,5 +1,7 @@
 import { IllegalArgumentException } from "../exceptions";
 import { ConnectionType, ConnectionInfoType } from "./baseConnectionHelper";
+import { CONNECTION_TOKEN_POLLING_INTERVAL } from "../../constants";
+
 
 export default class ConnectionDetailsProvider {
 
@@ -8,6 +10,7 @@ export default class ConnectionDetailsProvider {
     this.participantToken = participantToken || null;
     this.connectionDetails = connectionDetails || null;
     this.connectionToken = null;
+    this.connectionTokenExpiry = null;
     this.connectionType = null;
     this.firstCall = true;
     this.createConnectionToken = createConnectionToken || null;
@@ -22,6 +25,18 @@ export default class ConnectionDetailsProvider {
     } else {
       return this._fetchConnectionDetails().then(() => this.connectionDetails);
     }
+  }
+
+  getConnectionToken() {
+    return this.connectionToken;
+  }
+
+  getConnectionTokenExpiry() {
+    return this.connectionTokenExpiry;
+  }
+
+  getConnectionDetails() {
+    return this.connectionDetails;
   }
 
   fetchConnectionDetails() {
@@ -53,6 +68,7 @@ export default class ConnectionDetailsProvider {
   _handlePresetConnectionDetails() {
     this.connectionType = ConnectionType.IOT;
     this.connectionToken = this.connectionDetails.connectionToken;
+    this.connectionTokenExpiry = CONNECTION_TOKEN_POLLING_INTERVAL;
     this.connectionDetails = {
       connectionId: this.connectionDetails.ConnectionId,
       preSignedConnectionUrl: this.connectionDetails.PreSignedConnectionUrl
@@ -62,6 +78,7 @@ export default class ConnectionDetailsProvider {
   _handleCreateParticipantConnectionResponse(connectionDetails) {
     this.connectionType = ConnectionType.LPC;
     this.connectionToken = connectionDetails.ConnectionCredentials.ConnectionToken;
+    this.connectionTokenExpiry = connectionDetails.ConnectionCredentials.Expiry;
     this.connectionDetails = {
       connectionId: null,
       preSignedConnectionUrl: connectionDetails.Websocket.Url
@@ -75,14 +92,16 @@ export default class ConnectionDetailsProvider {
       this.connectionType = connectionDetails.connectionId ? ConnectionType.IOT : ConnectionType.LPC;
     }
     this.connectionToken = connectionDetails.ParticipantCredentials.ConnectionAuthenticationToken;
+    this.connectionTokenExpiry = connectionDetails.ParticipantCredentials.Expiry;
     this.connectionDetails = {
         connectionId: connectionDetails.ConnectionId,
         preSignedConnectionUrl: connectionDetails.PreSignedConnectionUrl
     };
   }
 
-  _handleCreateConnectionTokenResponse(connectionToken) {
-    this.connectionToken = connectionToken;
+  _handleCreateConnectionTokenResponse(connectionTokenDetails) {
+    this.connectionToken = connectionTokenDetails.participantToken;
+    this.connectionTokenExpiry = connectionTokenDetails.expiry;
     this.connectionType = ConnectionType.LPC;
     this.connectionDetails = {
       connectionId: null,
@@ -120,7 +139,7 @@ export default class ConnectionDetailsProvider {
         });
     } else if (this.createConnectionToken) {
       return this.createConnectionToken()
-        .then(response => this._handleCreateConnectionTokenResponse(response.chatTokenTransport.participantToken))
+        .then(response => this._handleCreateConnectionTokenResponse(response.chatTokenTransport))
         .catch(error => {
           return Promise.reject({
             reason: "Failed to fetch connectionToken via createConnectionToken api",

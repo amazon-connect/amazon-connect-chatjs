@@ -28,7 +28,8 @@ describe("ConnectionDetailsProvider", () => {
     };
     fetchedConnectionDetails = {
       ParticipantCredentials: {
-        ConnectionAuthenticationToken: 'token'
+        ConnectionAuthenticationToken: 'token',
+        Expiry: 1
       },
       PreSignedConnectionUrl: '.iot.url',
       ConnectionId: 'id'
@@ -45,7 +46,8 @@ describe("ConnectionDetailsProvider", () => {
           fetchedConnectionToken 
             ? resolve({
                 chatTokenTransport: {
-                  participantToken: fetchedConnectionToken+counter
+                  participantToken: fetchedConnectionToken+counter,
+                  expiry: 1
                 }
               })
             : reject("error in createConnectionToken type chat_token");
@@ -60,7 +62,8 @@ describe("ConnectionDetailsProvider", () => {
         return fetchedConnectionDetails
           ? Promise.resolve({ data: {
             ParticipantCredentials: {
-              ConnectionAuthenticationToken: fetchedConnectionDetails.ParticipantCredentials.ConnectionAuthenticationToken + counter
+              ConnectionAuthenticationToken: fetchedConnectionDetails.ParticipantCredentials.ConnectionAuthenticationToken + counter,
+              Expiry: 1
             },
             PreSignedConnectionUrl: fetchedConnectionDetails.PreSignedConnectionUrl + counter,
             ConnectionId: fetchedConnectionDetails.ConnectionId ? fetchedConnectionDetails.ConnectionId + counter : null
@@ -76,7 +79,8 @@ describe("ConnectionDetailsProvider", () => {
         return Promise.resolve({
           data: {
             ConnectionCredentials: {
-              ConnectionToken: fetchedConnectionDetails.ParticipantCredentials.ConnectionAuthenticationToken + counter
+              ConnectionToken: fetchedConnectionDetails.ParticipantCredentials.ConnectionAuthenticationToken + counter,
+              Expiry: 1
             },
             Websocket: {
               Url: fetchedConnectionDetails.PreSignedConnectionUrl + counter
@@ -523,6 +527,51 @@ describe("ConnectionDetailsProvider", () => {
       });
     });
 
+    describe(".getConnectionToken()", () => {
+      test("returns valid token after an init", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        const connectionToken = connectionDetailsProvider.getConnectionToken();
+        expect(connectionToken).toEqual("token1");
+      });
+
+      test("returns null before init", async () => {
+        setup();
+        const connectionToken = connectionDetailsProvider.getConnectionToken();
+        expect(connectionToken).toBeNull();
+      })
+    });
+
+    describe(".getConnectionTokenExpiry()", () => {
+      test("returns valid token expiry after an init", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        const connectionTokenExpiry = connectionDetailsProvider.getConnectionTokenExpiry();
+        expect(connectionTokenExpiry).toEqual(1);
+      });
+
+      test("returns null before init", async () => {
+        setup();
+        const connectionTokenExpiry = connectionDetailsProvider.getConnectionTokenExpiry();
+        expect(connectionTokenExpiry).toBeNull();
+      })
+    });
+
+    describe(".getConnectionDetails()", () => {
+      test("returns valid token after an init", async () => {
+        setup();
+        await connectionDetailsProvider.init();
+        const connectionDetails = connectionDetailsProvider.getConnectionDetails();
+        expect(connectionDetails.connectionId).toEqual(null);
+        expect(connectionDetails.preSignedConnectionUrl).toEqual(null);
+      });
+
+      test("returns null before init", async () => {
+        setup();
+        const connectionDetails = connectionDetailsProvider.getConnectionDetails();
+        expect(connectionDetails).toBeNull();
+      })
+    });
     describe(".fetchConnectionDetails()", () => {
       test("returns valid connection details on first call", async () => {
         setup();

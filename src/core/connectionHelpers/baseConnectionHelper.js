@@ -31,10 +31,12 @@ export default class BaseConnectionHelper {
     this.isStarted = false;
   }
 
-  startConnectionTokenPolling() {
-    this.interval = setInterval(() => {
+  startConnectionTokenPolling(isFirstCall, expiry=CONNECTION_TOKEN_POLLING_INTERVAL) {
+    if (!isFirstCall){
       this.connectionDetailsProvider.fetchConnectionToken();
-    }, CONNECTION_TOKEN_POLLING_INTERVAL);
+      expiry = this.connectionDetailsProvider.getConnectionTokenExpiry();
+    }
+    this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this, false), expiry);
   }
 
   start() {
@@ -42,15 +44,18 @@ export default class BaseConnectionHelper {
       return;
     }
     this.isStarted = true;
-    this.startConnectionTokenPolling();
+    this.startConnectionTokenPolling(
+      true, 
+      this.connectionDetailsProvider.getConnectionTokenExpiry()
+    );
   }
 
   end() {
-    clearInterval(this.interval);
+    clearTimeout(this.timeout);
   }
 
   getConnectionToken() {
-    return this.connectionDetailsProvider.connectionToken;
+    return this.connectionDetailsProvider.getConnectionToken();
   }
 }
 
