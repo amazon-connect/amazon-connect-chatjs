@@ -33,12 +33,14 @@ export default class BaseConnectionHelper {
 
   startConnectionTokenPolling(isFirstCall, expiry=CONNECTION_TOKEN_POLLING_INTERVAL_IN_MS) {
     if (!isFirstCall){
-      this.connectionDetailsProvider.fetchConnectionToken();
-      const date_expiry = new Date(
-          this.connectionDetailsProvider.getConnectionTokenExpiry()
-        ).getTime();
-      const now = new Date().getTime();
-      expiry = date_expiry - now - CONNECTION_TOKEN_EXPIRY_BUFFER_IN_MS;
+      this.connectionDetailsProvider.fetchConnectionToken()
+        .then(() => {
+          const date_expiry = new Date(
+            this.connectionDetailsProvider.getConnectionTokenExpiry()
+          ).getTime();
+          const now = new Date().getTime();
+          expiry = date_expiry - now - CONNECTION_TOKEN_EXPIRY_BUFFER_IN_MS;
+        });
     }
     this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this, false), expiry);
   }
