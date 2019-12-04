@@ -19,7 +19,7 @@ $ git clone https://github.com/amazon-connect/amazon-connect-chatjs
 2. Checkout this package into workspace and navigate to root folder
 3. `npm install`
 4. To build (non-minified):
-    1. `npm run dev` for a non-minified build.
+    1. `npm run devo` for a non-minified build.
     2. Find build artifacts in **dist** directory.
 5. To build (minified):
     1. `npm run release` for a minified build.
