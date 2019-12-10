@@ -1,5 +1,5 @@
 {
-  "name": "amazon-connect-chatjs",
+  "name": "@amzn/amazon-connect-chatjs",
   "version": "1.0.0",
   "main": "dist/amazon-connect-chat.js",
   "description": "Provides chat support to AmazonConnect customers",
