@@ -42,7 +42,6 @@ class ChatControllerArgsValidator {
     this.validateContentType(args.contentType);
   }
 
-  // TODO: Not sure about this API.
   /*eslint-disable no-unused-vars*/
   validateGetMessages(args) {
     return true;
@@ -53,12 +52,7 @@ class ChatControllerArgsValidator {
 class ChatServiceArgsValidator extends ChatControllerArgsValidator {
   validateChatDetails(chatDetails) {
     Utils.assertIsObject(chatDetails, "chatDetails");
-    if (!chatDetails.participantToken && !Utils.isFunction(chatDetails.getConnectionToken)) {
-      throw new IllegalArgumentException(
-        "getConnectionToken was not a function", 
-        chatDetails.getConnectionToken
-      );
-    }
+    
     Utils.assertIsNonEmptyString(
       chatDetails.contactId,
       "chatDetails.contactId"
@@ -98,7 +92,6 @@ class ChatServiceArgsValidator extends ChatControllerArgsValidator {
 
   normalizeChatDetails(chatDetailsInput) {
     let chatDetails = {};
-    chatDetails.getConnectionToken = chatDetailsInput.getConnectionToken || null;
     chatDetails.contactId = chatDetailsInput.ContactId || chatDetailsInput.contactId;
     chatDetails.participantId = chatDetailsInput.ParticipantId || chatDetailsInput.participantId;
     chatDetails.initialContactId = chatDetailsInput.InitialContactId || chatDetailsInput.initialContactId

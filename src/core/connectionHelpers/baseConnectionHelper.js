@@ -15,11 +15,6 @@ const ConnectionHelperEvents = {
   IncomingMessage: "IncomingMessage" // event data is: {payloadString: ...}
 };
 
-const ConnectionType = {
-  IOT: 'IOT',
-  LPC: 'LPC'
-};
-
 const ConnectionInfoType = {
   WEBSOCKET: "WEBSOCKET",
   CONNECTION_CREDENTIALS: "CONNECTION_CREDENTIALS"
@@ -68,6 +63,5 @@ export default class BaseConnectionHelper {
 export {
   ConnectionHelperStatus,
   ConnectionHelperEvents,
-  ConnectionType,
   ConnectionInfoType
 };

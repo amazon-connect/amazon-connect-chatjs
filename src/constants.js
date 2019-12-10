@@ -15,10 +15,6 @@ export const RESOURCE_PATH = {
   PARTICIPANT_CONNECTION: "/participant/connection"
 };
 
-export const HTTP_METHODS = {
-  POST: "post"
-};
-
 export const REGION_CONFIG = {
   "us-west-2": {
     invokeUrl: "https://eap1w93j0k.execute-api.us-west-2.amazonaws.com/prod"
@@ -37,11 +33,6 @@ export const REGION_CONFIG = {
   "eu-central-1": {
     invokeUrl: "https://1gynaarm3e.execute-api.eu-central-1.amazonaws.com/prod"
   }
-};
-
-export const MQTT_CONSTANTS = {
-  KEEP_ALIVE: 30,
-  CONNECT_TIMEOUT: 60
 };
 
 export const SESSION_TYPES = {

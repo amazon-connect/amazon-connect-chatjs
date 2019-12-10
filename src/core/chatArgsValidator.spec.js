@@ -11,21 +11,18 @@ describe("ChatServiceArgsValidator", () => {
   let chatDetailsInput;
   let expectedChatDetails;
   let chatDetails;
-  let mockFn = jest.fn();
 
   test("chatDetails w/o participantToken or connectionDetails normalized as expected", async () => {
     const chatArgsValidator = getValidator();
     chatDetailsInput = {
       ContactId: "cid",
       ParticipantId: "pid",
-      InitialContactId: "icid",
-      getConnectionToken: mockFn
+      InitialContactId: "icid"
     }
     expectedChatDetails = {
       contactId: "cid",
       participantId: "pid",
-      initialContactId: "icid",
-      getConnectionToken: mockFn
+      initialContactId: "icid"
     }
     chatDetails = chatArgsValidator.normalizeChatDetails(chatDetailsInput);
     expect(chatDetails).toEqual(expectedChatDetails);
@@ -36,15 +33,13 @@ describe("ChatServiceArgsValidator", () => {
     chatDetailsInput = {
       contactId: "cid",
       participantId: "pid",
-      ParticipantToken: "ptoken",
-      getConnectionToken: mockFn
+      ParticipantToken: "ptoken"
     }
     expectedChatDetails = {
       contactId: "cid",
       participantId: "pid",
       initialContactId: "cid",
-      participantToken: "ptoken",
-      getConnectionToken: mockFn
+      participantToken: "ptoken"
     }
     chatDetails = chatArgsValidator.normalizeChatDetails(chatDetailsInput);
     expect(chatDetails).toEqual(expectedChatDetails);
@@ -57,7 +52,6 @@ describe("ChatServiceArgsValidator", () => {
       participantId: "pid",
       participantToken: "ptoken",
       initialContactId: "icid",
-      getConnectionToken: mockFn,
       ChatConnectionAttributes: {
         ParticipantCredentials: {
           ConnectionAuthenticationToken: "cat"
@@ -70,8 +64,7 @@ describe("ChatServiceArgsValidator", () => {
       contactId: "cid",
       participantId: "pid",
       initialContactId: "icid",
-      participantToken: "ptoken",
-      getConnectionToken: mockFn
+      participantToken: "ptoken"
     }
     chatDetails = chatArgsValidator.normalizeChatDetails(chatDetailsInput);
     expect(chatDetails).toEqual(expectedChatDetails);
@@ -84,7 +77,6 @@ describe("ChatServiceArgsValidator", () => {
       participantId: "pid",
       participantToken: null,
       initialContactId: "icid",
-      getConnectionToken: mockFn,
       ChatConnectionAttributes: {
         ParticipantCredentials: {
           ConnectionAuthenticationToken: "cat"
@@ -97,7 +89,6 @@ describe("ChatServiceArgsValidator", () => {
       contactId: "cid",
       participantId: "pid",
       initialContactId: "icid",
-      getConnectionToken: mockFn,
       connectionDetails: {
         connectionToken: "cat",
         ConnectionId: "conid",

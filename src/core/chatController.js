@@ -2,15 +2,15 @@ import { ConnectionHelperStatus } from "./connectionHelpers/baseConnectionHelper
 import {
   CHAT_EVENTS,
   TRANSCRIPT_DEFAULT_PARAMS,
-  AGENT_RECONNECT_CONFIG,
-  CUSTOMER_RECONNECT_CONFIG,
   SESSION_TYPES,
   CONTENT_TYPE
 } from "../constants";
 import { LogManager } from "../log";
 import { EventBus } from "./eventbus";
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
-import connectionHelperProvider from "./connectionHelpers/connectionHelperProvider";
+import ConnectionDetailsProvider from "./connectionHelpers/connectionDetailsProvider";
+import LpcConnectionHelper from "./connectionHelpers/LpcConnectionHelper";
+
 
 var NetworkLinkStatus = {
   NeverEstablished: "NeverEstablished",
@@ -37,9 +37,6 @@ class ChatController {
     this.chatClient = args.chatClient;
     this.participantToken = args.chatDetails.participantToken;
     this.websocketManager = args.websocketManager;
-    
-    //from StreamsJS' ChatConnection.prototype.getConnectionToken API
-    this.createConnectionToken = args.chatDetails.getConnectionToken;
     this._participantDisconnected = false;
     this.sessionMetadata = {};
   }
@@ -117,34 +114,36 @@ class ChatController {
   connect(args={}) {
     this.sessionMetadata = args.metadata || null;
     this.argsValidator.validateConnectChat(args);
-
-    return connectionHelperProvider
-      .get({
-        contactId: this.contactId,
-        initialContactId: this.initialContactId,
-        connectionDetails: this.connectionDetails,
-        participantToken: this.participantToken,
-        chatClient: this.chatClient,
-        websocketManager: this.websocketManager,
-        createConnectionToken: this.createConnectionToken,
-        reconnectConfig: this.sessionType === SESSION_TYPES.AGENT ? AGENT_RECONNECT_CONFIG : CUSTOMER_RECONNECT_CONFIG
-      })
-      .then(
-        this._initConnectionHelper.bind(this)
-      )
-      .then(
-        this._onConnectSuccess.bind(this),
-        this._onConnectFailure.bind(this)
-      );
+    const connectionDetailsProvider = this._getConnectionDetailsProvider();
+    return connectionDetailsProvider.fetchConnectionToken()
+    .then(
+      this._initConnectionHelper.bind(this, connectionDetailsProvider)
+    )
+    .then(
+      this._onConnectSuccess.bind(this),
+      this._onConnectFailure.bind(this)
+    );
   }
 
-  _initConnectionHelper(connectionHelper) {
-    this.connectionHelper = connectionHelper;
+  _initConnectionHelper(connectionDetailsProvider) {
+    this.connectionHelper = new LpcConnectionHelper(
+      this.contactId,
+      this.initialContactId,
+      connectionDetailsProvider,
+      this.websocketManager
+    );
     this.connectionHelper.onEnded(this._handleEndedConnection.bind(this));
     this.connectionHelper.onConnectionLost(this._handleLostConnection.bind(this));
     this.connectionHelper.onConnectionGain(this._handleGainedConnection.bind(this));
     this.connectionHelper.onMessage(this._handleIncomingMessage.bind(this));
     return this.connectionHelper.start();
+  }
+
+  _getConnectionDetailsProvider() {
+    return new ConnectionDetailsProvider(
+      this.participantToken, 
+      this.chatClient
+    );
   }
 
   _handleEndedConnection(eventData) {

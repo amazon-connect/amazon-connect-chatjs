@@ -8,24 +8,23 @@ import {
 } from "../constants";
 import Utils from "../utils";
 import { ChatController } from "./chatController";
-import connectionHelperProvider from "./connectionHelpers/connectionHelperProvider";
 import { ConnectionHelperStatus } from "./connectionHelpers/baseConnectionHelper";
+import LpcConnectionHelper from "./connectionHelpers/LpcConnectionHelper";
+import connectionDetailsProvider from "./connectionHelpers/connectionDetailsProvider";
 
-jest.mock("./connectionHelpers/connectionHelperProvider");
+jest.mock("./connectionHelpers/LpcConnectionHelper");
+jest.mock("./connectionHelpers/connectionDetailsProvider");
 
 describe("ChatController", () => {
 
-  let createConnectionToken = () => Promise.resolve("response");
   const chatDetails = {
     contactId: "id",
     initialContactId: "id",
     connectionDetails: {},
     participantId: "pid",
-    participantToken: "token",
-    getConnectionToken: createConnectionToken
+    participantToken: "token"
   };
   let chatClient = {
-    createConnectionDetails: () => {}
   };
   const websocketManager = {};
   let startResponse;
@@ -44,36 +43,51 @@ describe("ChatController", () => {
     const messageHandlers = [];
     startResponse = Promise.resolve();
     endResponse = Promise.resolve();
-    connectionHelperProvider.get.mockResolvedValue({
-      onEnded: () => {},
-      onConnectionLost: () => {},
-      onConnectionGain: () => {},
-      onMessage: (handler) => {
-        messageHandlers.push(handler);
-      },
-      start: () => startResponse,
-      end: () => endResponse,
-      getStatus: () => ConnectionHelperStatus.Connected,
-      getConnectionToken: () => "token",
-      $simulateMessage: (message) => {
-        messageHandlers.forEach(f => f({
-          Type: MESSAGE,
-          ContentType: CONTENT_TYPE.textPlain,
-          Message: message
-        }));
-      },
-      $simulateTyping: () => {
-        messageHandlers.forEach(f => f({
-          Type: EVENT,
-          ContentType: CONTENT_TYPE.typing
-        }));
-      },
-      $simulateEnding: () => {
-        messageHandlers.forEach(f => f({
-          Type: EVENT,
-          ContentType: CONTENT_TYPE.chatEnded
-        }));
-      }
+    connectionDetailsProvider.mockImplementation(() => {
+      return {
+        fetchConnectionDetails: () => {
+          return Promise.resolve({
+            url: "url",
+            expiry: "expiry"
+          })
+        },
+        fetchConnectionToken: () => {
+          return Promise.resolve("token");
+        }
+      };
+    });
+    LpcConnectionHelper.mockImplementation(() => {
+      return {
+        onEnded: () => {},
+        onConnectionLost: () => {},
+        onConnectionGain: () => {},
+        onMessage: (handler) => {
+          messageHandlers.push(handler);
+        },
+        start: () => startResponse,
+        end: () => endResponse,
+        getStatus: () => ConnectionHelperStatus.Connected,
+        getConnectionToken: () => "token",
+        $simulateMessage: (message) => {
+          messageHandlers.forEach(f => f({
+            Type: MESSAGE,
+            ContentType: CONTENT_TYPE.textPlain,
+            Message: message
+          }));
+        },
+        $simulateTyping: () => {
+          messageHandlers.forEach(f => f({
+            Type: EVENT,
+            ContentType: CONTENT_TYPE.typing
+          }));
+        },
+        $simulateEnding: () => {
+          messageHandlers.forEach(f => f({
+            Type: EVENT,
+            ContentType: CONTENT_TYPE.chatEnded
+          }));
+        }
+      };
     });
     chatClient = {
       sendMessage: jest.fn(() => Promise.resolve({ testField: "test" })),
@@ -95,11 +109,14 @@ describe("ChatController", () => {
   test(".connect fails when connectionHelper can't establish connection", async () => {
     startResponse = Promise.reject();
     const chatController = getChatController();
+    let flag = false;
     try {
       await chatController.connect();
     } catch (e) {
+      flag = true;
       expect(e.connectSuccess).toBe(false);
     }
+    expect(flag).toEqual(true);
   });
 
   test("sendMessage works as expected", async () => {
