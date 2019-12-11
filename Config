@@ -22,7 +22,6 @@ package.AmazonConnectChatJS = {
     # be exported to other packages that build against you.
     dependencies = {
         1.0 = {
-            AmazonConnectWebSocketManager = 1.0;
         };
     };
 
