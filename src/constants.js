@@ -21,22 +21,20 @@ export const HTTP_METHODS = {
 
 export const REGION_CONFIG = {
   "us-west-2": {
-    invokeUrl: "https://eap1w93j0k.execute-api.us-west-2.amazonaws.com/prod"
+    invokeUrl: "https://participant.connect.us-west-2.amazonaws.com"
   },
   "us-east-1": {
-    invokeUrl: "https://4agcjusx3k.execute-api.us-east-1.amazonaws.com/prod"
+    invokeUrl: "https://participant.connect.us-east-1.amazonaws.com"
   },
   "ap-southeast-2": {
-    invokeUrl:
-      "https://v4u8oq0cve.execute-api.ap-southeast-2.amazonaws.com/prod"
+    invokeUrl: "https://participant.connect.ap-southeast-2.amazonaws.com"
   },
   "ap-northeast-1": {
-    invokeUrl:
-      "https://3fidunfyz7.execute-api.ap-northeast-1.amazonaws.com/prod"
+    invokeUrl: "https://participant.connect.ap-northeast-1.amazonaws.com"
   },
   "eu-central-1": {
-    invokeUrl: "https://1gynaarm3e.execute-api.eu-central-1.amazonaws.com/prod"
-  }
+    invokeUrl: "https://participant.connect.eu-central-1.amazonaws.com"
+  },
 };
 
 export const MQTT_CONSTANTS = {
