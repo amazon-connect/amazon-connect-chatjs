@@ -10,7 +10,8 @@
     "watch": "webpack --watch",
     "dev": "webpack --mode=development && webpack --watch",
     "server": "webpack-dev-server --hot --inline",
-    "clean": "rm -rf build/ node_modules build"
+    "clean": "rm -rf build/ node_modules build",
+    "release-watch": "npm run clean && npm install && npm run release && npm run watch"
   },
   "repository": {
     "type": "git",
