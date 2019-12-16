@@ -1,12 +1,8 @@
 import { UnImplementedMethodException } from "../core/exceptions";
-import { makeHttpRequest } from "./XmlHttpClient";
 import { GlobalConfig } from "../globalConfig";
 import {
-  RESOURCE_PATH,
-  HTTP_METHODS,
   REGION_CONFIG,
-  REGIONS,
-  PARTICIPANT_TOKEN_HEADER
+  REGIONS
 } from "../constants";
 import { LogManager } from "../log";
 import { ConnectParticipant } from "./aws-client";
@@ -56,20 +52,11 @@ class ChatClient {
     throw new UnImplementedMethodException("sendEvent in ChatClient");
   }
 
-  createConnectionDetails(participantToken) {
-    throw new UnImplementedMethodException("reconnectChat in ChatClient");
-  }
-
   createParticipantConnection(participantToken, type) {
-    throw new UnImplementedMethodException("createConnection in ChatClient");
+    throw new UnImplementedMethodException("createParticipantConnection in ChatClient");
   }
 }
 /*eslint-enable*/
-
-var createDefaultHeaders = () => ({
-  "Content-Type": "application/json",
-  Accept: "application/json"
-});
 
 class AWSChatClient extends ChatClient {
   constructor(args) {
@@ -81,7 +68,6 @@ class AWSChatClient extends ChatClient {
       credentials: creds
     });
     this.chatClient = new AWS.ConnectParticipant(config);
-    this.callHttpClient = makeHttpRequest;
     this.invokeUrl = args.endpoint;
     this.logger = LogManager.getLogger({ prefix: "ChatClient" });
   }
@@ -198,45 +184,6 @@ class AWSChatClient extends ChatClient {
           reject(errObj);
         })
         .send();
-    });
-  }
-
-  createConnectionDetails(participantToken) {
-    var requestInput = {
-      method: HTTP_METHODS.POST,
-      headers: {},
-      url: this.invokeUrl + RESOURCE_PATH.CONNECTION_DETAILS,
-      body: {}
-    };
-    requestInput.headers[PARTICIPANT_TOKEN_HEADER] = participantToken;
-    return this._callHttpClient(requestInput);
-  }
-
-  _callHttpClient(requestInput) {
-    var self = this;
-    requestInput.headers = Object.assign(
-      createDefaultHeaders(),
-      requestInput.headers
-    );
-    requestInput.body = JSON.stringify(requestInput.body);
-    return new Promise(function(resolve, reject) {
-      var success = request => {
-        var responseObject = {};
-        responseObject.data = JSON.parse(request.responseText);
-        resolve(responseObject);
-      };
-      var failure = request => {
-        var errorObject = {};
-        errorObject.statusText = request.statusText;
-        try {
-          errorObject.error = JSON.parse(request.responseText);
-        } catch (e) {
-          self.logger.warn("invalid json error from server");
-          errorObject.error = null;
-        }
-        reject(errorObject);
-      };
-      self.callHttpClient(requestInput, success, failure);
     });
   }
 }

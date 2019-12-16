@@ -15,11 +15,6 @@ const ConnectionHelperEvents = {
   IncomingMessage: "IncomingMessage" // event data is: {payloadString: ...}
 };
 
-const ConnectionType = {
-  IOT: 'IOT',
-  LPC: 'LPC'
-};
-
 const ConnectionInfoType = {
   WEBSOCKET: "WEBSOCKET",
   CONNECTION_CREDENTIALS: "CONNECTION_CREDENTIALS"
@@ -35,11 +30,11 @@ export default class BaseConnectionHelper {
     if (!isFirstCall){
       this.connectionDetailsProvider.fetchConnectionToken()
         .then(() => {
-          const date_expiry = new Date(
+          const dateExpiry = new Date(
             this.connectionDetailsProvider.getConnectionTokenExpiry()
           ).getTime();
           const now = new Date().getTime();
-          expiry = date_expiry - now - CONNECTION_TOKEN_EXPIRY_BUFFER_IN_MS;
+          expiry = dateExpiry - now - CONNECTION_TOKEN_EXPIRY_BUFFER_IN_MS;
         });
     }
     this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this, false), expiry);
@@ -68,6 +63,5 @@ export default class BaseConnectionHelper {
 export {
   ConnectionHelperStatus,
   ConnectionHelperEvents,
-  ConnectionType,
   ConnectionInfoType
 };

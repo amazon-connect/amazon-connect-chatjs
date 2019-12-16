@@ -1,11 +1,10 @@
 import LpcConnectionHelper from "./LpcConnectionHelper";
-
+import WebSocketManager from "../../lib/amazon-connect-websocket-manager";
 describe("LpcConnectionHelper", () => {
 
   let connectionDetailsProvider = {
     fetchConnectionDetails: () => {},
-    fetchConnectionToken: () => {},
-    getConnectionTokenExpiry: () => {}
+    fetchConnectionToken: () => {}
   };
   let websocketManager;
 
@@ -15,7 +14,6 @@ describe("LpcConnectionHelper", () => {
     const connectionGainHandlers = [];
     const endedHandlers = [];
     const refreshHandlers = [];
-
     websocketManager = {
       subscribeTopics: jest.fn((topics) => {}),
       onMessage: jest.fn((topic, handler) => {
@@ -52,22 +50,61 @@ describe("LpcConnectionHelper", () => {
     return websocketManager;
   }
 
+
   beforeEach(() => {
     connectionDetailsProvider.fetchConnectionDetails = jest.fn(() => Promise.resolve({
-      preSignedConnectionUrl: "url"
+      url: "url",
+      expiry: "expiry"
     }));
-    connectionDetailsProvider.fetchConnectionToken = jest.fn(() => 
-      Promise.resolve("token")
-    );
-    connectionDetailsProvider.getConnectionTokenExpiry = jest.fn(() => 100000000);
+    connectionDetailsProvider.getConnectionTokenExpiry = jest.fn(() => Promise.resolve("expiry"));
     LpcConnectionHelper.baseInstance = null;
     initWebsocketManager();
-    global.connect = global.connect || {};
-    global.connect.WebSocketManager = { create: initWebsocketManager };
+    const mock = jest.spyOn(WebSocketManager, 'create'); 
+    mock.mockImplementation(() => {
+    const messageHandlers = [];
+    const connectionLostHandlers = [];
+    const connectionGainHandlers = [];
+    const endedHandlers = [];
+    const refreshHandlers = [];
+    websocketManager = {
+      subscribeTopics: jest.fn((topics) => {}),
+      onMessage: jest.fn((topic, handler) => {
+        messageHandlers.push(handler);
+      }),
+      onConnectionGain: jest.fn((handler) => {
+        connectionGainHandlers.push(handler);
+      }),
+      onConnectionLost: jest.fn((handler) => {
+        connectionLostHandlers.push(handler);
+      }),
+      onInitFailure: jest.fn((handler) => {
+        endedHandlers.push(handler);
+      }),
+      init: jest.fn((dataProvider) => {
+        refreshHandlers.push(dataProvider);
+      }),
+      $simulateMessage(message) {
+        messageHandlers.forEach(f => f(message));
+      },
+      $simulateConnectionLost() {
+        connectionLostHandlers.forEach(f => f());
+      },
+      $simulateConnectionGain() {
+        connectionGainHandlers.forEach(f => f());
+      },
+      $simulateEnded() {
+        endedHandlers.forEach(f => f());
+      },
+      $simulateRefresh() {
+        refreshHandlers.forEach(f => f());
+      }
+    };
+    return websocketManager;
+  }); 
   });
 
-  function getLpcConnectionHelper(contactId) {
-    return new LpcConnectionHelper(contactId, contactId, connectionDetailsProvider, websocketManager);
+  function getLpcConnectionHelper(initialContactId) {
+    return new LpcConnectionHelper(null, initialContactId, connectionDetailsProvider, websocketManager);
   }
 
   describe("with provided websocketManager", () => {
@@ -80,7 +117,6 @@ describe("LpcConnectionHelper", () => {
       expect(websocketManager.onConnectionGain).toHaveBeenCalledTimes(1);
       expect(websocketManager.onConnectionLost).toHaveBeenCalledTimes(1);
     });
-  
     test("websocket manager will only be initialized once", () => {
       getLpcConnectionHelper("id1").start();
       getLpcConnectionHelper("id2").start();
@@ -89,7 +125,6 @@ describe("LpcConnectionHelper", () => {
       expect(websocketManager.onConnectionGain).toHaveBeenCalledTimes(1);
       expect(websocketManager.onConnectionLost).toHaveBeenCalledTimes(1);
     });
-
     test("onConnectionLost handler is called", () => {
       const onConnectionLostHandler1 = jest.fn();
       const onConnectionLostHandler2 = jest.fn();
@@ -99,7 +134,6 @@ describe("LpcConnectionHelper", () => {
       expect(onConnectionLostHandler1).toHaveBeenCalledTimes(1);
       expect(onConnectionLostHandler2).toHaveBeenCalledTimes(1);
     });
-
     test("onConnectionGain handler is called", () => {
       const onConnectionGainHandler1 = jest.fn();
       const onConnectionGainHandler2 = jest.fn();
@@ -109,18 +143,17 @@ describe("LpcConnectionHelper", () => {
       expect(onConnectionGainHandler1).toHaveBeenCalledTimes(1);
       expect(onConnectionGainHandler2).toHaveBeenCalledTimes(1);
     });
-
     test("onMessage handler is called", () => {
       const onMessageHandler1 = jest.fn();
       const onMessageHandler2 = jest.fn();
       getLpcConnectionHelper("id1").onMessage(onMessageHandler1);
       getLpcConnectionHelper("id2").onMessage(onMessageHandler2);
-      websocketManager.$simulateMessage({ content: JSON.stringify({ ContactId: "id1" }) });
-      websocketManager.$simulateMessage({ content: JSON.stringify({ ContactId: "id2" }) });
+      websocketManager.$simulateMessage({ content: JSON.stringify({ InitialContactId: "id1" }) });
+      websocketManager.$simulateMessage({ content: JSON.stringify({ InitialContactId: "id2" }) });
       expect(onMessageHandler1).toHaveBeenCalledTimes(1);
-      expect(onMessageHandler1).toHaveBeenCalledWith({ ContactId: "id1" }, expect.anything(), expect.anything());
+      expect(onMessageHandler1).toHaveBeenCalledWith({ InitialContactId: "id1" }, expect.anything(), expect.anything());
       expect(onMessageHandler2).toHaveBeenCalledTimes(1);
-      expect(onMessageHandler2).toHaveBeenCalledWith({ ContactId: "id2" }, expect.anything(), expect.anything());
+      expect(onMessageHandler2).toHaveBeenCalledWith({ InitialContactId: "id2" }, expect.anything(), expect.anything());
     });
   });
 
@@ -136,7 +169,6 @@ describe("LpcConnectionHelper", () => {
       expect(websocketManager.onConnectionLost).toHaveBeenCalledTimes(1);
       expect(websocketManager.init).toHaveBeenCalledTimes(1);
     });
-  
     test("websocket manager will only be initialized once", () => {
       websocketManager = null;
       getLpcConnectionHelper("id1").start();

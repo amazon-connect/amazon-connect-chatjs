@@ -1,13 +1,11 @@
 import { EventBus } from "../eventbus";
 import { LogManager } from "../../log";
-import { TRANSPORT_LIFETIME_IN_SECONDS } from "../../constants";
 import { 
   ConnectionHelperEvents,
   ConnectionHelperStatus
 } from "./baseConnectionHelper";
 import BaseConnectionHelper from "./baseConnectionHelper";
-
-
+import WebSocketManager from "../../lib/amazon-connect-websocket-manager";
 class LpcConnectionHelper extends BaseConnectionHelper {
 
   constructor(contactId, initialContactId, connectionDetailsProvider, websocketManager) {
@@ -101,7 +99,7 @@ class LPCConnectionHelperBase {
   }
 
   initWebsocketManager(websocketManager, connectionDetailsProvider) {
-    this.websocketManager = websocketManager || connect.WebSocketManager.create();
+    this.websocketManager = websocketManager || WebSocketManager.create();
     this.websocketManager.subscribeTopics(["aws/chat"]);
     this.subscriptions = [
       this.websocketManager.onMessage("aws/chat", this.handleMessage.bind(this)),
@@ -112,16 +110,12 @@ class LPCConnectionHelperBase {
     if (!websocketManager) {
       this.websocketManager.init(
         () => connectionDetailsProvider.fetchConnectionDetails()
-          .then(connectionDetails => {
-            const expiry = new Date();
-            expiry.setSeconds(expiry.getSeconds() + TRANSPORT_LIFETIME_IN_SECONDS);
-            return {
-              webSocketTransport: {
-                url: connectionDetails.preSignedConnectionUrl,
-                expiry: expiry.toISOString()
-              }
-            };
-          })
+          .then(connectionDetails => ({
+            webSocketTransport: {
+              url: connectionDetails.url,
+              expiry: connectionDetails.expiry
+            }
+          }))
       );
     }
   }
