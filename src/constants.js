@@ -26,6 +26,12 @@ export const REGION_CONFIG = {
   "us-east-1": {
     invokeUrl: "https://participant.connect.us-east-1.amazonaws.com"
   },
+  "ap-south-1": {
+    invokeUrl: "https://participant.connect.ap-south-1.amazonaws.com"
+  },
+  "ap-southeast-1": {
+    invokeUrl: "https://participant.connect.ap-southeast-1.amazonaws.com"
+  },
   "ap-southeast-2": {
     invokeUrl: "https://participant.connect.ap-southeast-2.amazonaws.com"
   },
@@ -35,6 +41,9 @@ export const REGION_CONFIG = {
   "eu-central-1": {
     invokeUrl: "https://participant.connect.eu-central-1.amazonaws.com"
   },
+  "eu-west-2": {
+    invokeUrl: "https://participant.connect.eu-west-2.amazonaws.com"
+  }
 };
 
 export const MQTT_CONSTANTS = {
