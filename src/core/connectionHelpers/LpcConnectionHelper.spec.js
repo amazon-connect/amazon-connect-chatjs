@@ -56,6 +56,7 @@ describe("LpcConnectionHelper", () => {
       url: "url",
       expiry: "expiry"
     }));
+    connectionDetailsProvider.getConnectionTokenExpiry = jest.fn(() => Promise.resolve("expiry"));
     LpcConnectionHelper.baseInstance = null;
     initWebsocketManager();
     const mock = jest.spyOn(WebSocketManager, 'create'); 
@@ -168,7 +169,6 @@ describe("LpcConnectionHelper", () => {
       expect(websocketManager.onConnectionLost).toHaveBeenCalledTimes(1);
       expect(websocketManager.init).toHaveBeenCalledTimes(1);
     });
-
     test("websocket manager will only be initialized once", () => {
       websocketManager = null;
       getLpcConnectionHelper("id1").start();

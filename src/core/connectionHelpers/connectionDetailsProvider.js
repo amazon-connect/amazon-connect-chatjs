@@ -8,6 +8,19 @@ export default class ConnectionDetailsProvider {
     this.participantToken = participantToken || null;
     this.connectionDetails = null;
     this.connectionToken = null;
+    this.connectionTokenExpiry = null;
+  }
+
+  getConnectionToken() {
+    return this.connectionToken;
+  }
+
+  getConnectionTokenExpiry() {
+    return this.connectionTokenExpiry;
+  }
+
+  getConnectionDetails() {
+    return this.connectionDetails;
   }
 
   fetchConnectionDetails() {
@@ -24,6 +37,7 @@ export default class ConnectionDetailsProvider {
       expiry: connectionDetails.Websocket.ConnectionExpiry
     };
     this.connectionToken = connectionDetails.ConnectionCredentials.ConnectionToken;
+    this.connectionTokenExpiry = connectionDetails.ConnectionCredentials.Expiry;
   }
 
   _fetchConnectionDetails() {

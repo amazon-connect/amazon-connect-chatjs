@@ -17,7 +17,8 @@ describe("ConnectionDetailsProvider", () => {
   beforeEach(() => {
     fetchedConnectionDetails = {
       ParticipantCredentials: {
-        ConnectionAuthenticationToken: 'token'
+        ConnectionAuthenticationToken: 'token',
+        Expiry: 1
       },
       url: 'url',
       expiry: 'expiry'
@@ -32,7 +33,8 @@ describe("ConnectionDetailsProvider", () => {
         return Promise.resolve({
           data: {
             ConnectionCredentials: {
-              ConnectionToken: fetchedConnectionDetails.ParticipantCredentials.ConnectionAuthenticationToken + counter
+              ConnectionToken: fetchedConnectionDetails.ParticipantCredentials.ConnectionAuthenticationToken + counter,
+              Expiry: 1
             },
             Websocket: {
               Url: fetchedConnectionDetails.url + counter,

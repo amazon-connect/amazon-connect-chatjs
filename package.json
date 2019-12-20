@@ -2,6 +2,12 @@
   "name": "amazon-connect-chatjs",
   "version": "1.0.0",
   "main": "dist/amazon-connect-chat.js",
+  "engines": {
+    "node": ">=10.0.0"
+  },
+  "directories": {
+    "lib": "./src"
+  },
   "description": "Provides chat support to AmazonConnect customers",
   "scripts": {
     "test": "jest",
@@ -10,11 +16,12 @@
     "watch": "webpack --watch",
     "dev": "webpack --mode=development && webpack --watch",
     "server": "webpack-dev-server --hot --inline",
-    "clean": "rm -rf build/ node_modules build"
+    "clean": "rm -rf build/ node_modules build",
+    "release-watch": "npm run release && npm run watch"
   },
   "repository": {
     "type": "git",
-    "url":"git+https://github.com/amazon-connect/amazon-connect-chatjs.git"
+    "url": "git+https://github.com/amazon-connect/amazon-connect-chatjs.git"
   },
   "keywords": [
     "amazon",
