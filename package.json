@@ -1,6 +1,6 @@
 {
   "name": "amazon-connect-chatjs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "dist/amazon-connect-chat.js",
   "engines": {
     "node": ">=10.0.0"
