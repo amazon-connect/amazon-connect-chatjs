@@ -1,13 +1,16 @@
 {
   "name": "amazon-connect-chatjs",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "dist/amazon-connect-chat.js",
   "engines": {
     "node": ">=10.0.0"
   },
   "directories": {
-    "lib": "./src"
+    "lib": "./dist"
   },
+  "files": [
+    "dist/"
+  ],
   "description": "Provides chat support to AmazonConnect customers",
   "scripts": {
     "test": "jest",
@@ -63,5 +66,8 @@
   },
   "dependencies": {
     "sprintf-js": "^1.1.2"
+  },
+  "npm-pretty-much": {
+    "runRelease": "always"
   }
 }

@@ -26,18 +26,16 @@ export default class BaseConnectionHelper {
     this.isStarted = false;
   }
 
-  startConnectionTokenPolling(isFirstCall, expiry=CONNECTION_TOKEN_POLLING_INTERVAL_IN_MS) {
+  startConnectionTokenPolling(isFirstCall=false, expiry=CONNECTION_TOKEN_POLLING_INTERVAL_IN_MS) {
     if (!isFirstCall){
       this.connectionDetailsProvider.fetchConnectionToken()
         .then(() => {
-          const dateExpiry = new Date(
-            this.connectionDetailsProvider.getConnectionTokenExpiry()
-          ).getTime();
+          const dateExpiry = this.getConnectionTokenExpiry();
           const now = new Date().getTime();
           expiry = dateExpiry - now - CONNECTION_TOKEN_EXPIRY_BUFFER_IN_MS;
         });
     }
-    this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this, false), expiry);
+    this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this), expiry);
   }
 
   start() {
@@ -47,7 +45,7 @@ export default class BaseConnectionHelper {
     this.isStarted = true;
     this.startConnectionTokenPolling(
       true, 
-      this.connectionDetailsProvider.getConnectionTokenExpiry()
+      this.getConnectionTokenExpiry()
     );
   }
 
@@ -57,6 +55,11 @@ export default class BaseConnectionHelper {
 
   getConnectionToken() {
     return this.connectionDetailsProvider.getConnectionToken();
+  }
+  getConnectionTokenExpiry() {
+    return new Date(
+      this.connectionDetailsProvider.getConnectionTokenExpiry()
+    ).getTime();
   }
 }
 
