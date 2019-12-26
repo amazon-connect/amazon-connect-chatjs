@@ -101,7 +101,7 @@ export const CUSTOMER_RECONNECT_CONFIG = {
   maxRetries: 5
 };
 
-export const CONNECTION_TOKEN_POLLING_INTERVAL_IN_MS = 1000 * 60 * 60 * 12;
+export const CONNECTION_TOKEN_POLLING_INTERVAL_IN_MS = 1000 * 60 * 60 * 12; // 12 hours
 
 export const CONNECTION_TOKEN_EXPIRY_BUFFER_IN_MS = 60 * 1000; //1 min
 
