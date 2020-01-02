@@ -1,5 +1,5 @@
-
 import Utils from "./utils";
+import regeneratorRuntime from "regenerator-runtime";
 
 describe("Utils", () => {
   describe(".delay()", () => {

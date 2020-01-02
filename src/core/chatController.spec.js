@@ -11,6 +11,7 @@ import { ChatController } from "./chatController";
 import { ConnectionHelperStatus } from "./connectionHelpers/baseConnectionHelper";
 import LpcConnectionHelper from "./connectionHelpers/LpcConnectionHelper";
 import connectionDetailsProvider from "./connectionHelpers/connectionDetailsProvider";
+import regeneratorRuntime from "regenerator-runtime";
 
 jest.mock("./connectionHelpers/LpcConnectionHelper");
 jest.mock("./connectionHelpers/connectionDetailsProvider");
