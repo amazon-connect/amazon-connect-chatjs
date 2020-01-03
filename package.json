@@ -36,8 +36,20 @@
     "setupFiles": [
       "./test/jestSetup.js"
     ],
-    "testPathIgnorePatterns": [
-      "/showcase/"
+    "transform": {
+      ".(js|jsx)$": "babel-jest"
+    },
+    "testRegex": "/src/.*\\.spec\\.js$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "json"
+    ],
+    "collectCoverage": true,
+    "coverageReporters": [
+      "json",
+      "html"
     ]
   },
   "author": "Amazon Web Services",
