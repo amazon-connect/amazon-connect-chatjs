@@ -33,20 +33,11 @@
     "chatjs"
   ],
   "jest": {
-    "transform": {
-      ".(js|jsx)$": "babel-jest"
-    },
-    "testRegex": "/src/.*\\.spec\\.js$",
-    "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js",
-      "json"
+    "setupFiles": [
+      "./test/jestSetup.js"
     ],
-    "collectCoverage": true,
-    "coverageReporters": [
-      "json",
-      "html"
+    "testPathIgnorePatterns": [
+      "/showcase/"
     ]
   },
   "author": "Amazon Web Services",
@@ -67,8 +58,5 @@
   },
   "dependencies": {
     "sprintf-js": "^1.1.2"
-  },
-  "npm-pretty-much": {
-    "runRelease": "always"
   }
 }
