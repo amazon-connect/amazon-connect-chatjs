@@ -1,7 +1,6 @@
 import Utils from "../utils";
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
 import { IllegalJsonException } from "./exceptions";
-import regeneratorRuntime from "regenerator-runtime";
 
 describe("ChatServiceArgsValidator", () => {
 

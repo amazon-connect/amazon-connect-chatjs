@@ -1,5 +1,6 @@
 import LpcConnectionHelper from "./LpcConnectionHelper";
 import WebSocketManager from "../../lib/amazon-connect-websocket-manager";
+
 describe("LpcConnectionHelper", () => {
 
   let connectionDetailsProvider = {

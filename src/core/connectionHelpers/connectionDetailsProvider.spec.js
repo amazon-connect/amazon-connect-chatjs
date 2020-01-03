@@ -1,6 +1,5 @@
 import ConnectionDetailsProvider from "./connectionDetailsProvider";
 import {  ConnectionInfoType } from "./baseConnectionHelper";
-import regeneratorRuntime from "regenerator-runtime";
 
 describe("ConnectionDetailsProvider", () => {
 
