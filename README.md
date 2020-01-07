@@ -21,13 +21,14 @@ Ensure you import ChatJS after Streams.
 Import Streams, then ChatJS, then the SDK. 
 Ensure that your AWS SDK includes the ConnectParticipant Service (it is relatively new, so make sure you have an up-to-date AWS SDK version [^2.597.0]).
 
-If this is not working for some reason (you could be imnporting streams and or chatjs in a way that makes it unclear which AWS object is bound to the Window object), you can remove the two files: `./client/aws-client.js` and `./client/client.js` from ChatJS to eliminate a potential source of conflict. However, DO NOT remove the built in SDK from Streams. If you remove ChatJS' SDK and still experience issues, you must ensure that the AWS SDK is imported after Streams in some way, so that its AWS object is the one bound to the Window object. 
-
 #### Scenario 3: ChatJS only, no AWS SDK import.
 No need to worry here, this will always work.
 
 #### Scenario 4: ChatJS only, with AWS SDK import.
 Import ChatJS before the AWS SDK, and ensure the AWS SDK version you are using contains the ConnectParticipant Service.
+
+#### A note for Scenarios 2 and 4.
+When using the SDK and ChatJS, you may remove the SDK from ChatJS to ensure lack of import conflicts. However, this should not be relevant if the order in which you are importing these libraries is the order reflected above.
 
 ### Downloading ChatJS
 ```
