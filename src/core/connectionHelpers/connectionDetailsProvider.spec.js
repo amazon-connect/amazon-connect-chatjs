@@ -48,7 +48,6 @@ describe("ConnectionDetailsProvider", () => {
 
 
   describe("With participantToken", () => {
-
     describe(".fetchConnectionDetails()", () => {
       test("returns valid url on first call", async () => {
         setup();

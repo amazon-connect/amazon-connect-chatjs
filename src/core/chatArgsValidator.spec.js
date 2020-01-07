@@ -2,7 +2,6 @@ import Utils from "../utils";
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
 import { IllegalJsonException } from "./exceptions";
 
-
 describe("ChatServiceArgsValidator", () => {
 
   function getValidator() {
