@@ -9,8 +9,27 @@ the [Amazon Connect User Guide](https://docs.aws.amazon.com/connect/latest/userg
 
 # Getting Started
 
-### Downloading ChatJS
+### A note about the AWS-SDK
+The AWS-SDK is, by default, included in ChatJS as a "baked-in" dependency. You can view it at `./client/aws-client.js`. In `./client/client.js` we import ConnectParticipant from this file. This file and import can be removed while using the AWS SDK imported through a script in the `index.html` file of your application.
+Incidentally, Amazon Connect Streams also contains a "baked-in" AWS SDK. This SDK cannot be removed, as it contains unreleased APIs that will not be available in the SDK you include as a script in `index.html`. 
+Therefore, there are several occasions where implementations can run into AWS SDK issues.
 
+#### Scenario 1: Streams and ChatJS are used. You are not importing the AWS SDK.
+Ensure you import ChatJS after Streams.
+
+#### Scenario 2: Streams and ChatJS are used. You are importing the AWS SDK.
+Import Streams, then ChatJS, then the SDK. 
+Ensure that your AWS SDK includes the ConnectParticipant Service (it is relatively new, so make sure you have an up-to-date AWS SDK version [^2.597.0]).
+
+If this is not working for some reason (you could be imnporting streams and or chatjs in a way that makes it unclear which AWS object is bound to the Window object), you can remove the two files: `./client/aws-client.js` and `./client/client.js` from ChatJS to eliminate a potential source of conflict. However, DO NOT remove the built in SDK from Streams. If you remove ChatJS' SDK and still experience issues, you must ensure that the AWS SDK is imported after Streams in some way, so that its AWS object is the one bound to the Window object. 
+
+#### Scenario 3: ChatJS only, no AWS SDK import.
+No need to worry here, this will always work.
+
+#### Scenario 4: ChatJS only, with AWS SDK import.
+Import ChatJS before the AWS SDK, and ensure the AWS SDK version you are using contains the ConnectParticipant Service.
+
+### Downloading ChatJS
 ```
 $ git clone https://github.com/amazon-connect/amazon-connect-chatjs
 ```
