@@ -10,8 +10,8 @@ the [Amazon Connect User Guide](https://docs.aws.amazon.com/connect/latest/userg
 # Getting Started
 
 ### A note about the AWS-SDK and ChatJS
-The AWS-SDK is, by default, included in ChatJS as a "baked-in" dependency. You can view it at `./client/aws-client.js`. In `./client/client.js` we import ConnectParticipant from this file. This file and import can be removed while using the AWS SDK imported through a script in the `index.html` file of your application, assuming that version of the AWS SDK has the ConnectParticipant Service included.
-Incidentally, Amazon Connect Streams also contains a "baked-in" AWS SDK. This SDK cannot be removed, as it contains unreleased APIs that will not be available in the SDK you include as a script in `index.html`. 
+The AWS-SDK is, by default, included in ChatJS as a "baked-in" dependency. You can view it at `./client/aws-client.js`. In `./client/client.js` we import `ConnectParticipant` from this file. This file and import can be removed while using the AWS SDK imported through a script in the page file of your application, assuming that version of the AWS SDK has the `ConnectParticipant` service included.
+Incidentally, Amazon Connect Streams also contains a "baked-in" AWS SDK. This SDK cannot be removed, as it contains unreleased APIs that will not be available in the SDK you include as a script in the page file. 
 Therefore, there are several occasions where implementations can run into AWS SDK issues.
 
 #### Scenario 1: Streams and ChatJS are used. You are not importing the AWS SDK.
