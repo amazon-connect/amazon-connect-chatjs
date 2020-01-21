@@ -54,7 +54,7 @@ export default class BaseConnectionHelper {
   }
 
   getConnectionToken() {
-    return this.connectionDetailsProvider.getConnectionToken();
+    return this.connectionDetailsProvider.getFetchedConnectionToken();
   }
   getConnectionTokenExpiry() {
     return new Date(
