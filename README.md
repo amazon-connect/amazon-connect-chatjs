@@ -30,11 +30,19 @@ Import ChatJS before the AWS SDK, and ensure the AWS SDK version you are using c
 #### A note for Scenarios 2 and 4.
 When using the SDK and ChatJS, you may remove the SDK from ChatJS to ensure lack of import conflicts. However, this should not be relevant if the order in which you are importing these libraries is the order reflected above.
 
-### Downloading ChatJS
+### Using ChatJS from npm
+
+`npm install amazon-connect-chatjs -save`
+
+# Importing using npm and ES6
+`import amazon-connect-chatjs`
+Note: this will apply the global `connect` variable to your current scope.
+
+### Using ChatJS from Github
 ```
 $ git clone https://github.com/amazon-connect/amazon-connect-chatjs
 ```
-### Building ChatJS
+# Building
 1. Install latest LTS version of [NodeJS](https://nodejs.org)
 2. Checkout this package into workspace and navigate to root folder
 3. `npm install`
@@ -53,7 +61,7 @@ $ git clone https://github.com/amazon-connect/amazon-connect-chatjs
 
 Find build artifacts in **dist** directory -  This will generate a file called `amazon-connect-chat.js` - this is the full Connect ChatJS API which you will want to include in your page.
 
-# Initialization
+### Initialization
 Setup the globalConfig and logger for ChatJS to use.
 ```
 var logger = {
