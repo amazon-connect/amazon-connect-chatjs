@@ -32,7 +32,7 @@ When using the SDK and ChatJS, you may remove the SDK from ChatJS to ensure lack
 
 ### Using ChatJS from npm
 
-`npm install amazon-connect-chatjs -save`
+`npm install amazon-connect-chatjs`
 
 # Importing using npm and ES6
 `import amazon-connect-chatjs`
