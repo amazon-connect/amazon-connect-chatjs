@@ -92,7 +92,7 @@ args = {
                         //connect.ChatSession.SessionTypes.CUSTOMER 
                         //connect.ChatSession.SessionTypes.AGENT
     "options": options, //required: no. See below for example
-    "websocketManager": WebSocketManager //Optional, only for AGENT type chat sessions. This comes from Streams 
+    "websocketManager": WebSocketManager //required: no, only for AGENT type chat sessions. This comes from Streams 
 };
 
 //This is the object returned by a successful call to the StartChatContact API.
