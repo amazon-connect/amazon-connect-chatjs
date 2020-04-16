@@ -86,8 +86,8 @@ connect.ChatSession.setGlobalConfig(globalConfig);
 `Method param:` args
 ```
 args = {
-    "chatDetails": chatDetails, //required: *yes*
-    "type": sessionType,//required: *yes*. Two types of sessionType: 
+    "chatDetails": chatDetails, //required: **yes**
+    "type": sessionType,//required: **yes**. Two types of sessionType: 
                         //connect.ChatSession.SessionTypes.CUSTOMER 
                         //connect.ChatSession.SessionTypes.AGENT
     "options": options, //required: no. See below for example
@@ -97,9 +97,9 @@ args = {
 //This is the object returned by a successful call to the StartChatContact API.
 //From the agent-side, these fields should all be available via Streams.
 chatDetails = {
-  "ContactId": "string", //required: *yes*. The alphanumeric string id identifying this contact.
-  "ParticipantId": "string", //required: *yes*. The alphanumeric string id identifying this participant.
-  "ParticipantToken": "string" //required: *yes*. The alphanumeric token that allows us to fetch our auth token for AWS SDK Chat API calls
+  "ContactId": "string", //required: **yes**. The alphanumeric string id identifying this contact.
+  "ParticipantId": "string", //required: **yes**. The alphanumeric string id identifying this participant.
+  "ParticipantToken": "string" //required: **yes**. The alphanumeric token that allows us to fetch our auth token for AWS SDK Chat API calls
 };
  
 options = {
@@ -152,8 +152,8 @@ chatSession.disconnectParticipant();
 `Method param:` args
 ```
 args = {
-    message: "string" //required: *yes*,* *min len: 1, max len: 1024
-    contentType: "string", //required: *yes*, only valid string for message is text/plain
+    message: "string" //required: **yes**, min len: 1, max len: 1024
+    contentType: "string", //required: **yes**, only valid string for message is text/plain
     metadata: //required: no
 }
 ```
@@ -166,7 +166,7 @@ IllegalArgumentException
 ```
 args = {
     content: "string", //required: no, nullable, reserved for future use; // min len: 1, max len: 1024
-    contentType: "string", //required: *yes*, custom type depicting chat events
+    contentType: "string", //required: **yes**, custom type depicting chat events
              // supported types ->
              //  "application/vnd.amazonaws.connect.event.typing 
              // | "application/vnd.amazonaws.connect.event.participant.joined
