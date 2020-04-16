@@ -1,5 +1,5 @@
 # About
-The Amazon Connect Chat javascript library (ChatJS) gives you the power to build your own chat widget to customize the chat experience. This can be used for both the Agent User Interface, in conjunction with [Amazon Connect Streams](https://github.com/aws/amazon-connect-streams) and for the customer chat interface. 
+The Amazon Connect Chat javascript library (ChatJS) gives you the power to build your own chat widget to customize the chat experience. This can be used for both the agent user interface, in conjunction with [Amazon Connect Streams](https://github.com/aws/amazon-connect-streams), and for the customer chat interface. 
 
 There is a [Chat UI reference implementation](https://github.com/amazon-connect/amazon-connect-chat-ui-examples) here. This will help you deploy an API Gateway and Lambda function for initiating chat from your webpage. From there you can use the ChatJS library to build a custom widget.
 
@@ -62,7 +62,7 @@ $ git clone https://github.com/amazon-connect/amazon-connect-chatjs
 Find build artifacts in **dist** directory -  This will generate a file called `amazon-connect-chat.js` - this is the full Connect ChatJS API which you will want to include in your page.
 
 ### Initialization
-Setup the globalConfig and logger for ChatJS to use.
+Setup the globalConfig and logger for ChatJS to use. If no `globalConfig` object is supplied, no logger will work and the default values for fields like `region` will be used. 
 ```
 var logger = {
   debug: (data) => {console.debug(data);},
@@ -71,13 +71,12 @@ var logger = {
   error: (data) => {console.error(data);}
 }
 
-var globalConfig = {
+var globalConfig = { //required: no. This object defines some config, but all of it is optional.
   loggerConfig: {
-    logger: logger,
-    // There are four levels available - DEBUG, INFO, WARN, ERROR. Default is INFO.
-    level: connect.ChatSession.LogLevel.INFO,
+    logger: logger, //required: no. See above for an example client logger implementation.
+    level: connect.ChatSession.LogLevel.INFO, // required: no. There are four levels available - DEBUG, INFO, WARN, ERROR. Default is INFO.
   },
-  region: "us-west-2" // "us-west-2" is the default value.
+  region: "us-west-2" // required: no. "us-west-2" is the default value.
 };
 
 connect.ChatSession.setGlobalConfig(globalConfig);
@@ -87,22 +86,28 @@ connect.ChatSession.setGlobalConfig(globalConfig);
 `Method param:` args
 ```
 args = {
-    "chatDetails": chatDetails,
-    "type": sessionType,//two types of sesstionType: 
+    "chatDetails": chatDetails, //required: *yes*
+    "type": sessionType,//required: *yes*. Two types of sessionType: 
                         //connect.ChatSession.SessionTypes.CUSTOMER 
                         //connect.ChatSession.SessionTypes.AGENT
-    "options": options,
-    "websocketManager": WebSocketManager
+    "options": options, //required: no. See below for example
+    "websocketManager": WebSocketManager //required: no, only for AGENT type chat sessions. This comes from Streams 
 };
 
+//This is the object returned by a successful call to the StartChatContact API.
+//From the agent-side, these fields should all be available via Streams.
 chatDetails = {
-  "ContactId": "<>",
-  "ParticipantId": "<>",
-  "ParticipantToken": "<>"
+  "ContactId": "string", //required: *yes*. The alphanumeric string id identifying this contact.
+  "ParticipantId": "string", //required: *yes*. The alphanumeric string id identifying this participant.
+  "ParticipantToken": "string" //required: *yes*. The alphanumeric token that allows us to fetch our auth token for AWS SDK Chat API calls
+};
+ 
+options = {
+    region: "string" //required: no. Represents the region (like "us-west-2", "eu-central-1", etc) for the AWS SDK client to use. 
 };
 
 
-var chatSession = connect.ChatSession.create(inputForChatSession);
+var chatSession = connect.ChatSession.create(args);
 ```
 
 Use the chatSession object to subscribe to the following callbacks. Example - The onMessage callback is used to handle any messages sent from one of the participants or the chat service.
@@ -147,9 +152,9 @@ chatSession.disconnectParticipant();
 `Method param:` args
 ```
 args = {
-    message: "string" //required: *yes*,* *min len: 1, max len: 1024
+    message: "string" //required: *yes*, min len: 1, max len: 1024
     contentType: "string", //required: *yes*, only valid string for message is text/plain
-    metadata: 
+    metadata: //required: no
 }
 ```
 `Exceptions:`
@@ -181,7 +186,7 @@ IllegalArgumentException
 `Method param:` args
 ```
 args = {
-   contactId: "string" //min len: 1, max len:256, required: No
+   contactId: "string" //required: no, min len: 1, max len:256
    maxResults: number, //required: no, Nullable, min:0, max: 100
    nextToken: "string", //required: no, min len:1, max len: 1000, 
    scanDirection: "string", //required: no, enum string to indicate FORWARD | BACKWARD
