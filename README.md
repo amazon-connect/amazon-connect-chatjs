@@ -189,8 +189,8 @@ args = {
    contactId: "string" //required: no, min len: 1, max len:256
    maxResults: number, //required: no, Nullable, min:0, max: 100
    nextToken: "string", //required: no, min len:1, max len: 1000, 
-   scanDirection: "string", //required: no, enum string to indicate FORWARD | BACKWARD
-   sortOrder: "string", //required: no, enum string to indicate DESCENDING | ASCENDING
+   scanDirection: "string", //required: no, enum string to indicate FORWARD | BACKWARD. Defaults to BACKWARD
+   sortOrder: "string", //required: no, enum string to indicate DESCENDING | ASCENDING. Defaults to DESCENDING
    startPosition: { // required: no
       id: "string", //min len: 1, max len:256
       mostRecent: number, // min:0, max: 100
@@ -201,3 +201,6 @@ args = {
 ```
 `Exceptions:`
 No Exceptions (API takes care of other exceptions)
+
+#### Important Note
+You can only specify `scanDirection` as `FORWARD` when you specify a `startPosition`. This is because the default `startPosition` is at the most recent update to the transcript, so requesting a transcript in the `FORWARD` direction from the default `startPosition` is equivalent to asking for a transcript containing only messages more recent than the present (you are asking for messages in the future!).
