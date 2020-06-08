@@ -203,4 +203,4 @@ args = {
 No Exceptions (API takes care of other exceptions)
 
 #### Important Note
-You can only specify `scanDirection` as `FORWARD` when you specify a `startPosition`. This is because the default `startPosition` is at the most recent update to the transcript, so requesting a transcript in the `FORWARD` direction from the default `startPosition` is equivalent to asking for a transcript containing only messages more recent than the present (you are asking for messages in the future!).
+In order to specify `scanDirection` as `FORWARD`, you need to explicitly include a `startPosition`. This is because the default `startPosition` is at the most recent update to the transcript, so requesting a transcript in the `FORWARD` direction from the default `startPosition` is equivalent to asking for a transcript containing only messages more recent than the present (you are asking for messages in the future!).
