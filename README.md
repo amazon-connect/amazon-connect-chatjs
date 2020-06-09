@@ -38,6 +38,16 @@ When using the SDK and ChatJS, you may remove the SDK from ChatJS to ensure lack
 `import "amazon-connect-chatjs"`
 Note: this will apply the global `connect` variable to your current scope.
 
+# Usage with TypeScript
+
+`amazon-connect-chatjs` is compatible with TypeScript. You'll need to use version `3.0.1` or higher:
+
+```ts
+import "amazon-connect-streams";
+
+connect.ChatSession.create({ /* ... */ });
+```
+
 ### Using ChatJS from Github
 ```
 $ git clone https://github.com/amazon-connect/amazon-connect-chatjs
@@ -61,146 +71,329 @@ $ git clone https://github.com/amazon-connect/amazon-connect-chatjs
 
 Find build artifacts in **dist** directory -  This will generate a file called `amazon-connect-chat.js` - this is the full Connect ChatJS API which you will want to include in your page.
 
-### Initialization
-Setup the globalConfig and logger for ChatJS to use. If no `globalConfig` object is supplied, no logger will work and the default values for fields like `region` will be used. 
-```
-var logger = {
-  debug: (data) => {console.debug(data);},
-  info: (data) => {console.info(data);},
-  warn: (data) => {console.warn(data);},
-  error: (data) => {console.error(data);}
-}
+# API
 
-var globalConfig = { //required: no. This object defines some config, but all of it is optional.
-  loggerConfig: {
-    logger: logger, //required: no. See above for an example client logger implementation.
-    level: connect.ChatSession.LogLevel.INFO, // required: no. There are four levels available - DEBUG, INFO, WARN, ERROR. Default is INFO.
+## `connect.ChatSesion` API
+
+This is the main entry point to `amazon-connect-chatjs`.
+All your interactions with the library start here.
+
+### `connect.ChatSession.setGlobalConfig()`
+```js
+connect.ChatSession.setGlobalConfig({
+  loggerConfig: { // optional, the logging configuration. If omitted, no logging occurs
+    logger: { // optional, a logger object implementation
+      debug: (msg) => console.debug(msg), // REQUIRED, can be any function
+      info: (msg) => console.info(msg), // REQUIRED, can be any function
+      warn: (msg) => console.warn(msg), // REQUIRED, can be any function
+      error: (msg) => console.error(msg) // REQUIRED, can be any function
+    },
+    level: connect.ChatSession.LogLevel.WARN, // optional, defaults to: `connect.ChatSession.LogLevel.INFO`
   },
-  region: "us-west-2" // required: no. "us-west-2" is the default value.
-};
-
-connect.ChatSession.setGlobalConfig(globalConfig);
+  region: "us-east-1", // optional, defaults to: "us-west-2"
+});
 ```
 
-### `connect.ChatSession.create`
-`Method param:` args
-```
-args = {
-    "chatDetails": chatDetails, //required: *yes*
-    "type": sessionType,//required: *yes*. Two types of sessionType: 
-                        //connect.ChatSession.SessionTypes.CUSTOMER 
-                        //connect.ChatSession.SessionTypes.AGENT
-    "options": options, //required: no. See below for example
-    "websocketManager": WebSocketManager //required: no, only for AGENT type chat sessions. This comes from Streams 
-};
+Setup the global configuration to use. If this method is not called, the defaults of `loggerConfig` and `region` are used.
+This method should be called before `connect.ChatSession.create()`.
 
-//This is the object returned by a successful call to the StartChatContact API.
-//From the agent-side, these fields should all be available via Streams.
-chatDetails = {
-  "ContactId": "string", //required: *yes*. The alphanumeric string id identifying this contact.
-  "ParticipantId": "string", //required: *yes*. The alphanumeric string id identifying this participant.
-  "ParticipantToken": "string" //required: *yes*. The alphanumeric token that allows us to fetch our auth token for AWS SDK Chat API calls
-};
- 
-options = {
-    region: "string" //required: no. Represents the region (like "us-west-2", "eu-central-1", etc) for the AWS SDK client to use. 
-};
-
-
-var chatSession = connect.ChatSession.create(args);
+### `connect.ChatSession.create()`
+```js
+const customerChatSession = connect.ChatSession.create({
+  chatDetails: { // REQUIRED
+    contactId: "...", // REQUIRED
+    participantId: "...", // REQUIRED
+    participantToken: "...", // REQUIRED
+  },
+  options: { // optional
+    region: "us-east-1", // optional, defaults to `region` set in `connect.ChatSession.setGlobalConfig()`
+  },
+  type: connect.ChatSession.SessionTypes.CUSTOMER, // REQUIRED
+});
 ```
 
-Use the chatSession object to subscribe to the following callbacks. Example - The onMessage callback is used to handle any messages sent from one of the participants or the chat service.
+Creates an instance of `AgentChatSession` or `CustomerChatSession`, depending on the specified `type`.
 
-```
-chatSession.onConnectionBroken(data => {console.log("connection broken with server")});
-chatSession.onTyping(data => {console.log("someone is typing! details:", data)});
-chatSession.onMessage(data => {console.log("there  is message! details:", data)});
-chatSession.onConnectionEstablished(data => {console.log("connection established with server")});
-chatSession.onEnded(() => {console.log("chat has ended")})
-```
-# Usage:
+If you're creating a `CustomerChatSession`, the `chatDetails` field should be populated with the response of the [StartChatContact](https://docs.aws.amazon.com/connect/latest/APIReference/API_StartChatContact.html) API.
 
-### `connect.ChatSession.connect`
-`Method param:` args
+If you're creating an `AgentChatSession`, you must also include [`amazon-connect-streams`](https://github.com/amazon-connect/amazon-connect-streams). For example:
+```js
+// order is important, alternatively use <script> tags
+import "amazon-connect-streams";
+import "amazon-connect-chatjs";
+
+connect.contact(contact => {
+  if (contact.getType() !== connect.ContactType.CHAT) {
+    // applies only to CHAT contacts
+    return;
+  }
+
+  // recommended: calls `connect.ChatSession.setGlobalConfig()` and `connect.ChatSession.create()` internally
+  contact.onAccepted(async () => {
+    const cnn = contact.getConnections().find(cnn => cnn.getType() === connect.ConnectionType.AGENT);
+
+    const agentChatSession = await cnn.getMediaController();
+  });
+
+  // alternative: if you want control over the args of `connect.ChatSession.setGlobalConfig()` and `connect.ChatSession.create()`
+  contact.onAccepted(() => {
+    const cnn = contact.getConnections().find(cnn => cnn.getType() === connect.ConnectionType.AGENT);
+
+    const agentChatSession = connect.ChatSession.create({
+      chatDetails: cnn.getMediaInfo(), // REQUIRED
+      options: { // REQUIRED
+        region: "us-east-1", // REQUIRED, must match the value provided to `connect.core.initCCP()`
+      },
+      type: connect.ChatSession.SessionTypes.AGENT, // REQUIRED
+      websocketManager: connect.core.getWebSocketManager() // REQUIRED
+    });
+  });
+});
 ```
-args = {
-    "metadata": metadata //required: no
+
+See the [`amazon-connect-streams` API documentation](https://github.com/amazon-connect/amazon-connect-streams/blob/master/Documentation.md) for more information on the methods not documented here.
+
+**Note:** `AgentChatSession` and `CustomerChatSession` are logical concepts.
+As a result, the `instanceof` operator will not work how you expect:
+```js
+if (connect.ChatSession.create(/* ... */) instanceof connect.ChatSession) {
+  // this will never execute
 }
 ```
-Establish the connection with the back end by calling the *connect* function of the chatSession. It returns a Promise object.
-```
-chatSession.connect().
-    then((response) => console.log("Chat is connected!")).
-    catch((error) => console.log("Could not connect."));
+
+### `connect.ChatSession.LogLevel`
+```js
+connect.ChatSession.LogLevel = {
+  DEBUG: /* ... */,
+  INFO: /* ... */,
+  WARN: /* ... */,
+  ERROR: /* ... */
+};
 ```
 
-### `connect.ChatSession.disconnectParticipant`
-`Method param:` args
+Enumerates the logging levels.
 
-```
-// Below method is not available on the agentChatController. 
-// It is present only on the customerChatController.
-// This disconnected the customer. No action can be permformed on this chat anymore by the customer.
-// Once this method is called the chatSession is obsolete and cannot be used anymore.
-chatSession.disconnectParticipant();
+### `connect.ChatSession.SessionTypes`
+```js
+connect.ChatSession.SessionTypes = {
+  AGENT: /* ... */,
+  CUSTOMER: /* ... */
+};
 ```
 
-## API Definition
+Enumerates the session types.
 
-### `chatSession.sendMessage`
-`Method param:` args
-```
-args = {
-    message: "string" //required: *yes*, min len: 1, max len: 1024
-    contentType: "string", //required: *yes*, only valid string for message is text/plain
-    metadata: //required: no
+## ChatSession API
+
+The `ChatSession` API divided into three sections: Amazon Connect Participant Service API wrappers, events, and other.
+
+### Amazon Connect Participant Service API wrappers
+
+Functions in this section:
+- Wrap the APIs of the [Amazon Connect Participant Service](https://docs.aws.amazon.com/connect-participant/latest/APIReference/Welcome.html).
+- Return a `Promise<Response>` (except for `chatSession.connect()`), where:
+  - `Response` is an [`aws-sdk` Response object](https://github.com/aws/aws-sdk-js/blob/master/lib/response.d.ts).
+  - If the `Promise` rejects, the error will still be a `Response` object. However, the `data` field will not be populated while the `error `field will.
+- Can optionally specify a `metadata` arg field (except for `customerChatSession.disconnectParticipant()`). The `metadata` arg field is not used directly by `amazon-connect-chatjs`, rather it's merely copied to the response object for usage by developers.
+
+For example:
+```js
+function handleResponse(response) {
+  // `response` is an aws-sdk `Response` object
+  // `data` contains the response data
+  // `metadata` === "foo"
+  const { data, metadata } = response;
+  // ...
 }
-```
-`Exceptions:`
-IllegalArgumentException
-(API takes care of other exceptions)
 
-### `chatSession.sendEvent`
-`Method param:` args
-```
-args = {
-    content: "string", //required: no, nullable, reserved for future use; // min len: 1, max len: 1024
-    contentType: "string", //required: *yes*, custom type depicting chat events
-             // supported types ->
-             //  "application/vnd.amazonaws.connect.event.typing 
-             // | "application/vnd.amazonaws.connect.event.participant.joined
-             // | "application/vnd.amazonaws.connect.event.participant.left
-             // | "application/vnd.amazonaws.connect.event.transfer.succeed
-             // | "application/vnd.amazonaws.connect.event.transfer.failed
-             // | "application/vnd.amazonaws.connect.event.chat.ended
-             // *Must* be one of the above strings, or an IllegalArgumentException will be thrown
-    metadata: //required: no
+function handleError(response) {
+  // `response` is an aws-sdk `Response` object
+  // `error` contains the response error
+  // `metadata` === "foo"
+  const { error, metadata } = response;
+  // ...
 }
-```
-`Exceptions:`
-IllegalArgumentException
-(API takes care of other exceptions)
 
-### `chatSession.getTranscript`
-`Method param:` args
+chatSession
+  .getTranscript({ metadata: "foo" })
+  .then(handleResponse, handleError);
 ```
-args = {
-   contactId: "string" //required: no, min len: 1, max len:256
-   maxResults: number, //required: no, Nullable, min:0, max: 100
-   nextToken: "string", //required: no, min len:1, max len: 1000, 
-   scanDirection: "string", //required: no, enum string to indicate FORWARD | BACKWARD. Defaults to BACKWARD
-   sortOrder: "string", //required: no, enum string to indicate DESCENDING | ASCENDING. Defaults to DESCENDING
-   startPosition: { // required: no
-      id: "string", //min len: 1, max len:256
-      mostRecent: number, // min:0, max: 100
-      absoluteTime: "string" // String matching ISO 8601 format: "yyyy-MM-ddThh:mm:ssZ"
-   }
-   metadata: //required: no
-} metadata: //required: no
-```
-`Exceptions:`
-No Exceptions (API takes care of other exceptions)
 
-#### Important Note
-In order to specify `scanDirection` as `FORWARD`, you need to explicitly include a `startPosition`. This is because the default `startPosition` is at the most recent update to the transcript, so requesting a transcript in the `FORWARD` direction from the default `startPosition` is equivalent to asking for a transcript containing only messages more recent than the present (you are asking for messages in the future!).
+#### `chatSession.connect()`
+```js
+// connectCalled: indicates whether the Amazon Connect Participant Service was called
+// connectSuccess: indicates whether the operation succeeded
+const { connectCalled, connectSuccess } = await chatSession.connect();
+```
+
+Wraps the [CreateParticipantConnection](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CreateParticipantConnection.html) API.
+
+The arguments and response do not overlap with the API request or response.
+
+**Note:** If the operation fails, the `Promise` will reject, but the error will have the same schema as a successful response.
+
+#### `chatSession.getTranscript()`
+```js
+const awsSdkResponse = await chatSession.getTranscript({
+  maxResults: 100,
+  sortOrder: "ASCENDING"
+});
+const { InitialContactId, NextToken, Transcript } = awsSdkResponse.data;
+```
+
+Wraps the [GetTranscript](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetTranscript.html) API.
+
+The arguments are based on the [API request body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetTranscript.html#API_GetTranscript_RequestSyntax) with the following differences:
+
+- Fields are in `camelCase`.
+- `MaxResults` defaults to `15`.
+- `ScanDirection` defaults to `BACKWARD` always.
+- `SortOrder` defaults to `ASCENDING`.
+
+The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetTranscript.html#API_GetTranscript_ResponseSyntax).
+
+**Important note:** In order to specify `scanDirection` as `FORWARD`, you need to explicitly include a `startPosition`.
+This is because the default `startPosition` is at the most recent update to the transcript, so requesting a transcript in the `FORWARD` direction from the default `startPosition` is equivalent to asking for a transcript containing only messages more recent than the present (you are asking for messages in the future!).
+
+#### `chatSession.sendEvent()`
+```js
+const awsSdkResponse = await chatSession.sendEvent({
+  contentType: "application/vnd.amazonaws.connect.event.typing"
+});
+const { AbsoluteTime, Id } = awsSdkResponse.data;
+```
+
+Wraps the [SendEvent](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html) API.
+
+The arguments are based on the [API request body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html#API_SendEvent_RequestSyntax) with the following differences:
+
+- Fields are in `camelCase`.
+- `ClientToken` cannot be specified.
+- `ContentType` allows the following values:
+  - `"application/vnd.amazonaws.connect.event.chat.ended"`
+  - `"application/vnd.amazonaws.connect.event.participant.joined"`
+  - `"application/vnd.amazonaws.connect.event.participant.left"`
+  - `"application/vnd.amazonaws.connect.event.transfer.succeeded"`
+  - `"application/vnd.amazonaws.connect.event.transfer.failed"`
+  - `"application/vnd.amazonaws.connect.event.typing"`
+
+The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html#API_SendEvent_ResponseSyntax).
+
+#### `chatSession.sendMessage()`
+```js
+const awsSdkResponse = await chatSession.sendMessage({
+  contentType: "text/plain",
+  message: "Hello World!"
+});
+const { AbsoluteTime, Id } = awsSdkResponse.data;
+```
+
+Wraps the [SendMessage](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendMessage.html) API.
+
+The arguments are based on the [API request body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendMessage.html#API_SendMessage_RequestSyntax) with the following differences:
+- Fields are in `camelCase`.
+- `ClientToken` cannot be specified.
+
+The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendMessage.html#API_SendMessage_ResponseSyntax).
+
+#### `customerChatSession.disconnectParticipant()`
+```js
+const awsSdkResponse = await customerChatSession.disconnectParticipant();
+```
+
+Wraps the [DisconnectParticipant](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_DisconnectParticipant.html) API.
+
+The arguments and response do not overlap with the API request or response.
+
+Once this method is called, the `CustomerChatSession` cannot be used anymore.
+
+Applies only for `CustomerChatSession`. See `connect.ChatSession.create()` for more info.
+
+### Events
+
+Function in this section:
+
+- When invoked, register an event handler that is triggered whenever the event occurs.
+- Can be called multiple times (i.e. register multiple event handlers).
+- Receive an `event` object that contains a `chatDetails` field. See `chatSession.getChatDetails()` for more info.
+
+#### `chatSession.onConnectionBroken()`
+```js
+chatSession.onConnectionBroken(event => {
+  const { chatDetails } = event;
+  // ...
+});
+```
+
+Subscribes an event handler that triggers when the session connection is broken.
+
+#### `chatSession.onConnectionEstablished()`
+```js
+chatSession.onConnectionEstablished(event => {
+  const { chatDetails } = event;
+  // ...
+});
+```
+
+Subscribes an event handler that triggers when the session connection is established.
+
+#### `chatSession.onEnded()`
+```js
+chatSession.onEnded(event => {
+  const { chatDetails, data } = event;
+  // ...
+});
+```
+
+Subscribes an event handler that triggers when the session is ended.
+
+#### `chatSession.onMessage()`
+```js
+chatSession.onMessage(event => {
+  const { chatDetails, data } = event;
+  switch (data.ContentType) {
+    // ...
+  }
+});
+```
+
+Subscribes an event handler that triggers whenever a message or an event (except for `application/vnd.amazonaws.connect.event.typing`) is created by any participant.
+The `data` field has the same schema as the [`Item` data type](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_Item.html) from the Amazon Connect Participant Service with the addition of the following **optional** fields: `contactId`, `initialContactId`.
+
+#### `chatSession.onTyping()`
+```js
+chatSession.onTyping(event => {
+  const { chatDetails, data } = event;
+  if (data.ParticipantRole === "AGENT") {
+    // ...
+  }
+});
+```
+
+Subscribes an event handler that triggers whenever a `application/vnd.amazonaws.connect.event.typing` event is created by any participant.
+The `data` field has the same schema as `chatSession.onMessage()`.
+
+### Other
+
+This section contains all the functions that do not fall under the previous two categories.
+
+#### `chatSession.getChatDetails()`
+```js
+const {
+  contactId,
+  initialContactId,
+  participantId,
+  participantToken,
+} = chatSession.getChatDetails();
+```
+
+Gets the chat session details.
+
+#### `agentChatSession.cleanUpOnParticipantDisconnect()`
+```js
+agentChatSession.cleanUpOnParticipantDisconnect();
+```
+
+Cleans up all event handlers.
+
+Applies only for `AgentChatSession`. See `connect.ChatSession.create()` for more info.
