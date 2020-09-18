@@ -24,11 +24,19 @@ export default class ConnectionDetailsProvider {
   }
 
   fetchConnectionDetails() {
-    return this._fetchConnectionDetails().then(() => this.connectionDetails);
+    if(!this.connectionDetails) {
+      return this._fetchConnectionDetails().then(() => this.connectionDetails);
+    } else {
+      return Promise.resolve(this.connectionDetails);
+    }
   }
 
-  fetchConnectionToken() {
-    return this._fetchConnectionDetails().then(() => this.connectionToken);
+  fetchConnectionToken(isRefresh=false) {
+    if (isRefresh) {
+      return this._fetchConnectionDetails().then(() => this.connectionDetails);
+    } else {
+      return Promise.resolve(this.connectionDetails);
+    }
   }
 
   _handleCreateParticipantConnectionResponse(connectionDetails) {

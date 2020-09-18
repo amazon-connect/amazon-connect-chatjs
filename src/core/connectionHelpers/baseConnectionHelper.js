@@ -28,7 +28,7 @@ export default class BaseConnectionHelper {
 
   startConnectionTokenPolling(isFirstCall=false, expiry=CONNECTION_TOKEN_POLLING_INTERVAL_IN_MS) {
     if (!isFirstCall){
-      this.connectionDetailsProvider.fetchConnectionToken()
+      this.connectionDetailsProvider.fetchConnectionToken(true)
         .then(() => {
           const dateExpiry = this.getConnectionTokenExpiry();
           const now = new Date().getTime();
@@ -44,8 +44,7 @@ export default class BaseConnectionHelper {
     }
     this.isStarted = true;
     this.startConnectionTokenPolling(
-      true, 
-      this.getConnectionTokenExpiry()
+      true
     );
   }
 
