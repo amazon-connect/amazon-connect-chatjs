@@ -9,6 +9,7 @@ export default class ConnectionDetailsProvider {
     this.connectionDetails = null;
     this.connectionToken = null;
     this.connectionTokenExpiry = null;
+    this.connected = false;
   }
 
   getConnectionToken() {
@@ -23,8 +24,8 @@ export default class ConnectionDetailsProvider {
     return this.connectionDetails;
   }
 
-  fetchConnectionDetails() {
-    if(!this.connectionDetails) {
+  fetchConnectionDetails(isRefresh=false) {
+    if(!this.connected || isRefresh) {
       return this._fetchConnectionDetails().then(() => this.connectionDetails);
     } else {
       return Promise.resolve(this.connectionDetails);
@@ -32,8 +33,8 @@ export default class ConnectionDetailsProvider {
   }
 
   fetchConnectionToken(isRefresh=false) {
-    if (isRefresh) {
-      return this._fetchConnectionDetails().then(() => this.connectionDetails);
+    if (!this.connected || isRefresh) {
+      return this._fetchConnectionDetails().then(() => this.connectionToken);
     } else {
       return Promise.resolve(this.connectionDetails);
     }
@@ -46,6 +47,7 @@ export default class ConnectionDetailsProvider {
     };
     this.connectionToken = connectionDetails.ConnectionCredentials.ConnectionToken;
     this.connectionTokenExpiry = connectionDetails.ConnectionCredentials.Expiry;
+    this.connected = true;
   }
 
   _fetchConnectionDetails() {

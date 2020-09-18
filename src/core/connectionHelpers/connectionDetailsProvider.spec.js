@@ -59,7 +59,7 @@ describe("ConnectionDetailsProvider", () => {
       test("returns valid url on second call", async () => {
         setup();
         await connectionDetailsProvider.fetchConnectionDetails();
-        const connectionDetails = await connectionDetailsProvider.fetchConnectionDetails();
+        const connectionDetails = await connectionDetailsProvider.fetchConnectionDetails(true);
         expect(connectionDetails.url).toEqual("url2");
         expect(connectionDetails.expiry).toEqual("expiry2");
       });
@@ -74,7 +74,7 @@ describe("ConnectionDetailsProvider", () => {
       test("updates internal state on second call", async () => {
         setup();
         await connectionDetailsProvider.fetchConnectionDetails();
-        await connectionDetailsProvider.fetchConnectionDetails();
+        await connectionDetailsProvider.fetchConnectionDetails(true);
         expect(connectionDetailsProvider.connectionDetails.url).toEqual("url2");
         expect(connectionDetailsProvider.connectionDetails.expiry).toEqual("expiry2");
       });
@@ -88,7 +88,7 @@ describe("ConnectionDetailsProvider", () => {
       test("hits API on second call", async () => {
         setup();
         await connectionDetailsProvider.fetchConnectionDetails();
-        await connectionDetailsProvider.fetchConnectionDetails();
+        await connectionDetailsProvider.fetchConnectionDetails(true);
         expect(chatClient.createParticipantConnection).toHaveBeenCalledTimes(2);
         expect(chatClient.createParticipantConnection).toHaveBeenLastCalledWith(participantToken, [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS]);
       });
@@ -103,8 +103,9 @@ describe("ConnectionDetailsProvider", () => {
 
       test("returns valid connection token on second call", async () => {
         setup();
-        await connectionDetailsProvider.fetchConnectionToken();
-        const connectionToken = await connectionDetailsProvider.fetchConnectionToken();
+        await connectionDetailsProvider.fetchConnectionToken(true);
+        const connectionToken = await connectionDetailsProvider.fetchConnectionToken(true);
+        console.log(connectionToken);
         expect(connectionToken).toBe('token2');
       });
 
@@ -117,7 +118,7 @@ describe("ConnectionDetailsProvider", () => {
       test("updates internal state on second call", async () => {
         setup();
         await connectionDetailsProvider.fetchConnectionToken();
-        await connectionDetailsProvider.fetchConnectionToken();
+        await connectionDetailsProvider.fetchConnectionToken(true);
         expect(connectionDetailsProvider.connectionToken).toBe('token2');
       });
 
@@ -130,7 +131,7 @@ describe("ConnectionDetailsProvider", () => {
       test("hits API on second call", async () => {
         setup();
         await connectionDetailsProvider.fetchConnectionToken();
-        await connectionDetailsProvider.fetchConnectionToken();
+        await connectionDetailsProvider.fetchConnectionToken(true);
         expect(chatClient.createParticipantConnection).toHaveBeenCalledTimes(2);
         expect(chatClient.createParticipantConnection).toHaveBeenLastCalledWith(participantToken, [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS]);
       });
