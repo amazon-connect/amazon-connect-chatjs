@@ -11,7 +11,6 @@ import { ChatServiceArgsValidator } from "./chatArgsValidator";
 import ConnectionDetailsProvider from "./connectionHelpers/connectionDetailsProvider";
 import LpcConnectionHelper from "./connectionHelpers/LpcConnectionHelper";
 
-
 var NetworkLinkStatus = {
   NeverEstablished: "NeverEstablished",
   Establishing: "Establishing",
@@ -30,6 +29,7 @@ class ChatController {
     this.argsValidator = new ChatServiceArgsValidator();
     this.pubsub = new EventBus();
     this.sessionType = args.sessionType;
+    this.getConnectionToken = args.chatDetails.getConnectionToken;
     this.connectionDetails = args.chatDetails.connectionDetails;
     this.initialContactId = args.chatDetails.initialContactId;
     this.contactId = args.chatDetails.contactId;
@@ -142,7 +142,9 @@ class ChatController {
   _getConnectionDetailsProvider() {
     return new ConnectionDetailsProvider(
       this.participantToken, 
-      this.chatClient
+      this.chatClient,
+      this.sessionType,
+      this.getConnectionToken
     );
   }
 
