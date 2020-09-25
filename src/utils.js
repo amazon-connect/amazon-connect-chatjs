@@ -65,7 +65,7 @@ Utils.assertIsEnum = function(value, allowedValues, key) {
     }
   }
   throw new IllegalArgumentException(
-    key + " passed is not valid. " + "Allowed values are: " + allowedValues
+    key + " passed (" + value + ")" + " is not valid. Allowed values are: " + allowedValues
   );
 };
 
