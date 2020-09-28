@@ -4,11 +4,11 @@ const webpack = require("webpack");
 module.exports = {
   entry: "./src/index",
   mode: "development",
-  devtool: "source-map",
   output: {
     filename: "amazon-connect-chat.js",
     path: path.resolve(__dirname, "dist")
   },
+  devtool: "source-map",
   resolve: {
     extensions: [".js"]
   },
