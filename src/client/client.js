@@ -5,7 +5,7 @@ import {
   REGIONS
 } from "../constants";
 import { LogManager } from "../log";
-import { ConnectParticipant } from "./aws-sdk-connectparticipant.js";
+import { ConnectParticipant } from "./aws-client";
 
 class ChatClientFactoryImpl {
   constructor() {
