@@ -1,4 +1,6 @@
+import Utils from "../utils";
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
+import { IllegalJsonException } from "./exceptions";
 
 describe("ChatServiceArgsValidator", () => {
 
@@ -8,21 +10,18 @@ describe("ChatServiceArgsValidator", () => {
   let chatDetailsInput;
   let expectedChatDetails;
   let chatDetails;
-  let getConnectionToken = jest.fn()
 
   test("chatDetails w/o participantToken or connectionDetails normalized as expected", async () => {
     const chatArgsValidator = getValidator();
     chatDetailsInput = {
       ContactId: "cid",
       ParticipantId: "pid",
-      InitialContactId: "icid",
-      getConnectionToken: getConnectionToken
+      InitialContactId: "icid"
     }
     expectedChatDetails = {
       contactId: "cid",
       participantId: "pid",
-      initialContactId: "icid",
-      getConnectionToken: getConnectionToken
+      initialContactId: "icid"
     }
     chatDetails = chatArgsValidator.normalizeChatDetails(chatDetailsInput);
     expect(chatDetails).toEqual(expectedChatDetails);
@@ -41,6 +40,60 @@ describe("ChatServiceArgsValidator", () => {
       initialContactId: "cid",
       participantToken: "ptoken"
     }
+    chatDetails = chatArgsValidator.normalizeChatDetails(chatDetailsInput);
+    expect(chatDetails).toEqual(expectedChatDetails);
+  });
+
+  test("chatDetails w/ participantToken, w/ connectionDetails normalized as expected", async () => {
+    const chatArgsValidator = getValidator();
+    chatDetailsInput = {
+      contactId: "cid",
+      participantId: "pid",
+      participantToken: "ptoken",
+      initialContactId: "icid",
+      ChatConnectionAttributes: {
+        ParticipantCredentials: {
+          ConnectionAuthenticationToken: "cat"
+        },
+        ConnectionId: "conid",
+        PreSignedConnectionUrl: "url"
+      }
+    };
+    expectedChatDetails = {
+      contactId: "cid",
+      participantId: "pid",
+      initialContactId: "icid",
+      participantToken: "ptoken"
+    }
+    chatDetails = chatArgsValidator.normalizeChatDetails(chatDetailsInput);
+    expect(chatDetails).toEqual(expectedChatDetails);
+  });
+
+  test("chatDetails w/o participantToken, w/ connectionDetails normalized as expected", async () => {
+    const chatArgsValidator = getValidator();
+    chatDetailsInput = {
+      contactId: "cid",
+      participantId: "pid",
+      participantToken: null,
+      initialContactId: "icid",
+      ChatConnectionAttributes: {
+        ParticipantCredentials: {
+          ConnectionAuthenticationToken: "cat"
+        },
+        ConnectionId: "conid",
+        PreSignedConnectionUrl: "url"
+      }
+    };
+    expectedChatDetails = {
+      contactId: "cid",
+      participantId: "pid",
+      initialContactId: "icid",
+      connectionDetails: {
+        connectionToken: "cat",
+        ConnectionId: "conid",
+        PreSignedConnectionUrl: "url"
+      }
+    };
     chatDetails = chatArgsValidator.normalizeChatDetails(chatDetailsInput);
     expect(chatDetails).toEqual(expectedChatDetails);
   });

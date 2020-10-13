@@ -1,6 +1,6 @@
 import Utils from "../utils";
 import { IllegalArgumentException } from "./exceptions";
-import { CONTENT_TYPE, SESSION_TYPES } from "../constants";
+import { CONTENT_TYPE } from "../constants";
 
 class ChatControllerArgsValidator {
   /*eslint-disable no-unused-vars*/
@@ -50,14 +50,9 @@ class ChatControllerArgsValidator {
 }
 
 class ChatServiceArgsValidator extends ChatControllerArgsValidator {
-  validateChatDetails(chatDetails, sessionType) {
+  validateChatDetails(chatDetails) {
     Utils.assertIsObject(chatDetails, "chatDetails");
-    if (sessionType===SESSION_TYPES.AGENT && !Utils.isFunction(chatDetails.getConnectionToken)) {
-      throw new IllegalArgumentException(
-        "getConnectionToken was not a function", 
-        chatDetails.getConnectionToken
-      );
-    }
+    
     Utils.assertIsNonEmptyString(
       chatDetails.contactId,
       "chatDetails.contactId"
@@ -66,18 +61,28 @@ class ChatServiceArgsValidator extends ChatControllerArgsValidator {
       chatDetails.participantId,
       "chatDetails.participantId"
     );
-    if (sessionType===SESSION_TYPES.CUSTOMER){
-      if (chatDetails.participantToken){
-        Utils.assertIsNonEmptyString(
-          chatDetails.participantToken,
-          "chatDetails.participantToken"
-        );
-      } else {
-        throw new IllegalArgumentException(
-          "participantToken was not provided for a customer session type",
-          chatDetails.participantToken
-        );
-      }
+    if (chatDetails.connectionDetails) {
+      Utils.assertIsObject(
+        chatDetails.connectionDetails,
+        "chatDetails.connectionDetails"
+      );
+      Utils.assertIsNonEmptyString(
+        chatDetails.connectionDetails.PreSignedConnectionUrl,
+        "chatDetails.connectionDetails.PreSignedConnectionUrl"
+      );
+      Utils.assertIsNonEmptyString(
+        chatDetails.connectionDetails.ConnectionId,
+        "chatDetails.connectionDetails.ConnectionId"
+      );
+      Utils.assertIsNonEmptyString(
+        chatDetails.connectionDetails.connectionToken,
+        "chatDetails.connectionDetails.connectionToken"
+      );
+    } else if (chatDetails.participantToken){
+      Utils.assertIsNonEmptyString(
+        chatDetails.participantToken,
+        "chatDetails.participantToken"
+      );
     }
   }
 
@@ -90,13 +95,29 @@ class ChatServiceArgsValidator extends ChatControllerArgsValidator {
     chatDetails.contactId = chatDetailsInput.ContactId || chatDetailsInput.contactId;
     chatDetails.participantId = chatDetailsInput.ParticipantId || chatDetailsInput.participantId;
     chatDetails.initialContactId = chatDetailsInput.InitialContactId || chatDetailsInput.initialContactId
-      || chatDetails.contactId || chatDetails.ContactId;
-    chatDetails.getConnectionToken = chatDetailsInput.getConnectionToken || chatDetailsInput.GetConnectionToken;
+    || chatDetails.contactId || chatDetails.ContactId;
     if (chatDetailsInput.participantToken || chatDetailsInput.ParticipantToken) {
       chatDetails.participantToken = chatDetailsInput.ParticipantToken || chatDetailsInput.participantToken;
+      this.validateChatDetails(chatDetails);
+      return chatDetails;
+    } else if (
+      chatDetailsInput.ChatConnectionAttributes &&
+      chatDetailsInput.ChatConnectionAttributes.ParticipantCredentials
+    ) {
+      this.validateInitiateChatResponse(chatDetailsInput);
+      var connectionDetails = {};
+      connectionDetails.connectionToken =
+        chatDetailsInput.ChatConnectionAttributes.ParticipantCredentials.ConnectionAuthenticationToken;
+      connectionDetails.ConnectionId =
+        chatDetailsInput.ChatConnectionAttributes.ConnectionId;
+      connectionDetails.PreSignedConnectionUrl =
+        chatDetailsInput.ChatConnectionAttributes.PreSignedConnectionUrl;
+      chatDetails.connectionDetails = connectionDetails;
+      return chatDetails;
+    } else {
+      this.validateChatDetails(chatDetails);
+      return chatDetails;
     }
-    this.validateChatDetails(chatDetails);
-    return chatDetails;
   }
 }
 

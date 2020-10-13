@@ -30,17 +30,12 @@ export default class BaseConnectionHelper {
     if (!isFirstCall){
       this.connectionDetailsProvider.fetchConnectionToken()
         .then(() => {
-          expiry = this.getTimeToConnectionTokenExpiry();
-          this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this), expiry);
-        })
-        .catch((e) => {
-          console.log("An error occurred when attempting to fetch the connection token during Connection Token Polling", e);
-          this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this), expiry);
+          const dateExpiry = this.getConnectionTokenExpiry();
+          const now = new Date().getTime();
+          expiry = dateExpiry - now - CONNECTION_TOKEN_EXPIRY_BUFFER_IN_MS;
         });
     }
-    else {
-      this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this), expiry);
-    }
+    this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this), expiry);
   }
 
   start() {
@@ -50,7 +45,7 @@ export default class BaseConnectionHelper {
     this.isStarted = true;
     this.startConnectionTokenPolling(
       true, 
-      this.getTimeToConnectionTokenExpiry()
+      this.getConnectionTokenExpiry()
     );
   }
 
@@ -59,19 +54,12 @@ export default class BaseConnectionHelper {
   }
 
   getConnectionToken() {
-    return this.connectionDetailsProvider.getFetchedConnectionToken();
+    return this.connectionDetailsProvider.getConnectionToken();
   }
-
   getConnectionTokenExpiry() {
-    return this.connectionDetailsProvider.getConnectionTokenExpiry();
-  }
-
-  getTimeToConnectionTokenExpiry() {
-    var dateExpiry = new Date(
-      this.getConnectionTokenExpiry()
+    return new Date(
+      this.connectionDetailsProvider.getConnectionTokenExpiry()
     ).getTime();
-    var now = new Date().getTime();
-    return dateExpiry - now - CONNECTION_TOKEN_EXPIRY_BUFFER_IN_MS;
   }
 }
 
