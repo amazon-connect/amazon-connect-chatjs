@@ -12,7 +12,8 @@ export const RESOURCE_PATH = {
   TRANSCRIPT: "/participant/transcript",
   EVENT: "/participant/event",
   DISCONNECT: "/participant/disconnect",
-  PARTICIPANT_CONNECTION: "/participant/connection"
+  PARTICIPANT_CONNECTION: "/participant/connection",
+  ATTACHMENT: "/participant/attachment"
 };
 
 export const REGION_CONFIG = {
@@ -59,13 +60,22 @@ export const CHAT_EVENTS = {
 
 export const CONTENT_TYPE = {
   textPlain: "text/plain",
+  textCsv: "text/csv",
+  applicationDoc: "application/msword",
+  applicationPdf: "application/pdf",
+  applicationPpt: "application/vnd.ms-powerpoint",
+  applicationXls: "application/vnd.ms-excel",
+  imageJpg: "image/jpeg",
+  imagePng: "image/png",
+  audioWav: "audio/wav",
   connectionAcknowledged: "application/vnd.amazonaws.connect.event.connection.acknowledged",
   typing: "application/vnd.amazonaws.connect.event.typing",
   participantJoined: "application/vnd.amazonaws.connect.event.participant.joined",
   participantLeft: "application/vnd.amazonaws.connect.event.participant.left",
   transferSucceeded: "application/vnd.amazonaws.connect.event.transfer.succeeded",
   transferFailed: "application/vnd.amazonaws.connect.event.transfer.failed",
-  chatEnded: "application/vnd.amazonaws.connect.event.chat.ended"
+  chatEnded: "application/vnd.amazonaws.connect.event.chat.ended",
+  interactiveMessage: "application/vnd.amazonaws.connect.message.interactive"
 };
 
 export const EVENT = "EVENT";

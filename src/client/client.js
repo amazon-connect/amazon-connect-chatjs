@@ -5,7 +5,7 @@ import {
   REGIONS
 } from "../constants";
 import { LogManager } from "../log";
-import { ConnectParticipant } from "./aws-client";
+import { ConnectParticipant } from "./aws-sdk-connectparticipant";
 
 class ChatClientFactoryImpl {
   constructor() {
@@ -42,6 +42,14 @@ class ChatClientFactoryImpl {
 class ChatClient {
   sendMessage(participantToken, message, type) {
     throw new UnImplementedMethodException("sendTextMessage in ChatClient");
+  }
+
+  sendAttachment(participantToken, attachment, metadata) {
+    throw new UnImplementedMethodException("sendAttachment in ChatClient");
+  }
+
+  downloadAttachment(participantToken, attachmentId){
+    throw new UnImplementedMethodException("downloadAttachment in ChatClient");
   }
 
   disconnectParticipant(participantToken) {
@@ -126,6 +134,7 @@ class AWSChatClient extends ChatClient {
       params.ContactId = args.contactId;
     }
     var getTranscriptRequest = self.chatClient.getTranscript(params);
+    console.log("getTranscriptRequest", getTranscriptRequest);
     return self._sendRequest(getTranscriptRequest).then((res) => {
       self.logger.info("successfully get transcript");
       return res;
@@ -150,6 +159,63 @@ class AWSChatClient extends ChatClient {
         self.logger.error("error when sending message");
         return Promise.reject(err);
       });
+  }
+
+  sendAttachment(connectionToken, attachment, metadata) {
+    let self = this;
+    const startUploadRequestParams = {
+      ContentType: attachment.type,
+      AttachmentName: attachment.name,
+      AttachmentSizeInBytes: attachment.size,
+      ConnectionToken: connectionToken
+    };
+    const startUploadRequest = self.chatClient.startAttachmentUpload(startUploadRequestParams);
+    return self._sendRequest(startUploadRequest)
+        .then(startUploadResponse => {
+          return self._uploadToS3(attachment, startUploadResponse.data.UploadMetadata)
+              .then(() => {
+                self.logger.info("successfully uploaded attachment");
+                const completeUploadRequestParams = {
+                  AttachmentIds: [ startUploadResponse.data.AttachmentId ],
+                  ConnectionToken: connectionToken
+                };
+                const completeUploadRequest = self.chatClient.completeAttachmentUpload(completeUploadRequestParams);
+                return self._sendRequest(completeUploadRequest);
+              });
+        }).catch((err) => {
+          self.logger.error("error when sending attachment");
+          return Promise.reject(err);
+        });
+  }
+
+  _uploadToS3(file, metadata) {
+    return fetch(metadata.Url,{
+      method: "PUT",
+      headers: metadata.HeadersToInclude,
+      body: file
+    });
+  }
+
+  downloadAttachment(connectionToken, attachmentId) {
+    let self = this;
+    const params = {
+      AttachmentId: attachmentId,
+      ConnectionToken: connectionToken
+    };
+    const getAttachmentRequest = self.chatClient.getAttachment(params);
+    return self._sendRequest(getAttachmentRequest)
+        .then(response => {
+          return self._downloadUrl(response.data.Url);
+        }).catch(err => {
+          self.logger.error("error when sending attachment");
+          return Promise.reject(err);
+        });
+  }
+
+  _downloadUrl(url){
+    return fetch(url)
+        .then(t => t.blob())
+        .catch(err => { return Promise.reject(err); });
   }
 
   sendEvent(connectionToken, contentType, content) {

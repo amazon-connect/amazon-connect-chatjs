@@ -10,7 +10,7 @@ the [Amazon Connect User Guide](https://docs.aws.amazon.com/connect/latest/userg
 # Getting Started
 
 ### A note about the AWS-SDK and ChatJS
-The AWS-SDK is, by default, included in ChatJS as a "baked-in" dependency. You can view it at `./client/aws-client.js`. In `./client/client.js` we import `ConnectParticipant` from this file. This file and import can be removed while using the AWS SDK imported through a script in the page file of your application, assuming that version of the AWS SDK has the `ConnectParticipant` service included.
+The AWS-SDK is, by default, included in ChatJS as a "baked-in" dependency. You can view it at `./client/aws-sdk-connectparticipant.js`. In `./client/client.js` we import `ConnectParticipant` from this file. This file and import can be removed while using the AWS SDK imported through a script in the page file of your application, assuming that version of the AWS SDK has the `ConnectParticipant` service included.
 Incidentally, Amazon Connect Streams also contains a "baked-in" AWS SDK. This SDK cannot be removed, as it contains unreleased APIs that will not be available in the SDK you include as a script in the page file. 
 Therefore, there are several occasions where implementations can run into AWS SDK issues.
 
@@ -295,6 +295,41 @@ The arguments are based on the [API request body](https://docs.aws.amazon.com/co
 - `ClientToken` cannot be specified.
 
 The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendMessage.html#API_SendMessage_ResponseSyntax).
+
+#### `chatSession.sendAttachment()`
+```js
+// attachment object is the actual file that will be sent to agent from end-customer and vice versa.
+const awsSdkResponse = await chatSession.sendAttachment({
+  attachment: attachment
+});
+```
+Wraps the [StartAttachmentUpload](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_StartAttachmentUpload.html) and [CompleteAttachmentUpload](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CompleteAttachmentUpload.html) API.
+The arguments are based on the [StartAttachmentUpload](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_StartAttachmentUpload.html#API_StartAttachmentUpload_RequestSyntax) and [CompleteAttachmentUpload](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CompleteAttachmentUpload.html#API_CompleteAttachmentUpload_RequestSyntax) API request body with the following differences:
+- Fields are in `camelCase`.
+The response `data` is the same as the [StartAttachmentUpload](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_StartAttachmentUpload.html#API_StartAttachmentUpload_ResponseSyntax) and [CompleteAttachmentUpload](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CompleteAttachmentUpload.html#API_CompleteAttachmentUpload_ResponseSyntax) API response body.
+`chatSession.sendAttachment()` invokes the StartAttachmentUpload API, uploads the Attachment to the S3 bucket using the pre-signed URL received in the StartAttachmentUpload API response and invokes the CompleteAttachmentUpload API to finish the Attachment upload process.
+#### `chatSession.downloadAttachment()`
+```js
+const awsSdkResponse = await chatSession.downloadAttachment({
+  attachmentId: "string"
+});
+const { attachment } = awsSdkResponse.data;
+/* 
+Attachment Object - This is the actual file that will be downloaded by either agent or end-customer.
+attachment => {
+  lastModified: long
+  name: "string"
+  size: long
+  type: "string"
+  webkitRelativePath: "string"
+}
+*/
+```
+Wraps the [GetAttachment](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html) API.
+The arguments are based on the [API request body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html#API_GetAttachment_RequestSyntax) with the following differences:
+- Fields are in `camelCase`.
+The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html#API_GetAttachment_ResponseSyntax).
+`chatSession.downloadAttachment()` invokes the GetAttachment using the AttachmentId as a request parameter and fetches the Attachment from the S3 bucket using the pre-signed URL received in the GetAttachment API response.
 
 #### `customerChatSession.disconnectParticipant()`
 ```js
