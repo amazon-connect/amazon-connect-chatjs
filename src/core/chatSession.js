@@ -88,6 +88,14 @@ class ChatSession {
     return this.controller.sendMessage(args);
   }
 
+  sendAttachment(args){
+    return this.controller.sendAttachment(args);
+  }
+
+  downloadAttachment(args){
+    return this.controller.downloadAttachment(args);
+  }
+
   connect(args) {
     return this.controller.connect(args);
   }

@@ -1,6 +1,7 @@
 import { IllegalArgumentException } from "./core/exceptions";
 import { ValueError } from "./core/exceptions";
 import { sprintf } from "sprintf-js";
+import { CONTENT_TYPE } from "./constants";
 const Utils = {};
 
 /**
@@ -65,7 +66,7 @@ Utils.assertIsEnum = function(value, allowedValues, key) {
     }
   }
   throw new IllegalArgumentException(
-    key + " passed is not valid. " + "Allowed values are: " + allowedValues
+      key + " passed (" + value + ")" + " is not valid. Allowed values are: " + allowedValues
   );
 };
 
@@ -178,6 +179,17 @@ Utils.asyncWhileInterval = function(f, predicate, interval, count=0, error=null)
   } else {
     return Promise.reject(error || new Error("async while aborted"));
   }
+};
+
+Utils.isAttachmentContentType = function(contentType){
+  return contentType === CONTENT_TYPE.applicationPdf
+      || contentType === CONTENT_TYPE.imageJpg
+      || contentType === CONTENT_TYPE.imagePng
+      || contentType === CONTENT_TYPE.applicationDoc
+      || contentType === CONTENT_TYPE.applicationXls
+      || contentType === CONTENT_TYPE.applicationPpt
+      || contentType === CONTENT_TYPE.textCsv
+      || contentType === CONTENT_TYPE.audioWav;
 };
 
 export default Utils;

@@ -1,7 +1,8 @@
 {
   "name": "amazon-connect-chatjs",
-  "version": "1.0.8",
+  "version": "1.1.0",
   "main": "dist/amazon-connect-chat.js",
+  "types": "src/index.d.ts",
   "engines": {
     "node": ">=10.0.0"
   },
@@ -9,12 +10,13 @@
     "lib": "./dist"
   },
   "files": [
-    "dist/"
+    "dist/",
+    "src/index.d.ts"
   ],
   "description": "Provides chat support to AmazonConnect customers",
   "scripts": {
     "test": "jest",
-    "release": "jest && webpack --mode=production",
+    "release": "tsc && jest && webpack --mode=production",
     "devo": "jest && webpack --mode=development",
     "watch": "webpack --watch",
     "dev": "webpack --mode=development && webpack --watch",
@@ -64,6 +66,7 @@
     "eslint-loader": "^2.1.1",
     "jest": "^24.0.0",
     "regenerator-runtime": "^0.13.3",
+    "typescript": "3.0.1",
     "webpack": "^4.26.0",
     "webpack-cli": "^3.1.2",
     "webpack-dev-server": "^3.1.10"

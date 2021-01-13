@@ -74,6 +74,25 @@ class ChatController {
       .catch(this.handleRequestFailure(metadata, args, "sendMessage"));
   }
 
+  sendAttachment(args){
+    const metadata = args.metadata || null;
+    //TODO: validation
+    const connectionToken = this.connectionHelper.getConnectionToken();
+    return this.chatClient
+        .sendAttachment(connectionToken, args.attachment, args.metadata)
+        .then(this.handleRequestSuccess(metadata, args, "sendAttachment"))
+        .catch(this.handleRequestFailure(metadata, args, "sendAttachment"));
+  }
+
+  downloadAttachment(args){
+    const metadata = args.metadata || null;
+    const connectionToken = this.connectionHelper.getConnectionToken();
+    return this.chatClient
+        .downloadAttachment(connectionToken, args.attachmentId)
+        .then(this.handleRequestSuccess(metadata, args, "downloadAttachment"))
+        .catch(this.handleRequestFailure(metadata, args, "downloadAttachment"));
+  }
+
   sendEvent(args) {
     const metadata = args.metadata || null;
     this.argsValidator.validateSendEvent(args);
