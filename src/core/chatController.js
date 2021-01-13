@@ -12,7 +12,6 @@ import { ChatServiceArgsValidator } from "./chatArgsValidator";
 import ConnectionDetailsProvider from "./connectionHelpers/connectionDetailsProvider";
 import LpcConnectionHelper from "./connectionHelpers/LpcConnectionHelper";
 
-
 var NetworkLinkStatus = {
   NeverEstablished: "NeverEstablished",
   Establishing: "Establishing",
