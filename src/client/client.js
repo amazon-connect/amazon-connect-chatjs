@@ -27,12 +27,12 @@ class ChatClientFactoryImpl {
   _createAwsClient(options) {
     var region = options.region;
     var endpointOverride = GlobalConfig.getEndpointOverride();
-    var stageConfig = REGION_CONFIG[region];
+    var endpointUrl = `https://participant.connect.${region}.amazonaws.com`;
     if (endpointOverride) {
-      stageConfig.invokeUrl = endpointOverride;
+      endpointUrl = endpointOverride;
     }
     return new AWSChatClient({
-      endpoint: stageConfig.invokeUrl,
+      endpoint: endpointUrl,
       region: region
     });
   }

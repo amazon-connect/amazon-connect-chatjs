@@ -16,33 +16,6 @@ export const RESOURCE_PATH = {
   ATTACHMENT: "/participant/attachment"
 };
 
-export const REGION_CONFIG = {
-  "us-west-2": {
-    invokeUrl: "https://participant.connect.us-west-2.amazonaws.com"
-  },
-  "us-east-1": {
-    invokeUrl: "https://participant.connect.us-east-1.amazonaws.com"
-  },
-  "ap-south-1": {
-    invokeUrl: "https://participant.connect.ap-south-1.amazonaws.com"
-  },
-  "ap-southeast-1": {
-    invokeUrl: "https://participant.connect.ap-southeast-1.amazonaws.com"
-  },
-  "ap-southeast-2": {
-    invokeUrl: "https://participant.connect.ap-southeast-2.amazonaws.com"
-  },
-  "ap-northeast-1": {
-    invokeUrl: "https://participant.connect.ap-northeast-1.amazonaws.com"
-  },
-  "eu-central-1": {
-    invokeUrl: "https://participant.connect.eu-central-1.amazonaws.com"
-  },
-  "eu-west-2": {
-    invokeUrl: "https://participant.connect.eu-west-2.amazonaws.com"
-  }
-};
-
 export const SESSION_TYPES = {
   AGENT: "AGENT",
   CUSTOMER: "CUSTOMER"
