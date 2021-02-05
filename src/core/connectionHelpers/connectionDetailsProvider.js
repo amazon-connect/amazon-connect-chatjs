@@ -1,6 +1,6 @@
 import { IllegalArgumentException } from "../exceptions";
 import { ConnectionInfoType } from "./baseConnectionHelper";
-import { SESSION_TYPES } from "../../constants";
+import { SESSION_TYPES, TRANSPORT_LIFETIME_IN_SECONDS } from "../../constants";
 
 export default class ConnectionDetailsProvider {
 
@@ -37,7 +37,8 @@ export default class ConnectionDetailsProvider {
   _handleCreateParticipantConnectionResponse(connectionDetails) {
     this.connectionDetails = {
       url: connectionDetails.Websocket.Url,
-      expiry: connectionDetails.Websocket.ConnectionExpiry
+      expiry: connectionDetails.Websocket.ConnectionExpiry,
+      transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS
     };
     this.connectionToken = connectionDetails.ConnectionCredentials.ConnectionToken;
     this.connectionTokenExpiry = connectionDetails.ConnectionCredentials.Expiry;
