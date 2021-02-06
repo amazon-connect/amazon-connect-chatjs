@@ -6,6 +6,8 @@ import {
 } from "./baseConnectionHelper";
 import BaseConnectionHelper from "./baseConnectionHelper";
 import WebSocketManager from "../../lib/amazon-connect-websocket-manager";
+import { TRANSPORT_LIFETIME_IN_SECONDS } from "../../constants";
+
 class LpcConnectionHelper extends BaseConnectionHelper {
 
   constructor(contactId, initialContactId, connectionDetailsProvider, websocketManager) {
@@ -113,7 +115,8 @@ class LPCConnectionHelperBase {
           .then(connectionDetails => ({
             webSocketTransport: {
               url: connectionDetails.url,
-              expiry: connectionDetails.expiry
+              expiry: connectionDetails.expiry,
+              transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS
             }
           }))
       );
