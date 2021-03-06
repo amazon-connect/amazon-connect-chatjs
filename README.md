@@ -73,7 +73,7 @@ Find build artifacts in **dist** directory -  This will generate a file called `
 
 # API
 
-## `connect.ChatSesion` API
+## `connect.ChatSession` API
 
 This is the main entry point to `amazon-connect-chatjs`.
 All your interactions with the library start here.
