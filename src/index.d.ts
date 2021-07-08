@@ -182,6 +182,27 @@ declare namespace connect {
     ): Promise<WithMetadata<ParticipantServiceResponse<SendEventResult>, T>>;
 
     /**
+     * Uploads a file
+     * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_StartAttachmentUpload.html
+     * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CompleteAttachmentUpload.html
+     * @param args The arguments of the operation.
+     */
+    sendAttachment(args: SendAttachmentArgs): Promise<ParticipantServiceResponse<SendAttachmentResult>>;
+    sendAttachment<T>(
+      args: WithMetadata<SendAttachmentArgs, T>
+    ): Promise<WithMetadata<ParticipantServiceResponse<SendAttachmentResult>, T>>;
+
+    /**
+     * Downloads a file
+     * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html
+     * @param args The arguments of the operation.
+     */
+    downloadAttachment(args: DownloadAttachmentArgs): Promise<ParticipantServiceResponse<DownloadAttachmentResult>>;
+    downloadAttachment<T>(
+      args: WithMetadata<DownloadAttachmentArgs, T>
+    ): Promise<WithMetadata<ParticipantServiceResponse<DownloadAttachmentResult>, T>>;
+
+    /**
      * Sends a message as the current session's participant.
      * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendMessage.html
      * @param args The arguments of the operation.
@@ -496,6 +517,26 @@ declare namespace connect {
   }
 
   /**
+   * An object that is transformed to a request of the Amazon Connect Participant Service `StartAttachmentUpload and Complete Attachment Upload` API.
+   * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_StartAttachmentUpload.html
+   */
+  interface SendAttachmentArgs {
+    /**
+     * An HTML file object
+     * https://developer.mozilla.org/en-US/docs/Web/API/File
+     */
+    attachment: File;
+  }
+
+    /**
+   * An object that is transformed to a request of the Amazon Connect Participant Service `GetAttachment` API.
+   * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html
+   */
+  interface DownloadAttachmentArgs {
+    attachmentId: string;
+  }
+
+  /**
    * Represents the response of the Amazon Connect Participant Service `SendEvent` API.
    * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html#API_SendEvent_ResponseSyntax
    */
@@ -509,6 +550,26 @@ declare namespace connect {
 
     /** The ID of the response. */
     readonly Id: string;
+  }
+
+    /**
+   * Represents the response of the Amazon Connect Participant Service `CompleteAttachmentUpload` API.
+   * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CompleteAttachmentUpload.html
+   */
+  interface SendAttachmentResult {
+  }
+
+  /**
+   * Represents the response of the Amazon Connect Participant Service `GetAttachment` API.
+   * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html
+   */
+  interface DownloadAttachmentResult {
+    // This is the pre-signed URL that can be used for uploading the file to Amazon S3 when used in response to StartAttachmentUpload.
+    Url: string;
+
+    // The expiration time of the URL in ISO timestamp.
+    // It's specified in ISO 8601 format: yyyy-MM-ddThh:mm:ss.SSSZ. For example, 2019-11-08T02:41:28.172Z.
+    UrlExpiry: string;
   }
 
   // ======
