@@ -197,10 +197,10 @@ declare namespace connect {
      * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html
      * @param args The arguments of the operation.
      */
-    downloadAttachment(args: DownloadAttachmentArgs): Promise<ParticipantServiceResponse<DownloadAttachmentResult>>;
+    downloadAttachment(args: DownloadAttachmentArgs): Promise<Blob>;
     downloadAttachment<T>(
       args: WithMetadata<DownloadAttachmentArgs, T>
-    ): Promise<WithMetadata<ParticipantServiceResponse<DownloadAttachmentResult>, T>>;
+    ): Promise<WithMetadata<Blob, T>>;
 
     /**
      * Sends a message as the current session's participant.
@@ -470,7 +470,7 @@ declare namespace connect {
      * Type of the item: message or event.
      * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_Item.html#connectparticipant-Type-Item-Type
      */
-    readonly Type: "MESSAGE" | "EVENT" | "CONNECTION_ACK";
+    readonly Type: "MESSAGE" | "EVENT" | "ATTACHMENT" | "CONNECTION_ACK";
   }
 
   /**
@@ -528,7 +528,7 @@ declare namespace connect {
     attachment: File;
   }
 
-    /**
+  /**
    * An object that is transformed to a request of the Amazon Connect Participant Service `GetAttachment` API.
    * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html
    */
@@ -557,19 +557,6 @@ declare namespace connect {
    * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CompleteAttachmentUpload.html
    */
   interface SendAttachmentResult {
-  }
-
-  /**
-   * Represents the response of the Amazon Connect Participant Service `GetAttachment` API.
-   * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html
-   */
-  interface DownloadAttachmentResult {
-    // This is the pre-signed URL that can be used for uploading the file to Amazon S3 when used in response to StartAttachmentUpload.
-    Url: string;
-
-    // The expiration time of the URL in ISO timestamp.
-    // It's specified in ISO 8601 format: yyyy-MM-ddThh:mm:ss.SSSZ. For example, 2019-11-08T02:41:28.172Z.
-    UrlExpiry: string;
   }
 
   // ======
