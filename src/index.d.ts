@@ -430,6 +430,11 @@ declare namespace connect {
     readonly AbsoluteTime: string;
 
     /**
+     * List of attachment information.
+     */
+    readonly Attachments?: AttachmentItem[];
+
+    /**
      * The content of the message or event.
      * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_Item.html#connectparticipant-Type-Item-Content
      */
@@ -439,7 +444,7 @@ declare namespace connect {
      * The type of content of the item.
      * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_Item.html#connectparticipant-Type-Item-ContentType
      */
-    readonly ContentType: ChatContentType;
+    readonly ContentType?: ChatContentType;
 
     /**
      * The chat display name of the sender.
@@ -471,6 +476,33 @@ declare namespace connect {
      * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_Item.html#connectparticipant-Type-Item-Type
      */
     readonly Type: "MESSAGE" | "EVENT" | "ATTACHMENT" | "CONNECTION_ACK";
+  }
+
+  /**
+   * Information about an attachment.
+   * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_AttachmentItem.html
+   */
+  interface AttachmentItem {
+    /**
+     * A unique identifier for the attachment.
+     */
+    readonly AttachmentId: string;
+
+    /**
+     * A case-sensitive name of the attachment being uploaded.
+     */
+    readonly AttachmentName: string;
+
+    /**
+     * The MIME file type of the attachment.
+     * For a list of supported file types, see: https://docs.aws.amazon.com/connect/latest/adminguide/amazon-connect-service-limits.html#feature-limits
+     */
+    readonly ContentType: string;
+
+    /**
+     * Status of the attachment.
+     */
+    readonly Status: "APPROVED" | "REJECTED" | "IN_PROGRESS";
   }
 
   /**
