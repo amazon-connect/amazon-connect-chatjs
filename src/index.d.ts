@@ -291,7 +291,9 @@ declare namespace connect {
     | "application/vnd.amazonaws.connect.event.transfer.failed"
     | "application/vnd.amazonaws.connect.event.chat.ended";
 
-  type ChatMessageContentType = "text/plain";
+  type ChatMessageContentType =
+      | "text/plain"
+      | "text/markdown";
 
   type ChatContentType = ChatEventContentType | ChatMessageContentType;
 
