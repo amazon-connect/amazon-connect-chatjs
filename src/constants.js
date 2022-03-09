@@ -33,6 +33,7 @@ export const CHAT_EVENTS = {
 
 export const CONTENT_TYPE = {
   textPlain: "text/plain",
+  textMarkdown: "text/markdown",
   textCsv: "text/csv",
   applicationDoc: "application/msword",
   applicationPdf: "application/pdf",
