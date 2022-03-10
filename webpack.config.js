@@ -15,21 +15,6 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.(js|ts)$/,
-        enforce: "pre",
-        use: [
-          {
-            options: {
-              formatter: require("eslint/lib/formatters/stylish"),
-              eslintPath: require.resolve("eslint")
-            },
-            loader: require.resolve("eslint-loader")
-          }
-        ],
-        exclude: /node_modules/
-      },
-
-      {
         test: /\.(js|mjs|jsx|ts|tsx)$/,
         exclude: /node_modules/,
         loader: require.resolve("babel-loader"),
@@ -46,13 +31,11 @@ module.exports = {
   },
 
   devServer: {
-    contentBase: [
-      path.resolve(__dirname, "showcase"),
-      path.resolve(__dirname, "dist"),
-      path.resolve(__dirname, "src")
-    ],
     compress: false,
     hot: true,
-    watchContentBase: true
+    static: {
+      directory: path.resolve(__dirname, "showcase"),
+      watch: true
+    }
   }
 };
