@@ -1,4 +1,5 @@
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
+import { IllegalArgumentException } from "./exceptions";
 
 describe("ChatServiceArgsValidator", () => {
 
@@ -43,5 +44,17 @@ describe("ChatServiceArgsValidator", () => {
     }
     chatDetails = chatArgsValidator.normalizeChatDetails(chatDetailsInput);
     expect(chatDetails).toEqual(expectedChatDetails);
+  });
+
+  test("validateSendEvent only passes on valid content types", () => {
+    const sendEventRequest = {
+      contentType: "application/vnd.amazonaws.connect.event.participant.inactive"
+    };
+    const chatArgsValidator = getValidator();
+    chatArgsValidator.validateSendEvent(sendEventRequest);
+
+    sendEventRequest.contentType = "application/vnd.amazonaws.connect.event.participant.disengaged";
+    const validateCall = () => chatArgsValidator.validateSendEvent(sendEventRequest);
+    expect(validateCall).toThrow(IllegalArgumentException);
   });
 });

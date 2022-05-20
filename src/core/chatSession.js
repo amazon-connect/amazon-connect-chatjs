@@ -49,11 +49,18 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
 
   _createChatController(sessionType, chatDetailsInput, options, websocketManager) {
     var chatDetails = this.argsValidator.normalizeChatDetails(chatDetailsInput);
+    var logMetaData = {
+      contactId: chatDetails.contactId,
+      participantId: chatDetails.participantId,
+      sessionType
+    }
+    var chatClient = ChatClientFactory.getCachedClient(options, logMetaData);
     var args = {
       sessionType: sessionType,
-      chatDetails: chatDetails,
-      chatClient: ChatClientFactory.getCachedClient(options),
-      websocketManager: websocketManager
+      chatDetails,
+      chatClient,
+      websocketManager: websocketManager,
+      logMetaData
     };
     return new ChatController(args);
   }
