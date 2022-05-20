@@ -1,5 +1,5 @@
 import { CONNECTION_TOKEN_POLLING_INTERVAL_IN_MS, CONNECTION_TOKEN_EXPIRY_BUFFER_IN_MS } from "../../constants";
-
+import { LogManager } from "../../log";
 const ConnectionHelperStatus = {
   NeverStarted: "NeverStarted",
   Starting: "Starting",
@@ -21,24 +21,27 @@ const ConnectionInfoType = {
 };
 
 export default class BaseConnectionHelper {
-  constructor(connectionDetailsProvider) {
+  constructor(connectionDetailsProvider, logMetaData) {
     this.connectionDetailsProvider = connectionDetailsProvider;
     this.isStarted = false;
+    this.logger = LogManager.getLogger({ prefix: "ChatJS-BaseConnectionHelper", logMetaData });
   }
 
   startConnectionTokenPolling(isFirstCall=false, expiry=CONNECTION_TOKEN_POLLING_INTERVAL_IN_MS) {
     if (!isFirstCall){
       this.connectionDetailsProvider.fetchConnectionToken()
         .then(() => {
+          this.logger.info("Connection token polling succeeded.")
           expiry = this.getTimeToConnectionTokenExpiry();
           this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this), expiry);
         })
         .catch((e) => {
-          console.log("An error occurred when attempting to fetch the connection token during Connection Token Polling", e);
+          this.logger.error("An error occurred when attempting to fetch the connection token during Connection Token Polling", e);
           this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this), expiry);
         });
     }
     else {
+      this.logger.info("First time polling connection token.")
       this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this), expiry);
     }
   }

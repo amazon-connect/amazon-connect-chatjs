@@ -10,12 +10,12 @@ import { TRANSPORT_LIFETIME_IN_SECONDS } from "../../constants";
 
 class LpcConnectionHelper extends BaseConnectionHelper {
 
-  constructor(contactId, initialContactId, connectionDetailsProvider, websocketManager) {
-    super(connectionDetailsProvider);
+  constructor(contactId, initialContactId, connectionDetailsProvider, websocketManager, logMetaData) {
+    super(connectionDetailsProvider, logMetaData);
     this.cleanUpBaseInstance = !websocketManager;
     this.tryCleanup();
     if (!LpcConnectionHelper.baseInstance) {
-      LpcConnectionHelper.baseInstance = new LPCConnectionHelperBase(connectionDetailsProvider, websocketManager);
+      LpcConnectionHelper.baseInstance = new LPCConnectionHelperBase(connectionDetailsProvider, websocketManager, logMetaData);
     }
     this.contactId = contactId;
     this.initialContactId = initialContactId;
@@ -91,11 +91,12 @@ LpcConnectionHelper.baseInstance = null;
 
 
 class LPCConnectionHelperBase {
-  constructor(connectionDetailsProvider, websocketManager) {
+  constructor(connectionDetailsProvider, websocketManager, logMetaData) {
     this.status = ConnectionHelperStatus.NeverStarted;
     this.eventBus = new EventBus();
     this.logger = LogManager.getLogger({
-      prefix: "LPC WebSockets: "
+      prefix: "ChatJS-LPCConnectionHelperBase",
+      logMetaData
     });
     this.initWebsocketManager(websocketManager, connectionDetailsProvider);
   }
@@ -109,16 +110,26 @@ class LPCConnectionHelperBase {
       this.websocketManager.onConnectionLost(this.handleConnectionLost.bind(this)),
       this.websocketManager.onInitFailure(this.handleEnded.bind(this))
     ];
+    this.logger.info("Initializing websocket manager.");
     if (!websocketManager) {
       this.websocketManager.init(
         () => connectionDetailsProvider.fetchConnectionDetails()
-          .then(connectionDetails => ({
-            webSocketTransport: {
-              url: connectionDetails.url,
-              expiry: connectionDetails.expiry,
-              transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS
+          .then(connectionDetails => {
+            const details = {
+              webSocketTransport: {
+                url: connectionDetails.url,
+                expiry: connectionDetails.expiry,
+                transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS
+              }
             }
-          }))
+            const logContent = {expiry: connectionDetails.expiry, transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS};
+            this.logger.debug("Websocket manager initialized. Connection details:", logContent);
+            return details;
+          }
+        ).catch(error => {
+          this.logger.error("Initializing Websocket Manager failed:", error);
+          throw error;
+        })
       );
     }
   }
@@ -127,6 +138,7 @@ class LPCConnectionHelperBase {
     this.websocketManager.closeWebSocket();
     this.eventBus.unsubscribeAll();
     this.subscriptions.forEach(f => f());
+    this.logger.info("Websocket closed. All event subscriptions are cleared.");
   }
 
   start() {
@@ -143,6 +155,7 @@ class LPCConnectionHelperBase {
   handleEnded() {
     this.status = ConnectionHelperStatus.Ended;
     this.eventBus.trigger(ConnectionHelperEvents.Ended, {});
+    this.logger.info("Websocket connection ended.");
   }
 
   onConnectionGain(handler) {
@@ -152,6 +165,7 @@ class LPCConnectionHelperBase {
   handleConnectionGain() {
     this.status = ConnectionHelperStatus.Connected;
     this.eventBus.trigger(ConnectionHelperEvents.ConnectionGained, {});
+    this.logger.info("Websocket connection gained.");
   }
 
   onConnectionLost(handler) {
@@ -161,6 +175,7 @@ class LPCConnectionHelperBase {
   handleConnectionLost() {
     this.status = ConnectionHelperStatus.ConnectionLost;
     this.eventBus.trigger(ConnectionHelperEvents.ConnectionLost, {});
+    this.logger.info("Websocket connection lost.");
   }
 
   onMessage(handler) {
@@ -172,8 +187,9 @@ class LPCConnectionHelperBase {
     try {
       parsedMessage = JSON.parse(message.content);
       this.eventBus.trigger(ConnectionHelperEvents.IncomingMessage, parsedMessage);
+      this.logger.info("Websocket incoming message", {messageId: parsedMessage.Id, contentType: parsedMessage.ContentType});
     } catch (e) {
-      this.logger.error(`Wrong message format: `, message);
+      this.logger.error("Wrong message format");
     }
   }
 

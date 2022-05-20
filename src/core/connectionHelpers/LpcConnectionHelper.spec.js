@@ -51,17 +51,22 @@ describe("LpcConnectionHelper", () => {
     return websocketManager;
   }
 
-
-  beforeEach(() => {
-    connectionDetailsProvider.fetchConnectionDetails = jest.fn(() => Promise.resolve({
-      url: "url",
-      expiry: "expiry"
-    }));
-    connectionDetailsProvider.getConnectionTokenExpiry = jest.fn(() => Promise.resolve("expiry"));
-    LpcConnectionHelper.baseInstance = null;
-    initWebsocketManager();
-    const mock = jest.spyOn(WebSocketManager, 'create'); 
-    mock.mockImplementation(() => {
+function runBasicSetup(withError) {
+  connectionDetailsProvider.fetchConnectionDetails = jest.fn(() => {
+    if(!withError) {
+      return Promise.resolve({
+        url: "url",
+        expiry: "expiry"
+      })
+    } else {
+      return Promise.reject(new Error("error"))
+    }
+  });
+  connectionDetailsProvider.getConnectionTokenExpiry = jest.fn(() => Promise.resolve("expiry"));
+  LpcConnectionHelper.baseInstance = null;
+  initWebsocketManager();
+  const mock = jest.spyOn(WebSocketManager, 'create');
+  mock.mockImplementation(() => {
     const messageHandlers = [];
     const connectionLostHandlers = [];
     const connectionGainHandlers = [];
@@ -101,14 +106,17 @@ describe("LpcConnectionHelper", () => {
       }
     };
     return websocketManager;
-  }); 
   });
+}
 
   function getLpcConnectionHelper(initialContactId) {
     return new LpcConnectionHelper(null, initialContactId, connectionDetailsProvider, websocketManager);
   }
 
   describe("with provided websocketManager", () => {
+    beforeEach(() => {
+      runBasicSetup(false);
+    });
     test("call relevant methods on provided websocketManager during initialization", () => {
       getLpcConnectionHelper("id").start();
       expect(websocketManager.subscribeTopics).toHaveBeenCalledTimes(1);
@@ -156,9 +164,18 @@ describe("LpcConnectionHelper", () => {
       expect(onMessageHandler2).toHaveBeenCalledTimes(1);
       expect(onMessageHandler2).toHaveBeenCalledWith({ InitialContactId: "id2" }, expect.anything(), expect.anything());
     });
+    test("onRefresh handler is called", () => {
+      websocketManager = null;
+      getLpcConnectionHelper("id");
+      websocketManager.$simulateRefresh();
+      expect(connectionDetailsProvider.fetchConnectionDetails).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("without provided websocketManager", () => {
+    beforeEach(() => {
+      runBasicSetup(false);
+    });
     test("call relevant methods on new websocketManager during initialization", () => {
       websocketManager = null;
       getLpcConnectionHelper("id").start();

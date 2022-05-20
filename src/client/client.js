@@ -12,19 +12,20 @@ class ChatClientFactoryImpl {
     this.clientCache = {};
   }
 
-  getCachedClient(optionsInput) {
+  getCachedClient(optionsInput, logMetaData) {
     var options = Object.assign({}, optionsInput);
     var region = optionsInput.region || GlobalConfig.getRegion() || REGIONS.pdx;
     options.region = region;
+    logMetaData.region = region;
     if (this.clientCache[region]) {
       return this.clientCache[region];
     }
-    var client = this._createAwsClient(options);
+    var client = this._createAwsClient(options, logMetaData);
     this.clientCache[region] = client;
     return client;
   }
 
-  _createAwsClient(options) {
+  _createAwsClient(options, logMetaData) {
     var region = options.region;
     var endpointOverride = GlobalConfig.getEndpointOverride();
     var endpointUrl = `https://participant.connect.${region}.amazonaws.com`;
@@ -33,7 +34,8 @@ class ChatClientFactoryImpl {
     }
     return new AWSChatClient({
       endpoint: endpointUrl,
-      region: region
+      region: region,
+      logMetaData
     });
   }
 }
@@ -77,7 +79,7 @@ class AWSChatClient extends ChatClient {
     });
     this.chatClient = new AWS.ConnectParticipant(config);
     this.invokeUrl = args.endpoint;
-    this.logger = LogManager.getLogger({ prefix: "ChatClient" });
+    this.logger = LogManager.getLogger({ prefix: "ChatJS-ChatClient", logMetaData: args.logMetaData });
   }
 
   createParticipantConnection(participantToken, type) {
@@ -90,10 +92,10 @@ class AWSChatClient extends ChatClient {
         params
       );
       return self._sendRequest(createParticipantConnectionRequest).then((res) => {
-        self.logger.info("successfully create connection request");
+        self.logger.info("Successfully create connection request")?.sendInternalLogToServer?.();
         return res;
       }).catch((err) => {
-        self.logger.error("error when creating connection request");
+        self.logger.error("Error when creating connection request ", err)?.sendInternalLogToServer?.();
         return Promise.reject(err);
       });
   }
@@ -108,10 +110,10 @@ class AWSChatClient extends ChatClient {
         params
       );
       return self._sendRequest(disconnectParticipantRequest).then((res) => {
-        self.logger.info("successfully disconnect participant");
+        self.logger.info("Successfully disconnect participant")?.sendInternalLogToServer?.();
         return res;
       }).catch((err) => {
-        self.logger.error("error when disconnecting participant");
+        self.logger.error("Error when disconnecting participant ", err)?.sendInternalLogToServer?.();
         return Promise.reject(err);
       });
   }
@@ -119,27 +121,26 @@ class AWSChatClient extends ChatClient {
   getTranscript(connectionToken, args) {
     let self = this;
     var params = {
-    MaxResults: args.maxResults,
-    NextToken: args.nextToken,
-    ScanDirection: args.scanDirection,
-    SortOrder: args.sortOrder,
-    StartPosition: {
-      Id: args.startPosition.id,
-      AbsoluteTime: args.startPosition.absoluteTime,
-      MostRecent: args.startPosition.mostRecent
-    },
-    ConnectionToken: connectionToken
+      MaxResults: args.maxResults,
+      NextToken: args.nextToken,
+      ScanDirection: args.scanDirection,
+      SortOrder: args.sortOrder,
+      StartPosition: {
+        Id: args.startPosition.id,
+        AbsoluteTime: args.startPosition.absoluteTime,
+        MostRecent: args.startPosition.mostRecent
+      },
+      ConnectionToken: connectionToken
     };
     if (args.contactId) {
       params.ContactId = args.contactId;
     }
     var getTranscriptRequest = self.chatClient.getTranscript(params);
-    console.log("getTranscriptRequest", getTranscriptRequest);
     return self._sendRequest(getTranscriptRequest).then((res) => {
-      self.logger.info("successfully get transcript");
+      this.logger.info("Successfully get transcript");
       return res;
     }).catch((err) => {
-      self.logger.error("error when getting transcript");
+      this.logger.error("Get transcript error", err);
       return Promise.reject(err);
     });
   }
@@ -153,10 +154,11 @@ class AWSChatClient extends ChatClient {
       };
       var sendMessageRequest = self.chatClient.sendMessage(params);
       return self._sendRequest(sendMessageRequest).then((res) => {
-        self.logger.info("successfully send message");
+        const logContent = {id: res.data?.Id, contentType: params.ContentType};
+        this.logger.debug("Successfully send message", logContent);
         return res;
       }).catch((err) => {
-        self.logger.error("error when sending message");
+        this.logger.error("Send message error", err, {contentType: params.ContentType});
         return Promise.reject(err);
       });
   }
@@ -170,20 +172,21 @@ class AWSChatClient extends ChatClient {
       ConnectionToken: connectionToken
     };
     const startUploadRequest = self.chatClient.startAttachmentUpload(startUploadRequestParams);
+    const logContent = {contentType: attachment.type, size: attachment.size};
     return self._sendRequest(startUploadRequest)
         .then(startUploadResponse => {
           return self._uploadToS3(attachment, startUploadResponse.data.UploadMetadata)
               .then(() => {
-                self.logger.info("successfully uploaded attachment");
                 const completeUploadRequestParams = {
                   AttachmentIds: [ startUploadResponse.data.AttachmentId ],
                   ConnectionToken: connectionToken
                 };
+                this.logger.debug("Successfully upload attachment", {...logContent, attachmentId: startUploadResponse.data?.AttachmentId});
                 const completeUploadRequest = self.chatClient.completeAttachmentUpload(completeUploadRequestParams);
                 return self._sendRequest(completeUploadRequest);
               });
         }).catch((err) => {
-          self.logger.error("error when sending attachment");
+          this.logger.error("Upload attachment error", err, logContent);
           return Promise.reject(err);
         });
   }
@@ -202,12 +205,14 @@ class AWSChatClient extends ChatClient {
       AttachmentId: attachmentId,
       ConnectionToken: connectionToken
     };
+    const logContent = {attachmentId};
     const getAttachmentRequest = self.chatClient.getAttachment(params);
     return self._sendRequest(getAttachmentRequest)
         .then(response => {
+          this.logger.debug("Successfully download attachment", logContent);
           return self._downloadUrl(response.data.Url);
         }).catch(err => {
-          self.logger.error("error when sending attachment");
+          this.logger.error("Download attachment error", err, logContent);
           return Promise.reject(err);
         });
   }
@@ -226,11 +231,12 @@ class AWSChatClient extends ChatClient {
         Content: content
       };
       var sendEventRequest = self.chatClient.sendEvent(params);
+      const logContent = {contentType};
       return self._sendRequest(sendEventRequest).then((res) => {
-        self.logger.info("successfully send event");
+        this.logger.debug("Successfully send event", {...logContent, id: res.data?.Id, });
         return res;
       }).catch((err) => {
-        self.logger.error("error when sending event");
+        this.logger.error("Send event error", err, logContent);
         return Promise.reject(err);
       });
   }

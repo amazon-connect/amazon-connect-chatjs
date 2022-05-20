@@ -1,6 +1,6 @@
 # About
 The Amazon Connect Chat javascript library (ChatJS) gives you the power to build your own chat widget to customize the chat experience. This can be used for both the agent user interface, in conjunction with [Amazon Connect Streams](https://github.com/aws/amazon-connect-streams), and for the customer chat interface. 
-
+Setup the globalConfig and logger for ChatJS to use.
 There is a [Chat UI reference implementation](https://github.com/amazon-connect/amazon-connect-chat-ui-examples) here. This will help you deploy an API Gateway and Lambda function for initiating chat from your webpage. From there you can use the ChatJS library to build a custom widget.
 
 # Learn More
@@ -78,20 +78,40 @@ Find build artifacts in **dist** directory -  This will generate a file called `
 This is the main entry point to `amazon-connect-chatjs`.
 All your interactions with the library start here.
 
+### Initialization
+Setup the globalConfig and logger for ChatJS to use.
+- If you don’t want to use any logger, you can skip this setup.
+- There are four log levels available - DEBUG, INFO, WARN, ERROR.
+- If you want to use your own logger, you can add them into `customizedLogger` , and add `customizedLogger` object as the value of `globalConfig.loggerConfig.customizedLogger`, then set the lowest logger level. `globalConfig.loggerConfig.useDefaultLogger` is not required.
+- If you want to use the default logger provided by Chat-js, you can set the logger level, and set `useDefaultLogger` to true. `globalConfig.loggerConfig.customizedLogger` is not required.
+- If you not only provide your own logger, but also set `useDefaultLogger` to true, your own logger will be overwritten by the default logger.
+
+
 ### `connect.ChatSession.setGlobalConfig()`
 ```js
-connect.ChatSession.setGlobalConfig({
-  loggerConfig: { // optional, the logging configuration. If omitted, no logging occurs
-    logger: { // optional, a logger object implementation
-      debug: (msg) => console.debug(msg), // REQUIRED, can be any function
-      info: (msg) => console.info(msg), // REQUIRED, can be any function
-      warn: (msg) => console.warn(msg), // REQUIRED, can be any function
-      error: (msg) => console.error(msg) // REQUIRED, can be any function
-    },
-    level: connect.ChatSession.LogLevel.WARN, // optional, defaults to: `connect.ChatSession.LogLevel.INFO`
+// Add your own logger function here
+var customizedLogger = {
+  debug: (data) => {// customize logger function here},
+  info: (data) => {// customize logger function here},
+  warn: (data) => {// customize logger function here},
+  error: (data) => {// customize logger function here}
+}
+
+var globalConfig = {
+  loggerConfig: {
+    // You can provide your own logger here, otherwise 
+    // this property is optional
+    customizedLogger: customizedLogger,
+    // There are four levels available - DEBUG, INFO, WARN, ERROR. Default is INFO
+    level: connect.LogLevel.INFO,
+    // Choose if you want to use the default logger
+    useDefaultLogger: true
   },
-  region: "us-east-1", // optional, defaults to: "us-west-2"
-});
+  region: "us-west-2" // "us-west-2" is the default value.
+};
+
+connect.ChatSession.setGlobalConfig(globalConfig);
+
 ```
 
 Setup the global configuration to use. If this method is not called, the defaults of `loggerConfig` and `region` are used.
