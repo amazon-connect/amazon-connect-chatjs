@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.1.12]
 ### Added
 - This CHANGELOG file to serve as an evolving example of a standardized open source project CHANGELOG.
 - Support for concurrent customer sessions and an agent session. Concurrent agent sessions are unsupported in [Streams](https://github.com/amazon-connect/amazon-connect-streams) and remain unsupported in ChatJS.
