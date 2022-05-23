@@ -52,7 +52,10 @@ describe("LpcConnectionHelper", () => {
         endedHandlers.forEach(f => f());
       },
       $simulateRefresh() {
-        return Promise.allSettled(refreshHandlers.map(f => f()));
+        return Promise.all(refreshHandlers.map(f => f().then(
+          value => ({ status: 'fulfilled', value }),
+          reason => ({ status: 'rejected', reason }),
+        )));
       }
     };
   }
