@@ -34,11 +34,11 @@ When using the SDK and ChatJS, you may remove the SDK from ChatJS to ensure lack
 
 `npm install amazon-connect-chatjs`
 
-# Importing using npm and ES6
+### Importing using npm and ES6
 `import "amazon-connect-chatjs"`
 Note: this will apply the global `connect` variable to your current scope.
 
-# Usage with TypeScript
+### Usage with TypeScript
 
 `amazon-connect-chatjs` is compatible with TypeScript. You'll need to use version `3.0.1` or higher:
 
@@ -52,7 +52,7 @@ connect.ChatSession.create({ /* ... */ });
 ```
 $ git clone https://github.com/amazon-connect/amazon-connect-chatjs
 ```
-# Building
+### Building
 1. Install latest LTS version of [NodeJS](https://nodejs.org)
 2. Checkout this package into workspace and navigate to root folder
 3. `npm install`
@@ -82,20 +82,31 @@ All your interactions with the library start here.
 ```js
 connect.ChatSession.setGlobalConfig({
   loggerConfig: { // optional, the logging configuration. If omitted, no logging occurs
-    logger: { // optional, a logger object implementation
+    // You can provide your own logger here, otherwise this property is optional
+    customizedLogger: {
       debug: (msg) => console.debug(msg), // REQUIRED, can be any function
       info: (msg) => console.info(msg), // REQUIRED, can be any function
       warn: (msg) => console.warn(msg), // REQUIRED, can be any function
       error: (msg) => console.error(msg) // REQUIRED, can be any function
     },
-    level: connect.ChatSession.LogLevel.WARN, // optional, defaults to: `connect.ChatSession.LogLevel.INFO`
+    // There are four levels available - DEBUG, INFO, WARN, ERROR. Default is INFO
+    level: connect.LogLevel.INFO,
+    // Choose if you want to use the default logger
+    useDefaultLogger: true
   },
   region: "us-east-1", // optional, defaults to: "us-west-2"
 });
 ```
 
-Setup the global configuration to use. If this method is not called, the defaults of `loggerConfig` and `region` are used.
+Set the global configuration to use. If this method is not called, the defaults of `loggerConfig` and `region` are used.
 This method should be called before `connect.ChatSession.create()`.
+
+Customizing `loggerConfig` for ChatJS:
+- If you don't want to use any logger, you can skip this field.
+- There are four log levels available - DEBUG, INFO, WARN, ERROR.
+- If you want to use your own logger, you can add them into `customizedLogger`, and add `customizedLogger` object as the value of `loggerConfig.customizedLogger`, then set the lowest logger level. `globalConfig.loggerConfig.useDefaultLogger` is not required.
+- If you want to use the default logger provided by ChatJS, you can set the logger level, and set `useDefaultLogger` to true. `loggerConfig.customizedLogger` is not required.
+- If you not only provide your own logger, but also set `useDefaultLogger` to true, your own logger will be overwritten by the default logger.
 
 ### `connect.ChatSession.create()`
 ```js

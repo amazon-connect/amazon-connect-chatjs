@@ -1,4 +1,3 @@
-
 import { ConnectionHelperStatus } from "./connectionHelpers/baseConnectionHelper";
 import {
   CHAT_EVENTS,
@@ -24,9 +23,6 @@ var ACCESS_DENIED_EXCEPTION = "AccessDeniedException";
 class ChatController {
 
   constructor(args) {
-    this.logger = LogManager.getLogger({
-      prefix: "ContactId-" + args.chatDetails.contactId + ": "
-    });
     this.argsValidator = new ChatServiceArgsValidator();
     this.pubsub = new EventBus();
     this.sessionType = args.sessionType;
@@ -40,25 +36,29 @@ class ChatController {
     this.websocketManager = args.websocketManager;
     this._participantDisconnected = false;
     this.sessionMetadata = {};
+    this.logger = LogManager.getLogger({
+      prefix: "ChatJS-ChatController",
+      logMetaData: args.logMetaData
+    });
+    this.logMetaData = args.logMetaData;
+    this.logger.info("Browser info:", window.navigator.userAgent)
   }
 
   subscribe(eventName, callback) {
     this.pubsub.subscribe(eventName, callback);
-    this.logger.info("Subscribed successfully to eventName: ", eventName);
+    this._sendInternalLogToServer(this.logger.info("Subscribed successfully to event:", eventName));
   }
 
-  handleRequestSuccess(metadata, request, requestName) {
+  handleRequestSuccess(metadata) {
     return response => {
       response.metadata = metadata;
-      this.logger.debug(`${requestName} successful! Response: `, response, " / Request: ", request);
       return response;
     };
   }
 
-  handleRequestFailure(metadata, request, requestName) {
+  handleRequestFailure(metadata) {
     return error => {
       error.metadata = metadata;
-      this.logger.debug(`${requestName} failed! Error: `, error, " / Request: ", request);
       return Promise.reject(error);
     };
   }
@@ -69,8 +69,8 @@ class ChatController {
     const connectionToken = this.connectionHelper.getConnectionToken();
     return this.chatClient
       .sendMessage(connectionToken, args.message, args.contentType)
-      .then(this.handleRequestSuccess(metadata, args, "sendMessage"))
-      .catch(this.handleRequestFailure(metadata, args, "sendMessage"));
+      .then(this.handleRequestSuccess(metadata))
+      .catch(this.handleRequestFailure(metadata));
   }
 
   sendAttachment(args){
@@ -78,18 +78,18 @@ class ChatController {
     //TODO: validation
     const connectionToken = this.connectionHelper.getConnectionToken();
     return this.chatClient
-        .sendAttachment(connectionToken, args.attachment, args.metadata)
-        .then(this.handleRequestSuccess(metadata, args, "sendAttachment"))
-        .catch(this.handleRequestFailure(metadata, args, "sendAttachment"));
+      .sendAttachment(connectionToken, args.attachment, args.metadata)
+      .then(this.handleRequestSuccess(metadata))
+      .catch(this.handleRequestFailure(metadata));
   }
 
   downloadAttachment(args){
     const metadata = args.metadata || null;
     const connectionToken = this.connectionHelper.getConnectionToken();
     return this.chatClient
-        .downloadAttachment(connectionToken, args.attachmentId)
-        .then(this.handleRequestSuccess(metadata, args, "downloadAttachment"))
-        .catch(this.handleRequestFailure(metadata, args, "downloadAttachment"));
+      .downloadAttachment(connectionToken, args.attachmentId)
+      .then(this.handleRequestSuccess(metadata))
+      .catch(this.handleRequestFailure(metadata));
   }
 
   sendEvent(args) {
@@ -103,12 +103,13 @@ class ChatController {
         args.contentType,
         content
       )
-      .then(this.handleRequestSuccess(metadata, args, "sendEvent"))
-      .catch(this.handleRequestFailure(metadata, args, "sendEvent"));
+      .then(this.handleRequestSuccess(metadata))
+      .catch(this.handleRequestFailure(metadata));
   }
 
   getTranscript(inputArgs) {
     if (this.connectionHelper.getStatus() === ConnectionHelperStatus.Ended) {
+      this._sendInternalLogToServer(this.logger.error(`Get transcript failed! Error: `, ACCESS_DENIED_EXCEPTION, " Connection status ended."));
       return Promise.reject(ACCESS_DENIED_EXCEPTION);
     }
     const metadata = inputArgs.metadata || null;
@@ -127,8 +128,8 @@ class ChatController {
     const connectionToken = this.connectionHelper.getConnectionToken();
     return this.chatClient
       .getTranscript(connectionToken, args)
-      .then(this.handleRequestSuccess(metadata, args, "getTranscript"))
-      .catch(this.handleRequestFailure(metadata, args, "getTranscript"));
+      .then(this.handleRequestSuccess(metadata))
+      .catch(this.handleRequestFailure(metadata));
   }
 
   connect(args={}) {
@@ -150,7 +151,8 @@ class ChatController {
       this.contactId,
       this.initialContactId,
       connectionDetailsProvider,
-      this.websocketManager
+      this.websocketManager,
+      this.logMetaData
     );
     this.connectionHelper.onEnded(this._handleEndedConnection.bind(this));
     this.connectionHelper.onConnectionLost(this._handleLostConnection.bind(this));
@@ -204,22 +206,22 @@ class ChatController {
         this.breakConnection();
       }
     } catch (e) {
-      this.logger.error(
-        "Error occured while handling message from Connection. eventData: ",
+      this._sendInternalLogToServer(this.logger.error(
+        "Error occured while handling message from Connection. eventData:",
         incomingData,
-        " Causing exception: ",
+        " Causing exception:",
         e
-      );
+      ));
     }
   }
 
   _forwardChatEvent(eventName, eventData) {
-    this.logger.debug("Triggering event for subscribers:", eventName, eventData);
     this.pubsub.triggerAsync(eventName, eventData);
   }
 
   _onConnectSuccess(response) {
-    this.logger.info("Connect successful!");
+    this._sendInternalLogToServer(this.logger.info("Connect successful!"));
+
     const responseObject = {
       _debug: response,
       connectSuccess: true,
@@ -247,7 +249,8 @@ class ChatController {
       connectCalled: true,
       metadata: this.sessionMetadata
     };
-    this.logger.error("Connect Failed with data: ", errorObject);
+    this._sendInternalLogToServer(this.logger.error("Connect Failed. Error: ", errorObject));
+
     return Promise.reject(errorObject);
   }
 
@@ -272,13 +275,15 @@ class ChatController {
     return this.chatClient
       .disconnectParticipant(connectionToken)
       .then(response => {
-        this.logger.info("disconnect participant successful");
+        this._sendInternalLogToServer(this.logger.info("Disconnect participant successfully"));
+
         this._participantDisconnected = true;
         this.cleanUpOnParticipantDisconnect();
         this.breakConnection();
         return response;
       }, error => {
-        this.logger.error("disconnect participant failed with error: ", error);
+        this._sendInternalLogToServer(this.logger.error("Disconnect participant failed. Error:", error));
+
         return Promise.reject(error);
       });
   }
@@ -306,16 +311,23 @@ class ChatController {
       case ConnectionHelperStatus.Connected:
         return NetworkLinkStatus.Established;
     }
-    this.logger.error(
+    this._sendInternalLogToServer(this.logger.error(
       "Reached invalid state. Unknown connectionHelperStatus: ",
       connectionHelperStatus
-    );
+    ));
   }
 
   getConnectionStatus() {
     return this._convertConnectionHelperStatus(
       this.connectionHelper.getStatus()
     );
+  }
+
+  _sendInternalLogToServer(logEntry) {
+    if (logEntry && typeof logEntry.sendInternalLogToServer === "function")
+      logEntry.sendInternalLogToServer();
+
+    return logEntry;
   }
 }
 

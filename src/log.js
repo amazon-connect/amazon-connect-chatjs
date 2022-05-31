@@ -1,5 +1,4 @@
 import Utils from "./utils";
-import { LOGS_DESTINATION } from "./constants";
 
 /*eslint-disable no-unused-vars*/
 class Logger {
@@ -51,24 +50,27 @@ class LogManagerImpl {
   }
 
   getLogger(options) {
-    var prefix = options.prefix || "";
-    if (this._logsDestination === LOGS_DESTINATION.DEBUG) {
-      return this.consoleLoggerWrapper;
-    }
-    return new LoggerWrapperImpl(prefix);
+    // option: {prefix: string; logMetaData: object}
+    return new LoggerWrapperImpl(options);
   }
 
   updateLoggerConfig(inputConfig) {
     var config = inputConfig || {};
     this._level = config.level || LogLevel.INFO;
-    this._clientLogger = config.logger || null;
-    this._logsDestination = LOGS_DESTINATION.NULL;
-    if (config.debug) {
-      this._logsDestination = LOGS_DESTINATION.DEBUG;
+    if(config.customizedLogger && typeof config.customizedLogger === "object") {
+      this.useClientLogger = true;
     }
-    if (config.logger) {
-      this._logsDestination = LOGS_DESTINATION.CLIENT_LOGGER;
+    this._clientLogger = this.selectLogger(config);
+  }
+
+  selectLogger(config) {
+    if(config.customizedLogger && typeof config.customizedLogger === "object") {
+      return config.customizedLogger;
     }
+    if(config.useDefaultLogger) {
+      return createConsoleLogger();
+    }
+    return null;
   }
 }
 
@@ -83,25 +85,25 @@ class LoggerWrapper {
 }
 
 class LoggerWrapperImpl extends LoggerWrapper {
-  constructor(prefix) {
+  constructor(options) {
     super();
-    this.prefix = prefix || "";
+    this.options = options || "";
   }
 
   debug(...args) {
-    this._log(LogLevel.DEBUG, args);
+    return this._log(LogLevel.DEBUG, args);
   }
 
   info(...args) {
-    this._log(LogLevel.INFO, args);
+    return this._log(LogLevel.INFO, args);
   }
 
   warn(...args) {
-    this._log(LogLevel.WARN, args);
+    return this._log(LogLevel.WARN, args);
   }
 
   error(...args) {
-    this._log(LogLevel.ERROR, args);
+    return this._log(LogLevel.ERROR, args);
   }
 
   _shouldLog(level) {
@@ -109,26 +111,38 @@ class LoggerWrapperImpl extends LoggerWrapper {
   }
 
   _writeToClientLogger(level, logStatement) {
-    LogManager.writeToClientLogger(level, logStatement);
+    return LogManager.writeToClientLogger(level, logStatement);
   }
 
   _log(level, args) {
     if (this._shouldLog(level)) {
-      var logStatement = this._convertToSingleStatement(args);
-      this._writeToClientLogger(level, logStatement);
+      var logStatement = LogManager.useClientLogger ? args : this._convertToSingleStatement(level, args);
+      return this._writeToClientLogger(level, logStatement);
     }
   }
 
-  _convertToSingleStatement(args) {
-    var logStatement = "";
-    if (this.prefix) {
-      logStatement += this.prefix + " ";
+  _convertToSingleStatement(logLevel, args) {
+    var date = new Date(Date.now()).toISOString();
+    var level = this._getLogLevelByValue(logLevel);
+    var logStatement = `[${date}][${level}]`;
+    if (this.options) {
+      this.options.prefix ? logStatement += " " + this.options.prefix + ":" : logStatement += "";
+      this.options.logMetaData ? logStatement += " Meta data: " + JSON.stringify(this.options.logMetaData) : logStatement += "";
     }
     for (var index = 0; index < args.length; index++) {
       var arg = args[index];
-      logStatement += this._convertToString(arg) + " ";
+      logStatement += " " + this._convertToString(arg);
     }
     return logStatement;
+  }
+
+  _getLogLevelByValue(value) {
+    switch(value) {
+      case 10: return "DEBUG";
+      case 20: return "INFO";
+      case 30: return "WARN";
+      case 40: return "ERROR";
+    }
   }
 
   _convertToString(arg) {

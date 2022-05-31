@@ -66,7 +66,7 @@ Utils.assertIsEnum = function(value, allowedValues, key) {
     }
   }
   throw new IllegalArgumentException(
-      key + " passed (" + value + ")" + " is not valid. Allowed values are: " + allowedValues
+    key + " passed (" + value + ")" + " is not valid. Allowed values are: " + allowedValues
   );
 };
 
@@ -183,13 +183,13 @@ Utils.asyncWhileInterval = function(f, predicate, interval, count=0, error=null)
 
 Utils.isAttachmentContentType = function(contentType){
   return contentType === CONTENT_TYPE.applicationPdf
-      || contentType === CONTENT_TYPE.imageJpg
-      || contentType === CONTENT_TYPE.imagePng
-      || contentType === CONTENT_TYPE.applicationDoc
-      || contentType === CONTENT_TYPE.applicationXls
-      || contentType === CONTENT_TYPE.applicationPpt
-      || contentType === CONTENT_TYPE.textCsv
-      || contentType === CONTENT_TYPE.audioWav;
+    || contentType === CONTENT_TYPE.imageJpg
+    || contentType === CONTENT_TYPE.imagePng
+    || contentType === CONTENT_TYPE.applicationDoc
+    || contentType === CONTENT_TYPE.applicationXls
+    || contentType === CONTENT_TYPE.applicationPpt
+    || contentType === CONTENT_TYPE.textCsv
+    || contentType === CONTENT_TYPE.audioWav;
 };
 
 export default Utils;
