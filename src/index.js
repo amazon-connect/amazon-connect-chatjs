@@ -1,7 +1,9 @@
 /*eslint no-unused-vars: "off"*/
 import { ChatSessionObject } from "./core/chatSession";
 import { LogManager, LogLevel } from "./log";
-global.connect = global.connect || {};
+var global = this || window;
+var connect = global.connect || {};
+global.connect = connect;
 connect.ChatSession = ChatSessionObject;
 connect.LogManager = LogManager;
 connect.LogLevel = LogLevel;
