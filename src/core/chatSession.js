@@ -8,6 +8,7 @@ import { SESSION_TYPES, CHAT_EVENTS } from "../constants";
 import { GlobalConfig } from "../globalConfig";
 import { ChatController } from "./chatController";
 import { LogManager, LogLevel, Logger } from "../log";
+import WebSocketManager from "../lib/amazon-connect-websocket-manager";
 
 class ChatSessionFactory {
   /*eslint-disable no-unused-vars*/
@@ -144,6 +145,14 @@ const CHAT_SESSION_FACTORY = new PersistentConnectionAndChatServiceSessionFactor
 
 var setGlobalConfig = config => {
   var loggerConfig = config.loggerConfig;
+  /**
+    * if config.loggerConfig.logger is present - use it in websocketManager
+    * if config.loggerConfig.customizedLogger is present - use it in websocketManager
+    * if config.loggerConfig.useDefaultLogger is true - use default window.console + default level INFO
+    * config.loggerConfig.advancedLogWriter to customize where you want to log advancedLog messages. Default is warn.
+    * else no logs from websocketManager - DEFAULT
+    */
+  WebSocketManager.setGlobalConfig(config);
   GlobalConfig.update(config);
   LogManager.updateLoggerConfig(loggerConfig);
 };

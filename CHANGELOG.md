@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.13]
+### Added
+- enabled logs for WebSocketManager
+- add advanced_log level to Logger for customers to identify critical logs needed for WebSocket production debugging.
+- add ability to re-connect to web socket after connection has ended.
+
+### Changed
+- remove websocket ended check for GetTranscript to allow GetTranscript after web socket has ended.
+- updated package-lock [lockfileVersion](https://docs.npmjs.com/cli/v8/configuring-npm/package-lock-json#lockfileversion) to 2 
+
 ## [1.1.12]
 ### Added
 - This CHANGELOG file to serve as an evolving example of a standardized open source project CHANGELOG.

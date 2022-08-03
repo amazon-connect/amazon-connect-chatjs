@@ -108,10 +108,6 @@ class ChatController {
   }
 
   getTranscript(inputArgs) {
-    if (this.connectionHelper.getStatus() === ConnectionHelperStatus.Ended) {
-      this._sendInternalLogToServer(this.logger.error(`Get transcript failed! Error: `, ACCESS_DENIED_EXCEPTION, " Connection status ended."));
-      return Promise.reject(ACCESS_DENIED_EXCEPTION);
-    }
     const metadata = inputArgs.metadata || null;
     const args = {
       startPosition: inputArgs.startPosition || {},
@@ -175,6 +171,7 @@ class ChatController {
       data: eventData,
       chatDetails: this.getChatDetails()
     });
+    this.breakConnection();
   }
 
   _handleLostConnection(eventData) {

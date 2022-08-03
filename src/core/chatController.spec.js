@@ -41,6 +41,7 @@ describe("ChatController", () => {
 
   beforeEach(() => {
     const messageHandlers = [];
+    const onEndedHandlers = [];
     startResponse = Promise.resolve();
     endResponse = Promise.resolve();
     connectionDetailsProvider.mockImplementation(() => {
@@ -58,7 +59,9 @@ describe("ChatController", () => {
     });
     LpcConnectionHelper.mockImplementation(() => {
       return {
-        onEnded: () => {},
+        onEnded:  (handlers) => {
+          onEndedHandlers.push(handlers);
+        },
         onConnectionLost: () => {},
         onConnectionGain: () => {},
         onMessage: (handler) => {
@@ -83,6 +86,12 @@ describe("ChatController", () => {
         },
         $simulateEnding: () => {
           messageHandlers.forEach(f => f({
+            Type: EVENT,
+            ContentType: CONTENT_TYPE.chatEnded
+          }));
+        },
+        $simulateConnectionEnding: () => {
+          onEndedHandlers.forEach(f => f({
             Type: EVENT,
             ContentType: CONTENT_TYPE.chatEnded
           }));
@@ -199,5 +208,12 @@ describe("ChatController", () => {
     chatController.connectionHelper.$simulateEnding();
     await Utils.delay(1);
     expect(messageHandler).toHaveBeenCalledTimes(1);
+  });
+  test("should call breakConnection method when ended event is received", async () => {
+    const chatController = getChatController();
+    const breakConnectionSpy = jest.spyOn(chatController, "breakConnection");
+    await chatController.connect();
+    chatController.connectionHelper.$simulateConnectionEnding();
+    expect(breakConnectionSpy).toHaveBeenCalledTimes(1);
   });
 });
