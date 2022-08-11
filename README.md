@@ -89,7 +89,7 @@ connect.ChatSession.setGlobalConfig({
       warn: (msg) => console.warn(msg), // REQUIRED, can be any function
       error: (msg) => console.error(msg) // REQUIRED, can be any function
     },
-    // There are four levels available - DEBUG, INFO, WARN, ERROR. Default is INFO
+    // There are five levels available - DEBUG, INFO, WARN, ERROR, ADVANCED_LOG. Default is INFO
     level: connect.LogLevel.INFO,
     // Choose if you want to use the default logger
     useDefaultLogger: true
@@ -103,10 +103,17 @@ This method should be called before `connect.ChatSession.create()`.
 
 Customizing `loggerConfig` for ChatJS:
 - If you don't want to use any logger, you can skip this field.
-- There are four log levels available - DEBUG, INFO, WARN, ERROR.
+- There are five log levels available - DEBUG, INFO, WARN, ERROR, ADVANCED_LOG.
 - If you want to use your own logger, you can add them into `customizedLogger`, and add `customizedLogger` object as the value of `loggerConfig.customizedLogger`, then set the lowest logger level. `globalConfig.loggerConfig.useDefaultLogger` is not required.
 - If you want to use the default logger provided by ChatJS, you can set the logger level, and set `useDefaultLogger` to true. `loggerConfig.customizedLogger` is not required.
 - If you not only provide your own logger, but also set `useDefaultLogger` to true, your own logger will be overwritten by the default logger.
+- `amazon-connect-chatjs/src/log.js` - has the logic to select LogLevel. Default value is INFO - which cause all logs with higher priority than INFO to be logged. eg: by default info, warn, error and advancedLog messages will be logged.
+- Priority of logs:
+  10: "DEBUG"
+  20: "INFO"
+  30: "WARN"
+  40: "ERROR"
+  50: "ADVANCED_LOG"
 
 ### `connect.ChatSession.create()`
 ```js

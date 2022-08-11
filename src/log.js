@@ -9,6 +9,8 @@ class Logger {
   warn(data) {}
 
   error(data) {}
+
+  advancedLog(data) {}
 }
 /*eslint-enable no-unused-vars*/
 
@@ -16,7 +18,8 @@ const LogLevel = {
   DEBUG: 10,
   INFO: 20,
   WARN: 30,
-  ERROR: 40
+  ERROR: 40,
+  ADVANCED_LOG: 50,
 };
 
 class LogManagerImpl {
@@ -31,13 +34,15 @@ class LogManagerImpl {
     }
     switch (level) {
       case LogLevel.DEBUG:
-        return this._clientLogger.debug(logStatement);
+        return this._clientLogger.debug(logStatement) || logStatement;
       case LogLevel.INFO:
-        return this._clientLogger.info(logStatement);
+        return this._clientLogger.info(logStatement) || logStatement;
       case LogLevel.WARN:
-        return this._clientLogger.warn(logStatement);
+        return this._clientLogger.warn(logStatement) || logStatement;
       case LogLevel.ERROR:
-        return this._clientLogger.error(logStatement);
+        return this._clientLogger.error(logStatement) || logStatement;
+      case LogLevel.ADVANCED_LOG:
+        return this._advancedLogWriter && this._clientLogger[this._advancedLogWriter] && this._clientLogger[this._advancedLogWriter](logStatement) || logStatement;
     }
   }
 
@@ -57,6 +62,12 @@ class LogManagerImpl {
   updateLoggerConfig(inputConfig) {
     var config = inputConfig || {};
     this._level = config.level || LogLevel.INFO;
+    //enabled advancedLogWriter
+    this._advancedLogWriter = "warn";
+    if (isValidAdvancedLogConfig(config.advancedLogWriter, config.customizedLogger)) {
+      this._advancedLogWriter = config.advancedLogWriter;
+    }
+    //enable clientLogger
     if(config.customizedLogger && typeof config.customizedLogger === "object") {
       this.useClientLogger = true;
     }
@@ -106,6 +117,10 @@ class LoggerWrapperImpl extends LoggerWrapper {
     return this._log(LogLevel.ERROR, args);
   }
 
+  advancedLog(...args) {
+    return this._log(LogLevel.ADVANCED_LOG, args);
+  }
+ 
   _shouldLog(level) {
     return LogManager.hasClientLogger() && LogManager.isLevelEnabled(level);
   }
@@ -142,6 +157,7 @@ class LoggerWrapperImpl extends LoggerWrapper {
       case 20: return "INFO";
       case 30: return "WARN";
       case 40: return "ERROR";
+      case 50: return "ADVANCED_LOG";
     }
   }
 
@@ -166,6 +182,20 @@ class LoggerWrapperImpl extends LoggerWrapper {
     }
   }
 }
+
+export const isValidAdvancedLogConfig = (advancedLogVal, customizedLogger) => {
+  const customizedLoggerKeys = customizedLogger && Object.keys(customizedLogger);
+  if (customizedLoggerKeys && customizedLoggerKeys.indexOf(advancedLogVal) === -1) {
+    console.error(`customizedLogger: incorrect value for loggerConfig:advancedLogWriter; use valid values from list ${customizedLoggerKeys} but used ${advancedLogVal}`);
+    return false;
+  }
+  const defaultLoggerKeys = ["warn", "info", "debug", "log"];
+  if (advancedLogVal && defaultLoggerKeys.indexOf(advancedLogVal) === -1) {
+    console.error(`incorrect value for loggerConfig:advancedLogWriter; use valid values from list ${defaultLoggerKeys} but used ${advancedLogVal}`);
+    return false;
+  }
+  return true;
+};
 
 var createConsoleLogger = () => {
   var logger = new LoggerWrapper();

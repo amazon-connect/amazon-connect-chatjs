@@ -7,6 +7,8 @@ import {
 import { LogManager } from "../log";
 import { ConnectParticipant } from "./aws-sdk-connectparticipant";
 
+const DEFAULT_PREFIX = "Amazon-Connect-ChatJS-ChatClient";
+
 class ChatClientFactoryImpl {
   constructor() {
     this.clientCache = {};
@@ -79,7 +81,7 @@ class AWSChatClient extends ChatClient {
     });
     this.chatClient = new AWS.ConnectParticipant(config);
     this.invokeUrl = args.endpoint;
-    this.logger = LogManager.getLogger({ prefix: "ChatJS-ChatClient", logMetaData: args.logMetaData });
+    this.logger = LogManager.getLogger({ prefix: DEFAULT_PREFIX, logMetaData: args.logMetaData });
   }
 
   createParticipantConnection(participantToken, type) {

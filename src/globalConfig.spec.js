@@ -37,11 +37,12 @@ describe("About using default logger", () => {
       }
     });
   })
-  function setConfig(level) {
+  function setConfig(level, advancedLogWriter) {
     ChatSessionObject.setGlobalConfig({
       loggerConfig: {
         useDefaultLogger: true,
-        level: level
+        level: level,
+        advancedLogWriter: advancedLogWriter
       }
     });
   }
@@ -52,9 +53,23 @@ describe("About using default logger", () => {
     logger.debug("debug", 3);
     expect(messages[0]).toBe("[2022-04-12T23:12:36.677Z][DEBUG] prefix : debug 3");
   })
+  it("should match log format in advanced_log level", () => {
+    console.info = mockFn;
+    setConfig(LogLevel.ADVANCED_LOG, "info");
+    var logger = LogManager.getLogger({ prefix: "prefix " });
+    logger.advancedLog("info", 3);
+    expect(messages[0]).toBe("[2022-04-12T23:12:36.677Z][ADVANCED_LOG] prefix : info 3");
+  });
+  it("should log error for incorrect config for advanced_log", () => {
+    console.error = mockFn;
+    setConfig(LogLevel.ADVANCED_LOG, "Info");
+    var logger = LogManager.getLogger({ prefix: "prefix " });
+    logger.advancedLog("info", 3);
+    expect(messages[0]).toBe("incorrect value for loggerConfig:advancedLogWriter; use valid values from list warn,info,debug,log but used Info");
+  });
   it("should match log format in info level", () => {
     console.info = mockFn;
-    setConfig(LogLevel.INFO)
+    setConfig(LogLevel.INFO);
     var logger = LogManager.getLogger({ prefix: "prefix " });
     logger.info("info", 3);
     expect(messages[0]).toBe("[2022-04-12T23:12:36.677Z][INFO] prefix : info 3");
