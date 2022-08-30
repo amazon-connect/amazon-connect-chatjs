@@ -25,24 +25,24 @@ const LogLevel = {
 class LogManagerImpl {
   constructor() {
     this.updateLoggerConfig();
-    this.consoleLoggerWrapper = createConsoleLogger();
   }
 
-  writeToClientLogger(level, logStatement) {
+  writeToClientLogger(level, logStatement, logMetaData) {
     if (!this.hasClientLogger()) {
       return;
     }
+    var levelStringValue = getLogLevelByValue(level);
     switch (level) {
       case LogLevel.DEBUG:
-        return this._clientLogger.debug(logStatement) || logStatement;
+        return this._clientLogger.debug(levelStringValue, logStatement, logMetaData) || logStatement;
       case LogLevel.INFO:
-        return this._clientLogger.info(logStatement) || logStatement;
+        return this._clientLogger.info(levelStringValue, logStatement, logMetaData) || logStatement;
       case LogLevel.WARN:
-        return this._clientLogger.warn(logStatement) || logStatement;
+        return this._clientLogger.warn(levelStringValue, logStatement, logMetaData) || logStatement;
       case LogLevel.ERROR:
-        return this._clientLogger.error(logStatement) || logStatement;
+        return this._clientLogger.error(levelStringValue, logStatement, logMetaData) || logStatement;
       case LogLevel.ADVANCED_LOG:
-        return this._advancedLogWriter && this._clientLogger[this._advancedLogWriter] && this._clientLogger[this._advancedLogWriter](logStatement) || logStatement;
+        return this._advancedLogWriter && this._clientLogger[this._advancedLogWriter] && this._clientLogger[this._advancedLogWriter](levelStringValue, logStatement, logMetaData) || logStatement;
     }
   }
 
@@ -54,7 +54,7 @@ class LogManagerImpl {
     return this._clientLogger !== null;
   }
 
-  getLogger(options) {
+  getLogger(options = {}) {
     // option: {prefix: string; logMetaData: object}
     return new LoggerWrapperImpl(options);
   }
@@ -84,6 +84,7 @@ class LogManagerImpl {
     return null;
   }
 }
+const LogManager = new LogManagerImpl();
 
 class LoggerWrapper {
   debug() {}
@@ -98,7 +99,7 @@ class LoggerWrapper {
 class LoggerWrapperImpl extends LoggerWrapper {
   constructor(options) {
     super();
-    this.options = options || "";
+    this.options = options || {};
   }
 
   debug(...args) {
@@ -126,39 +127,27 @@ class LoggerWrapperImpl extends LoggerWrapper {
   }
 
   _writeToClientLogger(level, logStatement) {
-    return LogManager.writeToClientLogger(level, logStatement);
+    return LogManager.writeToClientLogger(level, logStatement, this.options.logMetaData);
   }
 
   _log(level, args) {
     if (this._shouldLog(level)) {
-      var logStatement = LogManager.useClientLogger ? args : this._convertToSingleStatement(level, args);
+      var logStatement = LogManager.useClientLogger ? args : this._convertToSingleStatement(args);
       return this._writeToClientLogger(level, logStatement);
     }
   }
 
-  _convertToSingleStatement(logLevel, args) {
+  _convertToSingleStatement(args) {
     var date = new Date(Date.now()).toISOString();
-    var level = this._getLogLevelByValue(logLevel);
-    var logStatement = `[${date}][${level}]`;
+    var logStatement = `[${date}]`;
     if (this.options) {
       this.options.prefix ? logStatement += " " + this.options.prefix + ":" : logStatement += "";
-      this.options.logMetaData ? logStatement += " Meta data: " + JSON.stringify(this.options.logMetaData) : logStatement += "";
     }
     for (var index = 0; index < args.length; index++) {
       var arg = args[index];
       logStatement += " " + this._convertToString(arg);
     }
     return logStatement;
-  }
-
-  _getLogLevelByValue(value) {
-    switch(value) {
-      case 10: return "DEBUG";
-      case 20: return "INFO";
-      case 30: return "WARN";
-      case 40: return "ERROR";
-      case 50: return "ADVANCED_LOG";
-    }
   }
 
   _convertToString(arg) {
@@ -183,7 +172,17 @@ class LoggerWrapperImpl extends LoggerWrapper {
   }
 }
 
-export const isValidAdvancedLogConfig = (advancedLogVal, customizedLogger) => {
+function getLogLevelByValue(value) {
+  switch(value) {
+    case 10: return "DEBUG";
+    case 20: return "INFO";
+    case 30: return "WARN";
+    case 40: return "ERROR";
+    case 50: return "ADVANCED_LOG";
+  }
+}
+
+function isValidAdvancedLogConfig(advancedLogVal, customizedLogger) {
   const customizedLoggerKeys = customizedLogger && Object.keys(customizedLogger);
   if (customizedLoggerKeys && customizedLoggerKeys.indexOf(advancedLogVal) === -1) {
     console.error(`customizedLogger: incorrect value for loggerConfig:advancedLogWriter; use valid values from list ${customizedLoggerKeys} but used ${advancedLogVal}`);
@@ -195,7 +194,7 @@ export const isValidAdvancedLogConfig = (advancedLogVal, customizedLogger) => {
     return false;
   }
   return true;
-};
+}
 
 var createConsoleLogger = () => {
   var logger = new LoggerWrapper();
@@ -206,6 +205,5 @@ var createConsoleLogger = () => {
   return logger;
 };
 
-const LogManager = new LogManagerImpl();
 
 export { LogManager, Logger, LogLevel };

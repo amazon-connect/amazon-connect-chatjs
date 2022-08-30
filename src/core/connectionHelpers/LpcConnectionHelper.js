@@ -121,11 +121,11 @@ class LpcConnectionHelperBase {
       prefix: "ChatJS-LPCConnectionHelperBase",
       logMetaData
     });
-    this.initWebsocketManager(websocketManager, connectionDetailsProvider);
+    this.initWebsocketManager(websocketManager, connectionDetailsProvider, logMetaData);
   }
 
-  initWebsocketManager(websocketManager, connectionDetailsProvider) {
-    this.websocketManager = websocketManager || WebSocketManager.create();
+  initWebsocketManager(websocketManager, connectionDetailsProvider, logMetaData) {
+    this.websocketManager = websocketManager || WebSocketManager.create(logMetaData);
     this.websocketManager.subscribeTopics(["aws/chat"]);
     this.subscriptions = [
       this.websocketManager.onMessage("aws/chat", this.handleMessage.bind(this)),
