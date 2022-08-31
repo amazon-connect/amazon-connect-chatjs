@@ -30,63 +30,74 @@ describe("About using default logger", () => {
   let mockFn;
   beforeEach(() => {
     messages = [];
-    mockFn = (msg) => messages.push(msg);
+    mockFn = (...msg) => messages.push([...msg]);
     ChatSessionObject.setGlobalConfig({
       loggerConfig: {
         useDefaultLogger: true
       }
     });
   })
-  function setConfig(level, advancedLogWriter) {
+  function setConfig(level, advancedLogWriter = "warn", useDefaultLogger = true) {
     ChatSessionObject.setGlobalConfig({
       loggerConfig: {
-        useDefaultLogger: true,
+        useDefaultLogger,
         level: level,
         advancedLogWriter: advancedLogWriter
       }
     });
   }
+  it("should not log if clientLogger is not initialized", () => {
+    console.debug = mockFn;
+    setConfig(LogLevel.DEBUG, undefined, false);
+    var logMessage = LogManager.writeToClientLogger(LogLevel.DEBUG, "test", "metadata");
+    expect(logMessage).toEqual(undefined);
+    var logger = LogManager.getLogger({ prefix: "prefix " });
+    logger.debug("debug", 3);
+    expect(messages[0]).toEqual(undefined);
+  });
   it("should match log format in debug level", () => {
     console.debug = mockFn;
     setConfig(LogLevel.DEBUG)
     var logger = LogManager.getLogger({ prefix: "prefix " });
+    logger.debug("debug", undefined);
+    expect(messages[0]).toEqual(["DEBUG", "[2022-04-12T23:12:36.677Z] prefix : debug ", undefined]);
     logger.debug("debug", 3);
-    expect(messages[0]).toBe("[2022-04-12T23:12:36.677Z][DEBUG] prefix : debug 3");
+    expect(messages[1]).toEqual(["DEBUG", "[2022-04-12T23:12:36.677Z] prefix : debug 3", undefined]);
   })
   it("should match log format in advanced_log level", () => {
     console.info = mockFn;
     setConfig(LogLevel.ADVANCED_LOG, "info");
     var logger = LogManager.getLogger({ prefix: "prefix " });
     logger.advancedLog("info", 3);
-    expect(messages[0]).toBe("[2022-04-12T23:12:36.677Z][ADVANCED_LOG] prefix : info 3");
+    expect(messages[0]).toEqual(["ADVANCED_LOG", "[2022-04-12T23:12:36.677Z] prefix : info 3", undefined]);
   });
   it("should log error for incorrect config for advanced_log", () => {
     console.error = mockFn;
     setConfig(LogLevel.ADVANCED_LOG, "Info");
     var logger = LogManager.getLogger({ prefix: "prefix " });
     logger.advancedLog("info", 3);
-    expect(messages[0]).toBe("incorrect value for loggerConfig:advancedLogWriter; use valid values from list warn,info,debug,log but used Info");
+    expect(messages[0]).toEqual(["incorrect value for loggerConfig:advancedLogWriter; use valid values from list warn,info,debug,log but used Info"]);
   });
   it("should match log format in info level", () => {
     console.info = mockFn;
     setConfig(LogLevel.INFO);
     var logger = LogManager.getLogger({ prefix: "prefix " });
     logger.info("info", 3);
-    expect(messages[0]).toBe("[2022-04-12T23:12:36.677Z][INFO] prefix : info 3");
+    expect(messages[0]).toEqual(["INFO", "[2022-04-12T23:12:36.677Z] prefix : info 3", undefined]);
   })
   it("should match log format in warn level", () => {
     console.warn = mockFn;
     setConfig(LogLevel.WARN);
     var logger = LogManager.getLogger({ prefix: "prefix " });
     logger.warn("warn", 3);
-    expect(messages[0]).toBe("[2022-04-12T23:12:36.677Z][WARN] prefix : warn 3");
+    expect(messages[0]).toEqual(["WARN", "[2022-04-12T23:12:36.677Z] prefix : warn 3", undefined]);
   })
   it("should match log format in error level", () => {
     console.error = mockFn;
     setConfig(LogLevel.ERROR);
     var logger = LogManager.getLogger({ prefix: "prefix " });
     logger.error("error", 3);
-    expect(messages[0]).toBe("[2022-04-12T23:12:36.677Z][ERROR] prefix : error 3");
+    expect(messages[0]).toEqual(["ERROR", "[2022-04-12T23:12:36.677Z] prefix : error 3", undefined]);
   })
   test("set region", () => {
     ChatSessionObject.setGlobalConfig({
@@ -100,14 +111,16 @@ describe("About using default logger", () => {
     const logMetaData = {contactId: "abc"};
     var logger = LogManager.getLogger({ prefix: "prefix ", logMetaData });
     logger.info("info", 3);
-    expect(messages[0]).toBe("[2022-04-12T23:12:36.677Z][INFO] prefix : Meta data: {\"contactId\":\"abc\"} info 3");
+    expect(messages[0]).toEqual(["INFO","[2022-04-12T23:12:36.677Z] prefix : info 3", logMetaData]);
   })
   it("should match log format when there is no prefix and logMetaData", () => {
     console.info = mockFn;
     setConfig(LogLevel.INFO)
-    var logger = LogManager.getLogger();
+    var logger = LogManager.getLogger({
+      logMetaData: {contactId: "abc"}
+    });
     logger.info("info", 3);
-    expect(messages[0]).toBe("[2022-04-12T23:12:36.677Z][INFO] info 3");
+    expect(messages[0]).toEqual(["INFO", "[2022-04-12T23:12:36.677Z] info 3", {contactId: "abc"}]);
   })
   it("should match log format when there is no prefix, but logMetaData is included", () => {
     console.info = mockFn;
@@ -115,7 +128,7 @@ describe("About using default logger", () => {
     const logMetaData = {contactId: "abc"};
     var logger = LogManager.getLogger({ logMetaData });
     logger.info("info", 3);
-    expect(messages[0]).toBe("[2022-04-12T23:12:36.677Z][INFO] Meta data: {\"contactId\":\"abc\"} info 3");
+    expect(messages[0]).toEqual(["INFO", "[2022-04-12T23:12:36.677Z] info 3", logMetaData]);
   })
 })
 
@@ -140,9 +153,12 @@ describe("About using customized logger", () => {
     logger.error("error", 4);
     logger.error("error", 5);
   
-    expect(testLogger.warn.mock.calls[0][0]).toEqual(["warn", 3]);
-    expect(testLogger.error.mock.calls[0][0]).toEqual(["error", 4]);
-    expect(testLogger.error.mock.calls[1][0]).toEqual(["error", 5]);
+    expect(testLogger.warn.mock.calls[0][0]).toEqual("WARN");
+    expect(testLogger.warn.mock.calls[0][1]).toEqual(["warn", 3]);
+    expect(testLogger.error.mock.calls[0][0]).toEqual("ERROR");
+    expect(testLogger.error.mock.calls[0][1]).toEqual(["error", 4]);
+    expect(testLogger.error.mock.calls[1][0]).toEqual("ERROR");
+    expect(testLogger.error.mock.calls[1][1]).toEqual(["error", 5]);
   });
 
   test("default log level should be INFO", () => {

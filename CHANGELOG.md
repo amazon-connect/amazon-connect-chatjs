@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.14]
+### Added
+- fix WebSocketManager logger so its instance is tied to WebsocketManager instance. Fixes the case where multiple connections are initiated in 1 browser session.
+- update log message to contain logLevel and logMetaData
+
 ## [1.1.13]
 ### Added
 - enabled logs for WebSocketManager
