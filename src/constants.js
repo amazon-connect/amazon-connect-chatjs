@@ -21,6 +21,29 @@ export const SESSION_TYPES = {
   CUSTOMER: "CUSTOMER"
 };
 
+export const CSM_CATEGORY = {
+  API: "API",
+  UI: "UI"
+};
+
+export const ACPS_METHODS = {
+  SEND_MESSAGE: "SendMessage",
+  SEND_ATTACHMENT: "SendAttachment",
+  DOWNLOAD_ATTACHMENT: "DownloadAttachment",
+  SEND_EVENT: "SendEvent",
+  GET_TRANSCRIPT: "GetTranscript",
+  DISCONNECT_PARTICIPANT: "DisconnectParticipant",
+  CREATE_PARTICIPANT_CONNECTION: "CreateParticipantConnection",
+};
+
+export const WEBSOCKET_EVENTS = {
+  ConnectionLost: "WebsocketConnectionLost",
+  ConnectionGained: "WebsocketConnectionGained",
+  Ended: "WebsocketEnded",
+  IncomingMessage: "WebsocketIncomingMessage",
+  InitWebsocket: "InitWebsocket"
+};
+
 export const CHAT_EVENTS = {
   INCOMING_MESSAGE: "INCOMING_MESSAGE",
   INCOMING_TYPING: "INCOMING_TYPING",
@@ -101,3 +124,5 @@ export const CONNECTION_TOKEN_POLLING_INTERVAL_IN_MS = 1000 * 60 * 60 * 12; // 1
 export const CONNECTION_TOKEN_EXPIRY_BUFFER_IN_MS = 60 * 1000; //1 min
 
 export const TRANSPORT_LIFETIME_IN_SECONDS = 3540; // 59 mins
+
+export const START_CHAT_SESSION = "StartChatSession";

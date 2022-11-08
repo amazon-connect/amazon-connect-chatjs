@@ -1,6 +1,8 @@
 import LpcConnectionHelper from "./LpcConnectionHelper";
 import WebSocketManager from "../../lib/amazon-connect-websocket-manager";
 import { ConnectionHelperStatus } from "./baseConnectionHelper";
+import { csmService } from "../../service/csmService";
+	 import { CSM_CATEGORY, WEBSOCKET_EVENTS } from "../../constants";
 
 describe("LpcConnectionHelper", () => {
 
@@ -61,6 +63,8 @@ describe("LpcConnectionHelper", () => {
   }
 
   beforeEach(() => {
+    jest.resetAllMocks();
+	     jest.spyOn(csmService, 'addCountMetric').mockImplementation(() => {});
     connectionDetailsProvider.fetchConnectionDetails = jest.fn(() => Promise.resolve({
       url: "url",
       expiry: "expiry"
@@ -218,6 +222,40 @@ describe("LpcConnectionHelper", () => {
       createdWebsocketManager2.$simulateEnded();
       expect(onEndedHandler1).toHaveBeenCalledTimes(1);
       expect(onEndedHandler2).toHaveBeenCalledTimes(1);
+
+      expect(csmService.addCountMetric).toHaveBeenCalledTimes(2);
+	       expect(csmService.addCountMetric).toHaveBeenCalledWith(WEBSOCKET_EVENTS.Ended, CSM_CATEGORY.API)
+    });
+
+    test("onConnectionLost handler is called", () => {
+      const onConnectionLostHandler = jest.fn();
+      getLpcConnectionHelper("id1").onConnectionLost(onConnectionLostHandler);
+      const createdWebsocketManager = autoCreatedWebsocketManager;
+      createdWebsocketManager.$simulateConnectionLost();
+      expect(onConnectionLostHandler).toHaveBeenCalledTimes(1);
+      expect(csmService.addCountMetric).toHaveBeenCalledTimes(1);
+      expect(csmService.addCountMetric).toHaveBeenCalledWith(WEBSOCKET_EVENTS.ConnectionLost, CSM_CATEGORY.API)
+    });
+
+    test("onConnectionGain handler is called", () => {
+      const onConnectionGainHandler = jest.fn();
+      getLpcConnectionHelper("id1").onConnectionGain(onConnectionGainHandler);
+      const createdWebsocketManager = autoCreatedWebsocketManager;
+      createdWebsocketManager.$simulateConnectionGain();
+      expect(onConnectionGainHandler).toHaveBeenCalledTimes(1);
+      expect(csmService.addCountMetric).toHaveBeenCalledTimes(1);
+      expect(csmService.addCountMetric).toHaveBeenCalledWith(WEBSOCKET_EVENTS.ConnectionGained, CSM_CATEGORY.API)
+    });
+
+    test("onMessage handler is called", () => {
+      const onMessageHandler = jest.fn();
+      getLpcConnectionHelper("id1").onMessage(onMessageHandler);
+      const createdWebsocketManager = autoCreatedWebsocketManager;
+      createdWebsocketManager.$simulateMessage({ content: JSON.stringify({ InitialContactId: "id1" }) });
+      expect(onMessageHandler).toHaveBeenCalledTimes(1);
+      expect(onMessageHandler).toHaveBeenCalledWith({ InitialContactId: "id1" }, expect.anything(), expect.anything());
+      expect(csmService.addCountMetric).toHaveBeenCalledTimes(1);
+      expect(csmService.addCountMetric).toHaveBeenCalledWith(WEBSOCKET_EVENTS.IncomingMessage, CSM_CATEGORY.API)
     });
 
     test("onRefresh handler is called", () => {

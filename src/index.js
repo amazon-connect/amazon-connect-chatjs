@@ -5,4 +5,5 @@ global.connect = global.connect || {};
 connect.ChatSession = ChatSessionObject;
 connect.LogManager = LogManager;
 connect.LogLevel = LogLevel;
+connect.csmService = ChatSessionObject.csmService;
 export const ChatSession = ChatSessionObject;
