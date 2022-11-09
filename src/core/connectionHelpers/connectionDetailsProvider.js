@@ -1,6 +1,7 @@
 import { IllegalArgumentException } from "../exceptions";
 import { ConnectionInfoType } from "./baseConnectionHelper";
-import { SESSION_TYPES, TRANSPORT_LIFETIME_IN_SECONDS } from "../../constants";
+import { ACPS_METHODS, CSM_CATEGORY, SESSION_TYPES, TRANSPORT_LIFETIME_IN_SECONDS } from "../../constants";
+import { csmService } from "../../service/csmService";
 
 export default class ConnectionDetailsProvider {
 
@@ -55,10 +56,17 @@ export default class ConnectionDetailsProvider {
   }
 
   _callCreateParticipantConnection(){
+    const startTime = new Date().getTime();
     return this.chatClient
         .createParticipantConnection(this.participantToken, [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS] )
-        .then((response) => this._handleCreateParticipantConnectionResponse(response.data))
+        .then((response) => {
+          this._handleCreateParticipantConnectionResponse(response.data);
+          csmService.addLatencyMetricWithStartTime(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, startTime, CSM_CATEGORY.API);
+          csmService.addCountAndErrorMetric(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, CSM_CATEGORY.API, false);
+        })
         .catch( error => {
+          csmService.addLatencyMetricWithStartTime(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, startTime, CSM_CATEGORY.API);
+          csmService.addCountAndErrorMetric(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, CSM_CATEGORY.API, true);
           return Promise.reject({
             reason: "Failed to fetch connectionDetails with createParticipantConnection",
             _debug: error

@@ -3,13 +3,16 @@ import {
   CHAT_EVENTS,
   TRANSCRIPT_DEFAULT_PARAMS,
   SESSION_TYPES,
-  CONTENT_TYPE
+  CONTENT_TYPE,
+  CSM_CATEGORY,
+  ACPS_METHODS
 } from "../constants";
 import { LogManager } from "../log";
 import { EventBus } from "./eventbus";
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
 import ConnectionDetailsProvider from "./connectionHelpers/connectionDetailsProvider";
 import LpcConnectionHelper from "./connectionHelpers/LpcConnectionHelper";
+import { csmService } from "../service/csmService";
 
 var NetworkLinkStatus = {
   NeverEstablished: "NeverEstablished",
@@ -49,50 +52,63 @@ class ChatController {
     this._sendInternalLogToServer(this.logger.info("Subscribed successfully to event:", eventName));
   }
 
-  handleRequestSuccess(metadata) {
-    return response => {
-      response.metadata = metadata;
-      return response;
-    };
+  handleRequestSuccess(metadata, method, startTime, contentType) {
+    return response => this.handleResponse(metadata, method, startTime, contentType, response, false);
   }
 
-  handleRequestFailure(metadata) {
-    return error => {
-      error.metadata = metadata;
-      return Promise.reject(error);
-    };
+  handleRequestFailure(metadata, method, startTime, contentType) {
+    return error => this.handleResponse(metadata, method, startTime, contentType, error, true);
+  }
+
+  handleResponse(metadata, method, startTime, contentType, responseData, isFailed) {
+    const contentTypeDimension = contentType ?
+      [
+        {
+          name: "ContentType",
+          value: contentType
+        }
+      ]
+      : [];
+    csmService.addLatencyMetricWithStartTime(method, startTime, CSM_CATEGORY.API, contentTypeDimension);
+    csmService.addCountAndErrorMetric(method, CSM_CATEGORY.API, isFailed, contentTypeDimension);
+    responseData.metadata = metadata;
+    return isFailed ? Promise.reject(responseData) : responseData;
   }
 
   sendMessage(args) {
+    const startTime = new Date().getTime();
     const metadata = args.metadata || null;
     this.argsValidator.validateSendMessage(args);
     const connectionToken = this.connectionHelper.getConnectionToken();
     return this.chatClient
       .sendMessage(connectionToken, args.message, args.contentType)
-      .then(this.handleRequestSuccess(metadata))
-      .catch(this.handleRequestFailure(metadata));
+      .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_MESSAGE, startTime, args.contentType))
+      .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_MESSAGE, startTime, args.contentType));
   }
 
-  sendAttachment(args){
+  sendAttachment(args) {
+    const startTime = new Date().getTime();
     const metadata = args.metadata || null;
     //TODO: validation
     const connectionToken = this.connectionHelper.getConnectionToken();
     return this.chatClient
       .sendAttachment(connectionToken, args.attachment, args.metadata)
-      .then(this.handleRequestSuccess(metadata))
-      .catch(this.handleRequestFailure(metadata));
+      .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_ATTACHMENT, startTime, args.attachment.type))
+      .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_ATTACHMENT, startTime, args.attachment.type));
   }
 
-  downloadAttachment(args){
+  downloadAttachment(args) {
+    const startTime = new Date().getTime();
     const metadata = args.metadata || null;
     const connectionToken = this.connectionHelper.getConnectionToken();
     return this.chatClient
       .downloadAttachment(connectionToken, args.attachmentId)
-      .then(this.handleRequestSuccess(metadata))
-      .catch(this.handleRequestFailure(metadata));
+      .then(this.handleRequestSuccess(metadata, ACPS_METHODS.DOWNLOAD_ATTACHMENT, startTime))
+      .catch(this.handleRequestFailure(metadata, ACPS_METHODS.DOWNLOAD_ATTACHMENT, startTime));
   }
 
   sendEvent(args) {
+    const startTime = new Date().getTime();
     const metadata = args.metadata || null;
     this.argsValidator.validateSendEvent(args);
     const connectionToken = this.connectionHelper.getConnectionToken();
@@ -103,11 +119,12 @@ class ChatController {
         args.contentType,
         content
       )
-      .then(this.handleRequestSuccess(metadata))
-      .catch(this.handleRequestFailure(metadata));
+      .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType))
+      .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType));
   }
 
   getTranscript(inputArgs) {
+    const startTime = new Date().getTime();
     const metadata = inputArgs.metadata || null;
     const args = {
       startPosition: inputArgs.startPosition || {},
@@ -124,22 +141,23 @@ class ChatController {
     const connectionToken = this.connectionHelper.getConnectionToken();
     return this.chatClient
       .getTranscript(connectionToken, args)
-      .then(this.handleRequestSuccess(metadata))
-      .catch(this.handleRequestFailure(metadata));
+      .then(this.handleRequestSuccess(metadata, ACPS_METHODS.GET_TRANSCRIPT, startTime))
+      .catch(this.handleRequestFailure(metadata, ACPS_METHODS.GET_TRANSCRIPT, startTime));
+
   }
 
-  connect(args={}) {
+  connect(args = {}) {
     this.sessionMetadata = args.metadata || null;
     this.argsValidator.validateConnectChat(args);
     const connectionDetailsProvider = this._getConnectionDetailsProvider();
     return connectionDetailsProvider.fetchConnectionToken()
-    .then(
-      this._initConnectionHelper.bind(this, connectionDetailsProvider)
-    )
-    .then(
-      this._onConnectSuccess.bind(this),
-      this._onConnectFailure.bind(this)
-    );
+      .then(
+        this._initConnectionHelper.bind(this, connectionDetailsProvider)
+      )
+      .then(
+        this._onConnectSuccess.bind(this),
+        this._onConnectFailure.bind(this)
+      );
   }
 
   _initConnectionHelper(connectionDetailsProvider) {
@@ -159,7 +177,7 @@ class ChatController {
 
   _getConnectionDetailsProvider() {
     return new ConnectionDetailsProvider(
-      this.participantToken, 
+      this.participantToken,
       this.chatClient,
       this.sessionType,
       this.getConnectionToken
@@ -268,6 +286,7 @@ class ChatController {
   }
 
   disconnectParticipant() {
+    const startTime = new Date().getTime();
     const connectionToken = this.connectionHelper.getConnectionToken();
     return this.chatClient
       .disconnectParticipant(connectionToken)
@@ -277,8 +296,12 @@ class ChatController {
         this._participantDisconnected = true;
         this.cleanUpOnParticipantDisconnect();
         this.breakConnection();
+        csmService.addLatencyMetricWithStartTime(ACPS_METHODS.DISCONNECT_PARTICIPANT, startTime, CSM_CATEGORY.API);
+        csmService.addCountAndErrorMetric(ACPS_METHODS.DISCONNECT_PARTICIPANT, CSM_CATEGORY.API, false);
         return response;
       }, error => {
+        csmService.addLatencyMetricWithStartTime(ACPS_METHODS.DISCONNECT_PARTICIPANT, startTime, CSM_CATEGORY.API);
+        csmService.addCountAndErrorMetric(ACPS_METHODS.DISCONNECT_PARTICIPANT, CSM_CATEGORY.API, true);
         this._sendInternalLogToServer(this.logger.error("Disconnect participant failed. Error:", error));
 
         return Promise.reject(error);

@@ -1,12 +1,13 @@
 import { EventBus } from "../eventbus";
 import { LogManager } from "../../log";
-import { 
+import {
   ConnectionHelperEvents,
   ConnectionHelperStatus
 } from "./baseConnectionHelper";
 import BaseConnectionHelper from "./baseConnectionHelper";
 import WebSocketManager from "../../lib/amazon-connect-websocket-manager";
-import { TRANSPORT_LIFETIME_IN_SECONDS } from "../../constants";
+import { CSM_CATEGORY, TRANSPORT_LIFETIME_IN_SECONDS, WEBSOCKET_EVENTS } from "../../constants";
+import { csmService } from "../../service/csmService";
 
 class LpcConnectionHelper extends BaseConnectionHelper {
 
@@ -135,6 +136,7 @@ class LpcConnectionHelperBase {
     ];
     this.logger.info("Initializing websocket manager.");
     if (!websocketManager) {
+      const startTime = new Date().getTime();
       this.websocketManager.init(
         () => connectionDetailsProvider.fetchConnectionDetails()
           .then(connectionDetails => {
@@ -145,14 +147,18 @@ class LpcConnectionHelperBase {
                 transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS
               }
             }
-            const logContent = {expiry: connectionDetails.expiry, transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS};
+            const logContent = { expiry: connectionDetails.expiry, transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS };
             this.logger.debug("Websocket manager initialized. Connection details:", logContent);
+            csmService.addLatencyMetricWithStartTime(WEBSOCKET_EVENTS.InitWebsocket, startTime, CSM_CATEGORY.API);
+            csmService.addCountAndErrorMetric(WEBSOCKET_EVENTS.InitWebsocket, CSM_CATEGORY.API, false);
             return details;
           }
-        ).catch(error => {
-          this.logger.error("Initializing Websocket Manager failed:", error);
-          throw error;
-        })
+          ).catch(error => {
+            this.logger.error("Initializing Websocket Manager failed:", error);
+            csmService.addLatencyMetricWithStartTime(WEBSOCKET_EVENTS.InitWebsocket, startTime, CSM_CATEGORY.API);
+            csmService.addCountAndErrorMetric(WEBSOCKET_EVENTS.InitWebsocket, CSM_CATEGORY.API, true);
+            throw error;
+          })
       );
     }
   }
@@ -182,6 +188,7 @@ class LpcConnectionHelperBase {
     this.status = ConnectionHelperStatus.Ended;
     this.eventBus.trigger(ConnectionHelperEvents.Ended, {});
     this.logger.info("Websocket connection ended.");
+    csmService.addCountMetric(WEBSOCKET_EVENTS.Ended, CSM_CATEGORY.API);
   }
 
   onConnectionGain(handler) {
@@ -192,6 +199,7 @@ class LpcConnectionHelperBase {
     this.status = ConnectionHelperStatus.Connected;
     this.eventBus.trigger(ConnectionHelperEvents.ConnectionGained, {});
     this.logger.info("Websocket connection gained.");
+    csmService.addCountMetric(WEBSOCKET_EVENTS.ConnectionGained, CSM_CATEGORY.API);
   }
 
   onConnectionLost(handler) {
@@ -202,6 +210,7 @@ class LpcConnectionHelperBase {
     this.status = ConnectionHelperStatus.ConnectionLost;
     this.eventBus.trigger(ConnectionHelperEvents.ConnectionLost, {});
     this.logger.info("Websocket connection lost.");
+    csmService.addCountMetric(WEBSOCKET_EVENTS.ConnectionLost, CSM_CATEGORY.API);
   }
 
   onMessage(handler) {
@@ -213,7 +222,8 @@ class LpcConnectionHelperBase {
     try {
       parsedMessage = JSON.parse(message.content);
       this.eventBus.trigger(ConnectionHelperEvents.IncomingMessage, parsedMessage);
-      this.logger.info("Websocket incoming message", {messageId: parsedMessage.Id, contentType: parsedMessage.ContentType});
+      this.logger.info("Websocket incoming message", { messageId: parsedMessage.Id, contentType: parsedMessage.ContentType });
+      csmService.addCountMetric(WEBSOCKET_EVENTS.IncomingMessage, CSM_CATEGORY.API);
     } catch (e) {
       this._sendInternalLogToServer(this.logger.error("Wrong message format"));
     }

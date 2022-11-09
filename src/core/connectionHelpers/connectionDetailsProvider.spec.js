@@ -1,6 +1,7 @@
 import ConnectionDetailsProvider from "./connectionDetailsProvider";
-import {  ConnectionInfoType } from "./baseConnectionHelper";
-import { SESSION_TYPES } from "../../constants";
+import { ConnectionInfoType } from "./baseConnectionHelper";
+import { ACPS_METHODS, CONTENT_TYPE, CSM_CATEGORY, SESSION_TYPES } from "../../constants";
+import { csmService } from "../../service/csmService";
 
 describe("ConnectionDetailsProvider", () => {
 
@@ -20,6 +21,9 @@ describe("ConnectionDetailsProvider", () => {
   }
 
   beforeEach(() => {
+    jest.resetAllMocks();
+    jest.spyOn(csmService, 'addLatencyMetricWithStartTime').mockImplementation(() => { });
+    jest.spyOn(csmService, 'addCountAndErrorMetric').mockImplementation(() => { });
     fetchedConnectionDetails = {
       ParticipantCredentials: {
         ConnectionAuthenticationToken: 'token',
@@ -34,7 +38,7 @@ describe("ConnectionDetailsProvider", () => {
     getConnectionToken = jest.fn((function () {
       let counter = 0;
       return () => {
-        counter +=1;
+        counter += 1;
         return Promise.resolve({
           chatTokenTransport: {
             participantToken: fetchedConnectionDetails.ParticipantCredentials.ConnectionAuthenticationToken + counter,
@@ -47,7 +51,7 @@ describe("ConnectionDetailsProvider", () => {
     chatClient.createParticipantConnection = jest.fn((function () {
       let counter = 0;
       return () => {
-        counter +=1;
+        counter += 1;
         return Promise.resolve({
           data: {
             ConnectionCredentials: {
@@ -61,7 +65,7 @@ describe("ConnectionDetailsProvider", () => {
           }
         });
       };
-    } )());
+    })());
   });
 
 
@@ -107,6 +111,8 @@ describe("ConnectionDetailsProvider", () => {
         await connectionDetailsProvider.fetchConnectionDetails();
         expect(chatClient.createParticipantConnection).toHaveBeenCalledTimes(1);
         expect(chatClient.createParticipantConnection).toHaveBeenLastCalledWith(participantToken, [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS]);
+        expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, CSM_CATEGORY.API, false);
+        expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, expect.anything(), CSM_CATEGORY.API);
       });
 
       test("hits API on second call", async () => {
@@ -115,6 +121,20 @@ describe("ConnectionDetailsProvider", () => {
         await connectionDetailsProvider.fetchConnectionDetails();
         expect(chatClient.createParticipantConnection).toHaveBeenCalledTimes(2);
         expect(chatClient.createParticipantConnection).toHaveBeenLastCalledWith(participantToken, [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS]);
+      });
+
+      test("hits API on first call, and createParticipantConnection fails", async () => {
+        chatClient.createParticipantConnection = jest.fn(() => Promise.reject({}));
+        setupCustomer();
+        try {
+          await connectionDetailsProvider.fetchConnectionDetails();
+          expect(false).toEqual(true);
+        } catch (e) {
+          expect(chatClient.createParticipantConnection).toHaveBeenCalledTimes(1);
+          expect(chatClient.createParticipantConnection).toHaveBeenLastCalledWith(participantToken, [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS]);
+          expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, CSM_CATEGORY.API, true);
+          expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, expect.anything(), CSM_CATEGORY.API);
+        }
       });
     });
 

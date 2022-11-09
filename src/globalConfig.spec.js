@@ -12,6 +12,16 @@ const originInfo = console.info;
 const originWarn = console.warn;
 const originError = console.error;
 
+const stageRegion = {
+  stage: "test-stage",
+  region: "test-region",
+};
+ 
+const configInput = {
+  ...stageRegion,
+  endpoint: "test-endpoint",
+};
+
 beforeAll(() => {
   global.Date.now = jest.fn(() => new Date(fixDate).getTime())
 })
@@ -24,6 +34,21 @@ afterAll(() => {
   console.error = originError;
 
 })
+
+describe("Common globalConfig tests", () => {
+  it("should update all and fetch correct config", () => {
+    GlobalConfig.update(configInput);
+    expect(GlobalConfig.getStage()).toBe(configInput.stage);
+    expect(GlobalConfig.getRegion()).toBe(configInput.region);
+    expect(GlobalConfig.getEndpointOverride()).toBe(configInput.endpoint);
+  });
+ 
+  it("should update stage, region and fetch correct config", () => {
+    GlobalConfig.updateStageRegion(stageRegion);
+    expect(GlobalConfig.getStage()).toBe(stageRegion.stage);
+    expect(GlobalConfig.getRegion()).toBe(stageRegion.region);
+  });
+});
 
 describe("About using default logger", () => {
   let messages;

@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0]
+### Added
+- Add client side metric service in order to enhance the customer experience and proactively identify issues. Detail: [README.md](https://github.com/amazon-connect/amazon-connect-chatjs#Client-side-metric).
+- Update `.babelrc` file to fix the error of `ReferenceError: regeneratorRuntime is not defined`.
+
 ## [1.1.14]
 ### Added
 - fix WebSocketManager logger so its instance is tied to WebsocketManager instance. Fixes the case where multiple connections are initiated in 1 browser session.

@@ -4,12 +4,12 @@ import {
 } from "./exceptions";
 import { ChatClientFactory } from "../client/client";
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
-import { SESSION_TYPES, CHAT_EVENTS } from "../constants";
+import { SESSION_TYPES, CHAT_EVENTS, CSM_CATEGORY, START_CHAT_SESSION } from "../constants";
 import { GlobalConfig } from "../globalConfig";
 import { ChatController } from "./chatController";
 import { LogManager, LogLevel, Logger } from "../log";
 import WebSocketManager from "../lib/amazon-connect-websocket-manager";
-
+import { csmService } from "../service/csmService";
 class ChatSessionFactory {
   /*eslint-disable no-unused-vars*/
 
@@ -70,6 +70,7 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
 class ChatSession {
   constructor(controller) {
     this.controller = controller;
+    csmService.addCountMetric(START_CHAT_SESSION, CSM_CATEGORY.UI);
   }
 
   onMessage(callback) {
@@ -141,10 +142,11 @@ class CustomerChatSession extends ChatSession {
   }
 }
 
-const CHAT_SESSION_FACTORY = new PersistentConnectionAndChatServiceSessionFactory();
+export const CHAT_SESSION_FACTORY = new PersistentConnectionAndChatServiceSessionFactory();
 
 var setGlobalConfig = config => {
   var loggerConfig = config.loggerConfig;
+  var csmConfig = config.csmConfig;
   /**
     * if config.loggerConfig.logger is present - use it in websocketManager
     * if config.loggerConfig.customizedLogger is present - use it in websocketManager
@@ -155,11 +157,19 @@ var setGlobalConfig = config => {
   WebSocketManager.setGlobalConfig(config);
   GlobalConfig.update(config);
   LogManager.updateLoggerConfig(loggerConfig);
+  if (csmConfig) {
+    csmService.updateCsmConfig(csmConfig);
+  }
 };
 
 var ChatSessionConstructor = args => {
   var options = args.options || {};
   var type = args.type || SESSION_TYPES.AGENT;
+  GlobalConfig.updateStageRegion(options);
+  // initialize CSM Service for only customer chat widget
+  if(!args.disableCSM && type === SESSION_TYPES.CUSTOMER) {
+    csmService.initializeCSM();
+  }
   return CHAT_SESSION_FACTORY.createChatSession(
     type,
     args.chatDetails,
@@ -173,7 +183,8 @@ const ChatSessionObject = {
   setGlobalConfig: setGlobalConfig,
   LogLevel: LogLevel,
   Logger: Logger,
-  SessionTypes: SESSION_TYPES
+  SessionTypes: SESSION_TYPES,
+  csmService: csmService,
 };
 
 export { ChatSessionObject };
