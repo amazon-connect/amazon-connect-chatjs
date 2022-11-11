@@ -84,22 +84,24 @@ class AWSChatClient extends ChatClient {
     this.logger = LogManager.getLogger({ prefix: DEFAULT_PREFIX, logMetaData: args.logMetaData });
   }
 
-  createParticipantConnection(participantToken, type) {
+  createParticipantConnection(participantToken, type, acknowledgeConnection) {
     let self = this;
-      var params = {
-        Type: type,
-        ParticipantToken: participantToken
-      };
-      var createParticipantConnectionRequest = self.chatClient.createParticipantConnection(
-        params
-      );
-      return self._sendRequest(createParticipantConnectionRequest).then((res) => {
-        self.logger.info("Successfully create connection request")?.sendInternalLogToServer?.();
-        return res;
-      }).catch((err) => {
-        self.logger.error("Error when creating connection request ", err)?.sendInternalLogToServer?.();
-        return Promise.reject(err);
-      });
+    var params = {
+      ParticipantToken: participantToken,
+      Type: type,
+      ConnectParticipant: acknowledgeConnection
+    };
+    
+    var createParticipantConnectionRequest = self.chatClient.createParticipantConnection(
+      params
+    );
+    return self._sendRequest(createParticipantConnectionRequest).then((res) => {
+      self.logger.info("Successfully create connection request")?.sendInternalLogToServer?.();
+      return res;
+    }).catch((err) => {
+      self.logger.error("Error when creating connection request ", err)?.sendInternalLogToServer?.();
+      return Promise.reject(err);
+    });
   }
 
   disconnectParticipant(connectionToken) {

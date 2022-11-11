@@ -1,4 +1,5 @@
-import { CHAT_EVENTS, DEFAULT_THROTTLE_TIME } from '../constants';
+import { CHAT_EVENTS } from  '../constants';
+import { GlobalConfig } from '../globalConfig';
 import { LogManager } from '../log';
 
 export default class MessageReceiptsUtil {
@@ -153,14 +154,14 @@ export default class MessageReceiptsUtil {
     }
 
     /**
-   * Throttle for ${DEFAULT_THROTTLE_TIME} and then fire Read and Delivered events
+   * Throttle for ${GlobalConfig.getMessageReceiptsThrottleTime()} and then fire Read and Delivered events
    *
    * @param {function} callback The callback fn to throttle and invoke.
    * @param {Array} args array of params [connectionToken, contentType, content, eventType, throttleTime]
   */
     sendMessageReceipts(ChatClientContext, callback, ...args) {
         var self = this;
-        var throttleTime = args[4] || DEFAULT_THROTTLE_TIME;
+        var throttleTime = args[4] || GlobalConfig.getMessageReceiptsThrottleTime();
         var eventType = args[3];
         var content = typeof args[2] === "string" ? JSON.parse(args[2]) : args[2];
         var messageId = content.messageId;

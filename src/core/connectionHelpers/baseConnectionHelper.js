@@ -29,15 +29,17 @@ export default class BaseConnectionHelper {
 
     startConnectionTokenPolling(isFirstCall=false, expiry=CONNECTION_TOKEN_POLLING_INTERVAL_IN_MS) {
         if (!isFirstCall){
-            this.connectionDetailsProvider.fetchConnectionToken()
-                .then(() => {
+            return this.connectionDetailsProvider.fetchConnectionToken()
+                .then(response => {
                     this.logger.info("Connection token polling succeeded.");
                     expiry = this.getTimeToConnectionTokenExpiry();
                     this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this), expiry);
+                    return response;
                 })
                 .catch((e) => {
                     this.logger.error("An error occurred when attempting to fetch the connection token during Connection Token Polling", e);
                     this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this), expiry);
+                    return e;
                 });
         }
         else {
@@ -48,10 +50,10 @@ export default class BaseConnectionHelper {
 
     start() {
         if (this.isStarted) {
-            return;
+            return this.getConnectionToken();
         }
         this.isStarted = true;
-        this.startConnectionTokenPolling(
+        return this.startConnectionTokenPolling(
             true, 
             this.getTimeToConnectionTokenExpiry()
         );

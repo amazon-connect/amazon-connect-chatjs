@@ -4,7 +4,7 @@ import {
 } from "./exceptions";
 import { ChatClientFactory } from "../client/client";
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
-import { SESSION_TYPES, CHAT_EVENTS, CSM_CATEGORY, START_CHAT_SESSION, DEFAULT_THROTTLE_TIME } from "../constants";
+import { SESSION_TYPES, CHAT_EVENTS, CSM_CATEGORY, START_CHAT_SESSION, FEATURES } from "../constants";
 import { GlobalConfig } from "../globalConfig";
 import { ChatController } from "./chatController";
 import { LogManager, LogLevel, Logger } from "../log";
@@ -33,8 +33,8 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
         this.argsValidator = new ChatServiceArgsValidator();
     }
 
-    createChatSession(sessionType, chatDetails, options, websocketManager, features) {
-        const chatController = this._createChatController(sessionType, chatDetails, options, websocketManager, features);
+    createChatSession(sessionType, chatDetails, options, websocketManager) {
+        const chatController = this._createChatController(sessionType, chatDetails, options, websocketManager);
         if (sessionType === SESSION_TYPES.AGENT) {
             return new AgentChatSession(chatController);
         } else if (sessionType === SESSION_TYPES.CUSTOMER) {
@@ -48,7 +48,7 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
         }
     }
 
-    _createChatController(sessionType, chatDetailsInput, options, websocketManager, features) {
+    _createChatController(sessionType, chatDetailsInput, options, websocketManager) {
         var chatDetails = this.argsValidator.normalizeChatDetails(chatDetailsInput);
         var logMetaData = {
             contactId: chatDetails.contactId,
@@ -62,7 +62,6 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
             chatClient,
             websocketManager: websocketManager,
             logMetaData,
-            features,
         };
         return new ChatController(args);
     }
@@ -169,17 +168,20 @@ var setGlobalConfig = config => {
     if (csmConfig) {
         csmService.updateCsmConfig(csmConfig);
     }
+    //Message Receipts enabled by default
+    if (!(config.features?.messageReceipts?.shouldSendMessageReceipts === false)) {
+        console.warn("enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false");
+        setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+        GlobalConfig.updateThrottleTime(config.features?.messageReceipts?.thorttleTime);
+    }
+};
+
+var setFeatureFlag = feature => {
+    GlobalConfig.setFeatureFlag(feature);
 };
 
 var ChatSessionConstructor = args => {
     var options = args.options || {};
-    //Message Receipts enabled by default
-    const features = {
-        messageReceipts: {
-            shouldSendMessageReceipts: args.features?.messageReceipts?.shouldSendMessageReceipts ? args.features?.messageReceipts?.shouldSendMessageReceipts : true,
-            thorttleTime: args.features?.messageReceipts?.thorttleTime || DEFAULT_THROTTLE_TIME,
-        }
-    };
     var type = args.type || SESSION_TYPES.AGENT;
     GlobalConfig.updateStageRegion(options);
     // initialize CSM Service for only customer chat widget
@@ -191,7 +193,6 @@ var ChatSessionConstructor = args => {
         args.chatDetails,
         options,//options contain region 
         args.websocketManager,
-        features
     );
 };
 
@@ -202,6 +203,7 @@ const ChatSessionObject = {
     Logger: Logger,
     SessionTypes: SESSION_TYPES,
     csmService: csmService,
+    setFeatureFlag: setFeatureFlag,
 };
 
 export { ChatSessionObject };

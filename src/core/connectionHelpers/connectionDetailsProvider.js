@@ -1,7 +1,8 @@
 import { IllegalArgumentException } from "../exceptions";
 import { ConnectionInfoType } from "./baseConnectionHelper";
-import { ACPS_METHODS, CSM_CATEGORY, SESSION_TYPES, TRANSPORT_LIFETIME_IN_SECONDS } from "../../constants";
+import { ACPS_METHODS, CSM_CATEGORY, SESSION_TYPES, TRANSPORT_LIFETIME_IN_SECONDS, FEATURES, CONN_ACK_FAILED } from "../../constants";
 import { csmService } from "../../service/csmService";
+import { GlobalConfig } from "../../globalConfig";
 
 export default class ConnectionDetailsProvider {
 
@@ -35,15 +36,16 @@ export default class ConnectionDetailsProvider {
         return this._fetchConnectionDetails().then(() => this.connectionToken);
     }
 
-    _handleCreateParticipantConnectionResponse(connectionDetails) {
+    _handleCreateParticipantConnectionResponse(connectionDetails, ConnectParticipant) {
         this.connectionDetails = {
             url: connectionDetails.Websocket.Url,
             expiry: connectionDetails.Websocket.ConnectionExpiry,
-            transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS
+            transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS,
+            connectionAcknowledged: ConnectParticipant,
         };
         this.connectionToken = connectionDetails.ConnectionCredentials.ConnectionToken;
         this.connectionTokenExpiry = connectionDetails.ConnectionCredentials.Expiry;
-
+        return connectionDetails;
     }
 
     _handleGetConnectionTokenResponse(connectionTokenDetails) {
@@ -53,20 +55,23 @@ export default class ConnectionDetailsProvider {
         };
         this.connectionToken = connectionTokenDetails.participantToken;
         this.connectionTokenExpiry = connectionTokenDetails.expiry;
+        return Promise.resolve(connectionTokenDetails);
     }
 
-    _callCreateParticipantConnection(){
+    callCreateParticipantConnection({ Type = true, ConnectParticipant = false } = {}){
         const startTime = new Date().getTime();
         return this.chatClient
-            .createParticipantConnection(this.participantToken, [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS] )
+            .createParticipantConnection(this.participantToken, Type ? [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS] : null, ConnectParticipant ? ConnectParticipant : null)
             .then((response) => {
-                this._handleCreateParticipantConnectionResponse(response.data);
-                csmService.addLatencyMetricWithStartTime(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, startTime, CSM_CATEGORY.API);
-                csmService.addCountAndErrorMetric(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, CSM_CATEGORY.API, false);
+                if (Type) {
+                    this._addParticipantConnectionMetric(startTime);
+                    return this._handleCreateParticipantConnectionResponse(response.data, ConnectParticipant);
+                }
             })
             .catch( error => {
-                csmService.addLatencyMetricWithStartTime(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, startTime, CSM_CATEGORY.API);
-                csmService.addCountAndErrorMetric(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, CSM_CATEGORY.API, true);
+                if (Type) {
+                    this._addParticipantConnectionMetric(startTime, true);
+                }
                 return Promise.reject({
                     reason: "Failed to fetch connectionDetails with createParticipantConnection",
                     _debug: error
@@ -74,19 +79,39 @@ export default class ConnectionDetailsProvider {
             });
     }
 
-    _fetchConnectionDetails() {
-    // If this is a customer session, use the provided participantToken to call createParticipantConnection for our connection details. 
+    _addParticipantConnectionMetric(startTime, error = false) {
+        csmService.addLatencyMetric(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, startTime, CSM_CATEGORY.API);
+        csmService.addCountAndErrorMetric(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, CSM_CATEGORY.API, error);
+    }
+
+    async _fetchConnectionDetails() {
+        // If this is a customer session, use the provided participantToken to call createParticipantConnection for our connection details. 
         if (this.sessionType === SESSION_TYPES.CUSTOMER) {
-            return this._callCreateParticipantConnection();
+            return this.callCreateParticipantConnection();
         }
         // If this is an agent session, we can't assume that the participantToken is valid. 
         // In this case, we use the getConnectionToken API to fetch a valid connectionToken and expiry. 
         // If that fails, for now we try with createParticipantConnection.
         else if (this.sessionType === SESSION_TYPES.AGENT){
             return this.getConnectionToken()
-                .then((response) => this._handleGetConnectionTokenResponse(response.chatTokenTransport))
+                .then((response) => {
+                    return this._handleGetConnectionTokenResponse(response.chatTokenTransport);
+                })
                 .catch(() => {
-                    return this._callCreateParticipantConnection();
+                    if (!GlobalConfig.isFeatureEnabled(FEATURES.PARTICIPANT_CONN_ACK)) {
+                        //current behaviour
+                        return this.callCreateParticipantConnection();
+                    }
+                    //new behaviour for connAck
+                    return this.callCreateParticipantConnection({
+                        Type: true,
+                        ConnectParticipant: true
+                    }).catch((err) => {
+                        throw new Error({
+                            type: CONN_ACK_FAILED,
+                            errorMessage: err
+                        });
+                    });
                 });
         }
         else {

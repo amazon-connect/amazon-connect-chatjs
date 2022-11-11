@@ -6,6 +6,11 @@ export const CHAT_CONFIGURATIONS = {
 export const PARTICIPANT_TOKEN_HEADER = "x-amzn-connect-participant-token";
 export const AUTH_HEADER = "X-Amz-Bearer";
 
+export const FEATURES = {
+    PARTICIPANT_CONN_ACK: "PARTICIPANT_CONN_ACK",
+    MESSAGE_RECEIPTS_ENABLED: "MESSAGE_RECEIPTS_ENABLED"
+};
+
 export const RESOURCE_PATH = {
     CONNECTION_DETAILS: "/contact/chat/participant/connection-details",
     MESSAGE: "/participant/message",
@@ -96,6 +101,7 @@ export const CHAT_EVENT_TYPE_MAPPING = {
 
 export const EVENT = "EVENT";
 export const MESSAGE = "MESSAGE";
+export const CONN_ACK_FAILED = "CONN_ACK_FAILED";
 
 export const TRANSCRIPT_DEFAULT_PARAMS = {
     MAX_RESULTS: 15,
@@ -138,5 +144,3 @@ export const CONNECTION_TOKEN_EXPIRY_BUFFER_IN_MS = 60 * 1000; //1 min
 export const TRANSPORT_LIFETIME_IN_SECONDS = 3540; // 59 mins
 
 export const START_CHAT_SESSION = "StartChatSession";
-
-export const DEFAULT_THROTTLE_TIME = 5000;
