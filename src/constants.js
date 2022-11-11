@@ -139,4 +139,4 @@ export const TRANSPORT_LIFETIME_IN_SECONDS = 3540; // 59 mins
 
 export const START_CHAT_SESSION = "StartChatSession";
 
-export const DEFAULT_THROTTLE_TIME = 10000;
+export const DEFAULT_THROTTLE_TIME = 5000;
