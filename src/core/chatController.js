@@ -229,7 +229,7 @@ class ChatController {
 
   _handleIncomingMessage(incomingData) {
     try {
-      let eventType = incomingData?.ContentType && getEventTypeFromContentType(incomingData?.ContentType);
+      let eventType = getEventTypeFromContentType(incomingData?.ContentType);
       if (this.messageReceiptUtil.isMessageReceipt(eventType, incomingData)) {
         eventType = this.messageReceiptUtil.getEventTypeFromMessageMetaData(incomingData?.MessageMetadata);
         if (!eventType ||
@@ -381,7 +381,7 @@ class ChatController {
   }
 }
 
-const getEventTypeFromContentType = (contentType) => {
+export const getEventTypeFromContentType = (contentType) => {
   return CHAT_EVENT_TYPE_MAPPING[contentType] || CHAT_EVENT_TYPE_MAPPING.default;
 }
 

@@ -9,7 +9,7 @@ import {
   ACPS_METHODS
 } from "../constants";
 import Utils from "../utils";
-import { ChatController } from "./chatController";
+import { ChatController, getEventTypeFromContentType } from "./chatController";
 import { ConnectionHelperStatus } from "./connectionHelpers/baseConnectionHelper";
 import LpcConnectionHelper from "./connectionHelpers/LpcConnectionHelper";
 import connectionDetailsProvider from "./connectionHelpers/connectionDetailsProvider";
@@ -513,6 +513,16 @@ describe("ChatController", () => {
     });
 
   });
+
+  describe("Test ChatController induvidual methods with mock data", () => {
+    test("getEventTypeFromContentType should return default INCOMING_MESSAGE type", () => {
+      const chatController = getChatController();
+      chatController._forwardChatEvent = jest.fn();
+      chatController._handleIncomingMessage({ "AbsoluteTime": "2022-08-19T17:59:36.503Z", "Attachments": [{ "AttachmentName": "Screen Shot 2022-07-05 at 1.31.06 AM.png", "ContentType": "image/png", "AttachmentId": "544cd644-da74-4907-8566-a9bb11e03acc", "Status": "APPROVED" }], "Id": "d01406f0-3d64-4e8c-97fb-6092b82de153", "Type": "ATTACHMENT", "ParticipantId": "df731823-b76f-4d39-81f6-ac42f553fbea", "DisplayName": "AIDAT2LWUWLGQHAJ2JAOX", "ParticipantRole": "AGENT", "InitialContactId": "a1559116-304d-4ab4-b9af-8887ae911eaa", "ContactId": "a1559116-304d-4ab4-b9af-8887ae911eaa" });
+      expect(chatController._forwardChatEvent).toBeCalledWith("INCOMING_MESSAGE", { "chatDetails": { "connectionDetails": {}, "contactId": "id", "initialContactId": "id", "participantId": "pid", "participantToken": "token" }, "data": { "AbsoluteTime": "2022-08-19T17:59:36.503Z", "Attachments": [{ "AttachmentId": "544cd644-da74-4907-8566-a9bb11e03acc", "AttachmentName": "Screen Shot 2022-07-05 at 1.31.06 AM.png", "ContentType": "image/png", "Status": "APPROVED" }], "ContactId": "a1559116-304d-4ab4-b9af-8887ae911eaa", "DisplayName": "AIDAT2LWUWLGQHAJ2JAOX", "Id": "d01406f0-3d64-4e8c-97fb-6092b82de153", "InitialContactId": "a1559116-304d-4ab4-b9af-8887ae911eaa", "ParticipantId": "df731823-b76f-4d39-81f6-ac42f553fbea", "ParticipantRole": "AGENT", "Type": "ATTACHMENT" } });
+      chatController._forwardChatEvent.mockClear();
+    })
+  })
 
   test("getTranscript throws an error", async () => {
     var args = {
