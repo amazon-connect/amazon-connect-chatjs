@@ -385,7 +385,9 @@ describe("ChatController", () => {
     const args = {
       metadata: "metadata",
       contentType: CONTENT_TYPE.readReceipt,
-      content: "{}"
+      content: JSON.stringify({
+        MessageId: "messageId"
+      })
     };
     const chatController = getChatController(false);
     await chatController.connect();
@@ -402,7 +404,9 @@ describe("ChatController", () => {
     const args = {
       metadata: "metadata",
       contentType: CONTENT_TYPE.readReceipt,
-      content: JSON.stringify({})
+      content:  JSON.stringify({
+        MessageId: "messageId"
+      })
     };
     const chatController = getChatController();
     chatController.connect().then(() => {
@@ -414,7 +418,7 @@ describe("ChatController", () => {
       chatController.sendEvent(args),
       chatController.sendEvent(args)]).then(() => {
         expect(chatClient.sendEvent).toHaveBeenCalledTimes(1);
-        expect(chatClient.sendEvent).toHaveBeenCalledWith("token", CONTENT_TYPE.readReceipt, "{}", "INCOMING_READ_RECEIPT", 1000);
+        expect(chatClient.sendEvent).toHaveBeenCalledWith("token", CONTENT_TYPE.readReceipt, "{\"MessageId\":\"messageId\"}", "INCOMING_READ_RECEIPT", 1000);
         done();
       });
     });

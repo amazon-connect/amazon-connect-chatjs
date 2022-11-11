@@ -66,63 +66,71 @@ export default class MessageReceiptsUtil {
    * @param {Array} args array of params [connectionToken, contentType, content, eventType, throttleTime]
    * @return {promise} returnPromise for Read and Delivered events
   */
-  prioritizeAndSendMessageReceipt(callback, ...args) {
-    var self = this;
-    var deliverEventThrottleTime = 300;
-    var size = args.length;
-    var eventType = args[size - 2];
-    var content = typeof args[size-3] === "string" ? JSON.parse(args[size-3]) : args[size-3];
-    var messageId = content.MessageId;
+  prioritizeAndSendMessageReceipt(ChatClientContext, callback, ...args) {
+    try {
+      var self = this;
+      var deliverEventThrottleTime = 300;
+      var size = args.length;
+      var eventType = args[size - 2];
+      var content = typeof args[size - 3] === "string" ? JSON.parse(args[size - 3]) : args[size - 3];
+      var messageId = content.MessageId;
 
-    //ignore repeat events - do not make sendEvent API call.
-    if (self.readPromiseMap.has(messageId) || self.deliveredPromiseMap.has(messageId)) {
-      return Promise.resolve({
-        message: 'Event already fired'
-      });
-    }
-
-    var resolve, reject;
-    var returnPromise = new Promise(function (res, rej) {
-      resolve = res;
-      reject = rej;
-    });
-
-    if (eventType === CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT) {
-      self.deliveredPromiseMap.set(messageId, [resolve, reject]);
-    } else {
-      self.readPromiseMap.set(messageId, [resolve, reject]);
-    }
-
-    self.throttleInitialEventsToPrioritizeRead = function () {
-      // ignore Delivered event if Read event has been triggered for the current messageId
-      if (eventType === CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT &&
-        self.readSet.has(messageId)) {
-        self.deliveredSet.add(messageId);
-        self.resolveDeliveredPromises(messageId, 'Event already fired');
-        return resolve({
+      //ignore repeat events - do not make sendEvent API call.
+      if (self.readPromiseMap.has(messageId) || self.deliveredPromiseMap.has(messageId)) {
+        return Promise.resolve({
           message: 'Event already fired'
         });
       }
-      self.logger.debug('call next throttleFn sendMessageReceipts', args);
-      self.sendMessageReceipts.call(self, callback, ...args);
-    };
 
-    if (!self.timeout) {
-      self.timeout = setTimeout(function () {
+      var resolve, reject;
+      var returnPromise = new Promise(function (res, rej) {
+        resolve = res;
+        reject = rej;
+      });
+
+      if (eventType === CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT) {
+        self.deliveredPromiseMap.set(messageId, [resolve, reject]);
+      } else {
+        self.readPromiseMap.set(messageId, [resolve, reject]);
+      }
+
+      self.throttleInitialEventsToPrioritizeRead = function () {
+        // ignore Delivered event if Read event has been triggered for the current messageId
+        if (eventType === CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT &&
+          self.readSet.has(messageId)) {
+          self.deliveredSet.add(messageId);
+          self.resolveDeliveredPromises(messageId, 'Event already fired');
+          return resolve({
+            message: 'Event already fired'
+          });
+        }
+        self.logger.debug('call next throttleFn sendMessageReceipts', args);
+        self.sendMessageReceipts.call(self, ChatClientContext, callback, ...args);
+      };
+
+      if (!self.timeout) {
+        self.timeout = setTimeout(function () {
+          self.timeout = null;
+          self.throttleInitialEventsToPrioritizeRead();
+        }, deliverEventThrottleTime)
+      }
+
+      //prevent multiple Read events for same messageId
+      if (eventType === CHAT_EVENTS.INCOMING_READ_RECEIPT && !self.readSet.has(messageId)) {
+        self.readSet.add(messageId);
+        clearTimeout(self.timeout);
         self.timeout = null;
         self.throttleInitialEventsToPrioritizeRead();
-      }, deliverEventThrottleTime)
-    }
+      }
 
-    //prevent multiple Read events for same messageId
-    if (eventType === CHAT_EVENTS.INCOMING_READ_RECEIPT && !self.readSet.has(messageId)) {
-      self.readSet.add(messageId);
-      clearTimeout(self.timeout);
-      self.timeout = null;
-      self.throttleInitialEventsToPrioritizeRead();
+      return returnPromise;
+    } catch (Err) {
+      return Promise.reject({
+        message: "Failed to send messageReceipt",
+        args,
+        ...Err
+      });
     }
-
-    return returnPromise;
   }
 
   /**
@@ -131,33 +139,33 @@ export default class MessageReceiptsUtil {
    * @param {function} callback The callback fn to throttle and invoke.
    * @param {Array} args array of params [connectionToken, contentType, content, eventType, throttleTime]
   */
-  sendMessageReceipts(callback, ...args) {
+  sendMessageReceipts(ChatClientContext, callback, ...args) {
     var self = this;
     var size = args.length;
     var throttleTime = args[size - 1] || DEFAULT_THROTTLE_TIME;
     var eventType = args[size - 2];
-    var content = typeof args[size-3] === "string" ? JSON.parse(args[size-3]) : args[size-3];
+    var content = typeof args[size - 3] === "string" ? JSON.parse(args[size - 3]) : args[size - 3];
     var messageId = content.MessageId;
     this.lastReadArgs = eventType === CHAT_EVENTS.INCOMING_READ_RECEIPT ? args : this.lastReadArgs;
 
     self.throttleSendEventApiCall = function () {
       try {
         if (eventType === CHAT_EVENTS.INCOMING_READ_RECEIPT) {
-          var sendEventPromise = callback.apply(self, args);
+          var sendEventPromise = callback.call(ChatClientContext, ...args);
           self.resolveReadPromises(messageId, sendEventPromise);
           self.logger.debug('send Read event:', callback, args);
         } else {
           //delivered event is the last event fired
           //fire delivered for latest messageId
           //fire read for latest messageId
-          var PromiseArr = [callback.apply(self, args)];
+          var PromiseArr = [callback.call(ChatClientContext, ...args)];
           if (this.lastReadArgs) {
-            var contentVal = JSON.parse(this.lastReadArgs[size - 3]);
+            var contentVal = typeof this.lastReadArgs[size - 3] === "string" ? JSON.parse(this.lastReadArgs[size - 3]) : this.lastReadArgs[size - 3];
             var readEventMessageId = contentVal.MessageId;
             // if readPromise has been resolved for readEventMessageId; readPromiseMap should not contain readEventMessageId
             // if readPromiseMap contains readEventMessageId; read event has not been called!
             if (self.readPromiseMap.has(readEventMessageId)) {
-              PromiseArr.push(callback.apply(self, this.lastReadArgs));
+              PromiseArr.push(callback.call(ChatClientContext, ...this.lastReadArgs));
             }
           }
           self.logger.debug('send Delivered event:', args, 'read event:', this.lastReadArgs);

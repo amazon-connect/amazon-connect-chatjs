@@ -46,7 +46,7 @@ describe("MessageReceiptsUtil", () => {
     const callback = jest.fn().mockImplementation((...args) => {
       throw customError;
     });
-    messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, "token",
+    messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
       CONTENT_TYPE.readReceipt, `{"MessageId":"messageId222"}`,
       CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000)
       .then((res) => console.log("resolve", res))
@@ -60,15 +60,15 @@ describe("MessageReceiptsUtil", () => {
     const callback = jest.fn();
     const args = ["token", CONTENT_TYPE.deliveredReceipt,
       `{"MessageId":"messageId11"}`, CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000];
-    messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, ...args);
-    messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, ...args);
-    messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, ...args);
-    await messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, "token",
+    messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
+    messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
+    messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
+    await messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
       CONTENT_TYPE.readReceipt, `{"MessageId":"messageId21"}`,
       CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000);
     expect(callback).toHaveBeenCalledTimes(1);
 
-    await messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, "token",
+    await messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
       CONTENT_TYPE.deliveredReceipt, `{"MessageId":"messageId21"}`,
       CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000);
     expect(callback).toHaveBeenCalledTimes(1);
@@ -78,14 +78,14 @@ describe("MessageReceiptsUtil", () => {
     const callback = jest.fn().mockImplementation(() => Promise.resolve("test"));
     const args = ["token", CONTENT_TYPE.deliveredReceipt,
       `{"MessageId":"message1"}`, CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000];
-    messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, ...args);
-    messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, ...args);
-    messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, ...args);
-    messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, "token",
+    messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
+    messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
+    messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
+    messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
       CONTENT_TYPE.readReceipt, `{"MessageId":"message2"}`,
       CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000).then(() => {
         setTimeout(() => {
-          messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, "token",
+          messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
             CONTENT_TYPE.readReceipt, `{"MessageId":"message22"}`,
             CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000).then(() => {
               expect(callback).toHaveBeenCalledTimes(2);
@@ -99,21 +99,21 @@ describe("MessageReceiptsUtil", () => {
     const callback = jest.fn().mockImplementation(() => Promise.resolve("test"));
     const args = ["token", CONTENT_TYPE.deliveredReceipt,
       `{"MessageId":"m1"}`, CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000];
-    messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, ...args);
-    messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, ...args);
-    messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, ...args);
-    messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, "token",
+    messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
+    messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
+    messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
+    messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
       CONTENT_TYPE.readReceipt, `{"MessageId":"m2"}`,
       CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000).then(() => {
         setTimeout(() => {
           Promise.all([
-            messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, "token",
+            messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
               CONTENT_TYPE.readReceipt, `{"MessageId":"m3"}`,
               CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000),
-            messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, "token",
+            messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
               CONTENT_TYPE.deliveredReceipt, `{"MessageId":"m4"}`,
               CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000),
-            messageReceiptsUtil.prioritizeAndSendMessageReceipt(callback, "token",
+            messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
               CONTENT_TYPE.deliveredReceipt, `{"MessageId":"m5"}`,
               CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000)]).then(() => {
                 expect(callback).toHaveBeenCalledTimes(3);
@@ -146,5 +146,22 @@ describe("MessageReceiptsUtil", () => {
     messageReceiptsUtil.rehydrateReceiptMappers(callback, true)(response);
     expect(callback).toHaveBeenCalledTimes(1);
     expect(callback).toHaveBeenCalledWith(response);
-  })
+  });
+  test("should return an error", async () => {
+    const callback = jest.fn();
+    const context = null;
+    try {
+      const returnVal = await messageReceiptsUtil.prioritizeAndSendMessageReceipt.call(context, callback, {});
+      console.log("returnVal", returnVal);
+      expect(returnVal).toEqual({
+        "args": [],
+        "message": "Failed to send messageReceipt",
+      });
+    } catch (err) {
+      expect(err).toEqual({
+        "args": [],
+        "message": "Failed to send messageReceipt",
+      });
+    }
+  });
 });

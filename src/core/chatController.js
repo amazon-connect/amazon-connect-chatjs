@@ -119,13 +119,15 @@ class ChatController {
     const connectionToken = this.connectionHelper.getConnectionToken();
     const content = args.content || null;
     var eventType = getEventTypeFromContentType(args.contentType);
+    var parsedContent = typeof content === "string" ? JSON.parse(content) : content;
     if (this.messageReceiptUtil.isMessageReceipt(eventType, args)) {
       // Ignore all MessageReceipt events
-      if (!this.shouldSendMessageReceipts) {
+      if(!this.shouldSendMessageReceipts || !parsedContent.MessageId) {
+        this.logger.warn("Ignoring messageReceipt: missing messageId", args);
         return;
       }
       // Prioritize and send selective message receipts
-      return this.messageReceiptUtil.prioritizeAndSendMessageReceipt(this.chatClient.sendEvent,
+      return this.messageReceiptUtil.prioritizeAndSendMessageReceipt(this.chatClient, this.chatClient.sendEvent,
         connectionToken,
         args.contentType,
         content,
