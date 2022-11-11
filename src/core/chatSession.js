@@ -4,7 +4,7 @@ import {
 } from "./exceptions";
 import { ChatClientFactory } from "../client/client";
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
-import { SESSION_TYPES, CHAT_EVENTS, CSM_CATEGORY, START_CHAT_SESSION } from "../constants";
+import { SESSION_TYPES, CHAT_EVENTS, CSM_CATEGORY, START_CHAT_SESSION, DEFAULT_THROTTLE_TIME } from "../constants";
 import { GlobalConfig } from "../globalConfig";
 import { ChatController } from "./chatController";
 import { LogManager, LogLevel, Logger } from "../log";
@@ -33,8 +33,8 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
     this.argsValidator = new ChatServiceArgsValidator();
   }
 
-  createChatSession(sessionType, chatDetails, options, websocketManager) {
-    const chatController = this._createChatController(sessionType, chatDetails, options, websocketManager);
+  createChatSession(sessionType, chatDetails, options, websocketManager, features) {
+    const chatController = this._createChatController(sessionType, chatDetails, options, websocketManager, features);
     if (sessionType === SESSION_TYPES.AGENT) {
       return new AgentChatSession(chatController);
     } else if (sessionType === SESSION_TYPES.CUSTOMER) {
@@ -42,13 +42,13 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
     } else {
       throw new IllegalArgumentException(
         "Unkown value for session type, Allowed values are: " +
-          Object.values(SESSION_TYPES),
-          sessionType
+        Object.values(SESSION_TYPES),
+        sessionType
       );
     }
   }
 
-  _createChatController(sessionType, chatDetailsInput, options, websocketManager) {
+  _createChatController(sessionType, chatDetailsInput, options, websocketManager, features) {
     var chatDetails = this.argsValidator.normalizeChatDetails(chatDetailsInput);
     var logMetaData = {
       contactId: chatDetails.contactId,
@@ -61,7 +61,8 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
       chatDetails,
       chatClient,
       websocketManager: websocketManager,
-      logMetaData
+      logMetaData,
+      features,
     };
     return new ChatController(args);
   }
@@ -81,6 +82,14 @@ class ChatSession {
     this.controller.subscribe(CHAT_EVENTS.INCOMING_TYPING, callback);
   }
 
+  onReadReceipt(callback) {
+    this.controller.subscribe(CHAT_EVENTS.INCOMING_READ_RECEIPT, callback);
+  }
+
+  onDeliveredReceipt(callback) {
+    this.controller.subscribe(CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, callback);
+  }
+
   onConnectionBroken(callback) {
     this.controller.subscribe(CHAT_EVENTS.CONNECTION_BROKEN, callback);
   }
@@ -97,11 +106,11 @@ class ChatSession {
     return this.controller.sendMessage(args);
   }
 
-  sendAttachment(args){
+  sendAttachment(args) {
     return this.controller.sendAttachment(args);
   }
 
-  downloadAttachment(args){
+  downloadAttachment(args) {
     return this.controller.downloadAttachment(args);
   }
 
@@ -164,17 +173,25 @@ var setGlobalConfig = config => {
 
 var ChatSessionConstructor = args => {
   var options = args.options || {};
+  //Message Receipts enabled by default
+  const features = {
+    messageReceipts: {
+      shouldSendMessageReceipts: true || args.features?.messageReceipts?.shouldSendMessageReceipts,
+      thorttleTime: DEFAULT_THROTTLE_TIME || args.features?.messageReceipts?.thorttleTime,
+    }
+  };
   var type = args.type || SESSION_TYPES.AGENT;
   GlobalConfig.updateStageRegion(options);
   // initialize CSM Service for only customer chat widget
-  if(!args.disableCSM && type === SESSION_TYPES.CUSTOMER) {
+  if (!args.disableCSM && type === SESSION_TYPES.CUSTOMER) {
     csmService.initializeCSM();
   }
   return CHAT_SESSION_FACTORY.createChatSession(
     type,
     args.chatDetails,
-    options,
-    args.websocketManager
+    options,//options contain region 
+    args.websocketManager,
+    features
   );
 };
 

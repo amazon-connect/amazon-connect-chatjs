@@ -19,8 +19,13 @@ jest.mock("./connectionHelpers/LpcConnectionHelper");
 jest.mock("./connectionHelpers/connectionDetailsProvider");
 jest.mock("../service/csmService");
 
-describe("ChatController", () => {
+jest.mock("../log", () => ({
+  LogManager: {
+    getLogger: () => console
+  }
+}));
 
+describe("ChatController", () => {
   const chatDetails = {
     contactId: "id",
     initialContactId: "id",
@@ -34,12 +39,18 @@ describe("ChatController", () => {
   let startResponse;
   let endResponse;
 
-  function getChatController() {
+  function getChatController(shouldSendMessageReceipts = true) {
     return new ChatController({
       sessionType: SESSION_TYPES.AGENT,
       chatDetails: chatDetails,
       chatClient: chatClient,
-      websocketManager: websocketManager
+      websocketManager: websocketManager,
+      features: {
+        messageReceipts: {
+          shouldSendMessageReceipts: shouldSendMessageReceipts,
+          throttleTime: 1000,
+        }
+      }
     });
   }
 
@@ -81,6 +92,12 @@ describe("ChatController", () => {
             Type: MESSAGE,
             ContentType: CONTENT_TYPE.textPlain,
             Message: message
+          }));
+        },
+        $simulateDeliveredReceipt: (deliveredMessageData) => {
+          messageHandlers.forEach(f => f({
+            Type: CHAT_EVENTS.MESSAGE_METADATA,
+            MessageMetadata: deliveredMessageData
           }));
         },
         $simulateTyping: () => {
@@ -277,7 +294,9 @@ describe("ChatController", () => {
 
   test("getTranscript works as expected", async () => {
     var args = {
-      metadata: "metadata"
+      metadata: "metadata",
+      nextToken: "nextToken",
+      contactId: "contactId",
     };
     const chatController = getChatController();
     await chatController.connect();
@@ -286,7 +305,9 @@ describe("ChatController", () => {
       startPosition: {},
       scanDirection: TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
       sortOrder: TRANSCRIPT_DEFAULT_PARAMS.SORT_ORDER,
-      maxResults: TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS
+      maxResults: TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS,
+      "contactId": "contactId",
+      "nextToken": "nextToken"
     });
     expect(response.metadata).toBe("metadata");
     expect(response.testField).toBe("test");
@@ -326,6 +347,171 @@ describe("ChatController", () => {
     chatController.connectionHelper.$simulateMessage("message");
     await Utils.delay(1);
     expect(messageHandler).toHaveBeenCalledTimes(1);
+  });
+
+  test("incoming message of type receipt works as expected", async () => {
+    const chatController = getChatController();
+    await chatController.connect();
+    const messageHandler = jest.fn();
+    chatController.subscribe(CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, messageHandler);
+    chatController.connectionHelper.$simulateDeliveredReceipt({
+      MessageId: "messageId",
+      Receipts: [{
+        RecipientParticipantId: "RecipientParticipantId",
+        DeliverTimestamp: "2022-06-25T00:09:15.864Z",
+      }]
+    });
+    await Utils.delay(1);
+    expect(messageHandler).toHaveBeenCalledTimes(1);
+  });
+
+  test("incoming message of type receipt is ignored for same participant as sender of message", async () => {
+    const chatController = getChatController();
+    await chatController.connect();
+    const messageHandler = jest.fn();
+    chatController.subscribe(CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, messageHandler);
+    chatController.connectionHelper.$simulateDeliveredReceipt({
+      MessageId: "messageId",
+      Receipts: [{
+        RecipientParticipantId: chatDetails.participantId,
+        DeliverTimestamp: "2022-06-25T00:09:15.864Z",
+      }]
+    });
+    await Utils.delay(1);
+    expect(messageHandler).toHaveBeenCalledTimes(0);
+  });
+
+  test("should not throttle sendEvent for MessageReceipts if shouldSendMessageReceipts disabled", async () => {
+    const args = {
+      metadata: "metadata",
+      contentType: CONTENT_TYPE.readReceipt,
+      content: "{}"
+    };
+    const chatController = getChatController(false);
+    await chatController.connect();
+    chatClient.sendEvent.mockClear();
+    chatController.sendEvent(args);
+    chatController.sendEvent(args);
+    chatController.sendEvent(args);
+    chatController.sendEvent(args);
+    const response = await chatController.sendEvent(args);
+    expect(chatClient.sendEvent).toHaveBeenCalledTimes(0);
+  });
+  test("should throttle sendEvent for MessageReceipts", done => {
+    jest.useRealTimers();
+    const args = {
+      metadata: "metadata",
+      contentType: CONTENT_TYPE.readReceipt,
+      content: JSON.stringify({})
+    };
+    const chatController = getChatController();
+    chatController.connect().then(() => {
+      chatClient.sendEvent.mockClear();
+
+      Promise.all([chatController.sendEvent(args),
+      chatController.sendEvent(args),
+      chatController.sendEvent(args),
+      chatController.sendEvent(args),
+      chatController.sendEvent(args)]).then(() => {
+        expect(chatClient.sendEvent).toHaveBeenCalledTimes(1);
+        expect(chatClient.sendEvent).toHaveBeenCalledWith("token", CONTENT_TYPE.readReceipt, "{}", "INCOMING_READ_RECEIPT", 1000);
+        done();
+      });
+    });
+  });
+
+  test("should throttle Read and Delivered events for MessageReceipts to only send Read Event", async () => {
+    jest.useRealTimers();
+    const readArgs = {
+      metadata: "metadata",
+      contentType: CONTENT_TYPE.readReceipt,
+      content: JSON.stringify({
+        "MessageId": "messageId"
+      })
+    };
+    const deliveredArgs = {
+      metadata: "metadata",
+      contentType: CONTENT_TYPE.deliveredReceipt,
+      content: JSON.stringify({
+        "MessageId": "messageId2"
+      })
+    };
+    const chatController = getChatController();
+    await chatController.connect();
+    chatClient.sendEvent.mockClear();
+    chatController.sendEvent(readArgs);
+    chatController.sendEvent(readArgs);
+    chatController.sendEvent(readArgs);
+    chatController.sendEvent(readArgs);
+    chatController.sendEvent(deliveredArgs);
+    chatController.sendEvent(deliveredArgs);
+    chatController.sendEvent(deliveredArgs);
+    chatController.sendEvent(deliveredArgs);
+    chatController.sendEvent(deliveredArgs);
+    const finalContent = JSON.stringify({
+      "MessageId": "final-message"
+    });
+    const response = await chatController.sendEvent({
+      metadata: "metadata",
+      contentType: CONTENT_TYPE.readReceipt,
+      content: finalContent
+    });
+    expect(chatClient.sendEvent).toHaveBeenCalledTimes(1);
+    expect(chatClient.sendEvent).toHaveBeenCalledWith("token", "application/vnd.amazonaws.connect.event.message.read", finalContent, "INCOMING_READ_RECEIPT", 1000);
+    expect(response.metadata).toBe("metadata");
+    expect(response.testField).toBe("test");
+  });
+
+  test("should throttle Read and Delivered events for MessageReceipts to send Read and Delivered Event only once", (done) => {
+    jest.useRealTimers();
+    const readArgs = {
+      metadata: "metadata",
+      contentType: CONTENT_TYPE.readReceipt,
+      content: JSON.stringify({
+        "MessageId": "messageId3"
+      })
+    };
+    const deliveredArgs = {
+      metadata: "metadata",
+      contentType: CONTENT_TYPE.deliveredReceipt,
+      content: JSON.stringify({
+        "MessageId": "messageId4"
+      })
+    };
+    const chatController = getChatController();
+
+    chatController.connect().then(() => {
+      chatClient.sendEvent.mockClear();
+      chatController.sendEvent(readArgs);
+      chatController.sendEvent(readArgs);
+      chatController.sendEvent(readArgs);
+      chatController.sendEvent(readArgs);
+      chatController.sendEvent(readArgs);
+      setTimeout(() => {
+        chatController.sendEvent(deliveredArgs);
+        chatController.sendEvent(deliveredArgs);
+        chatController.sendEvent(deliveredArgs);
+        const finalContent = JSON.stringify({
+          "MessageId": "final-delivered-message"
+        });
+        chatController.sendEvent({
+          metadata: "metadata",
+          contentType: CONTENT_TYPE.deliveredReceipt,
+          content: finalContent
+        }).then(response => {
+          expect(chatClient.sendEvent).toHaveBeenCalledTimes(2);
+          expect(chatClient.sendEvent).toHaveBeenCalledWith("token", "application/vnd.amazonaws.connect.event.message.read", readArgs.content, "INCOMING_READ_RECEIPT", 1000);
+          expect(chatClient.sendEvent).toHaveBeenCalledWith("token", "application/vnd.amazonaws.connect.event.message.delivered", finalContent, "INCOMING_DELIVERED_RECEIPT", 1000);
+          expect(response.metadata).toBe("metadata");
+          expect(response.testField).toBe("test");
+          done();
+        }).catch(err => {
+          done();
+          console.error(err);
+        });
+      }, 1200)
+    });
+
   });
 
   test("getTranscript throws an error", async () => {

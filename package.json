@@ -16,6 +16,7 @@
   "description": "Provides chat support to AmazonConnect customers",
   "scripts": {
     "test": "jest",
+    "test:watch": "jest --watchAll",
     "release": "tsc && jest && webpack --mode=production",
     "devo": "jest && webpack --mode=development",
     "watch": "webpack --watch",

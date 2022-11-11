@@ -118,6 +118,9 @@ class LpcConnectionHelperBase {
   constructor(connectionDetailsProvider, websocketManager, logMetaData) {
     this.status = ConnectionHelperStatus.NeverStarted;
     this.eventBus = new EventBus();
+    window.LpcConnectionHelperBase = {
+      eventBus: this.eventBus
+    };
     this.logger = LogManager.getLogger({
       prefix: "ChatJS-LPCConnectionHelperBase",
       logMetaData
@@ -222,7 +225,7 @@ class LpcConnectionHelperBase {
     try {
       parsedMessage = JSON.parse(message.content);
       this.eventBus.trigger(ConnectionHelperEvents.IncomingMessage, parsedMessage);
-      this.logger.info("Websocket incoming message", { messageId: parsedMessage.Id, contentType: parsedMessage.ContentType });
+      this.logger.info("this.eventBus trigger Websocket incoming message", ConnectionHelperEvents.IncomingMessage, parsedMessage);
       csmService.addCountMetric(WEBSOCKET_EVENTS.IncomingMessage, CSM_CATEGORY.API);
     } catch (e) {
       this._sendInternalLogToServer(this.logger.error("Wrong message format"));

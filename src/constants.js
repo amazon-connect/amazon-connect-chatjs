@@ -47,11 +47,14 @@ export const WEBSOCKET_EVENTS = {
 export const CHAT_EVENTS = {
   INCOMING_MESSAGE: "INCOMING_MESSAGE",
   INCOMING_TYPING: "INCOMING_TYPING",
+  INCOMING_READ_RECEIPT: "INCOMING_READ_RECEIPT",
+  INCOMING_DELIVERED_RECEIPT: "INCOMING_DELIVERED_RECEIPT",
   CONNECTION_ESTABLISHED: "CONNECTION_ESTABLISHED",
   CONNECTION_LOST: "CONNECTION_LOST",
   CONNECTION_BROKEN: "CONNECTION_BROKEN",
   CONNECTION_ACK: "CONNECTION_ACK",
-  CHAT_ENDED: "CHAT_ENDED"
+  CHAT_ENDED: "CHAT_ENDED",
+  MESSAGE_METADATA: "MESSAGEMETADATA"
 };
 
 export const CONTENT_TYPE = {
@@ -79,7 +82,16 @@ export const CONTENT_TYPE = {
   transferSucceeded: "application/vnd.amazonaws.connect.event.transfer.succeeded",
   transferFailed: "application/vnd.amazonaws.connect.event.transfer.failed",
   chatEnded: "application/vnd.amazonaws.connect.event.chat.ended",
-  interactiveMessage: "application/vnd.amazonaws.connect.message.interactive"
+  interactiveMessage: "application/vnd.amazonaws.connect.message.interactive",
+  readReceipt: "application/vnd.amazonaws.connect.event.message.read",
+  deliveredReceipt: "application/vnd.amazonaws.connect.event.message.delivered",
+};
+
+export const CHAT_EVENT_TYPE_MAPPING = {
+  [CONTENT_TYPE.typing]: CHAT_EVENTS.INCOMING_TYPING,
+  [CONTENT_TYPE.readReceipt]: CHAT_EVENTS.INCOMING_READ_RECEIPT,
+  [CONTENT_TYPE.deliveredReceipt]: CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT,
+  default: CHAT_EVENTS.INCOMING_MESSAGE
 };
 
 export const EVENT = "EVENT";
@@ -126,3 +138,5 @@ export const CONNECTION_TOKEN_EXPIRY_BUFFER_IN_MS = 60 * 1000; //1 min
 export const TRANSPORT_LIFETIME_IN_SECONDS = 3540; // 59 mins
 
 export const START_CHAT_SESSION = "StartChatSession";
+
+export const DEFAULT_THROTTLE_TIME = 10000;

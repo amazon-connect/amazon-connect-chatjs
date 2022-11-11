@@ -5,7 +5,8 @@ import {
   SESSION_TYPES,
   CONTENT_TYPE,
   CSM_CATEGORY,
-  ACPS_METHODS
+  ACPS_METHODS,
+  CHAT_EVENT_TYPE_MAPPING
 } from "../constants";
 import { LogManager } from "../log";
 import { EventBus } from "./eventbus";
@@ -13,6 +14,7 @@ import { ChatServiceArgsValidator } from "./chatArgsValidator";
 import ConnectionDetailsProvider from "./connectionHelpers/connectionDetailsProvider";
 import LpcConnectionHelper from "./connectionHelpers/LpcConnectionHelper";
 import { csmService } from "../service/csmService";
+import MessageReceiptsUtil from './MessageReceiptsUtil';
 
 var NetworkLinkStatus = {
   NeverEstablished: "NeverEstablished",
@@ -44,6 +46,9 @@ class ChatController {
       logMetaData: args.logMetaData
     });
     this.logMetaData = args.logMetaData;
+    this.shouldSendMessageReceipts = args.features?.messageReceipts?.shouldSendMessageReceipts;
+    this.throttleTime = args.features?.messageReceipts?.throttleTime;
+    this.messageReceiptUtil = new MessageReceiptsUtil(args.logMetaData);
     this.logger.info("Browser info:", window.navigator.userAgent)
   }
 
@@ -113,6 +118,22 @@ class ChatController {
     this.argsValidator.validateSendEvent(args);
     const connectionToken = this.connectionHelper.getConnectionToken();
     const content = args.content || null;
+    var eventType = getEventTypeFromContentType(args.contentType);
+    if (this.messageReceiptUtil.isMessageReceipt(eventType, args)) {
+      // Ignore all MessageReceipt events
+      if (!this.shouldSendMessageReceipts) {
+        return;
+      }
+      // Prioritize and send selective message receipts
+      return this.messageReceiptUtil.prioritizeAndSendMessageReceipt(this.chatClient.sendEvent,
+        connectionToken,
+        args.contentType,
+        content,
+        eventType,
+        this.throttleTime)
+        .then(this.handleRequestSuccess(metadata))
+        .catch(this.handleRequestFailure(metadata));
+    }
     return this.chatClient
       .sendEvent(
         connectionToken,
@@ -141,7 +162,7 @@ class ChatController {
     const connectionToken = this.connectionHelper.getConnectionToken();
     return this.chatClient
       .getTranscript(connectionToken, args)
-      .then(this.handleRequestSuccess(metadata, ACPS_METHODS.GET_TRANSCRIPT, startTime))
+      .then(this.messageReceiptUtil.rehydrateReceiptMappers(this.handleRequestSuccess(metadata), this.shouldSendMessageReceipts))
       .catch(this.handleRequestFailure(metadata, ACPS_METHODS.GET_TRANSCRIPT, startTime));
 
   }
@@ -208,7 +229,16 @@ class ChatController {
 
   _handleIncomingMessage(incomingData) {
     try {
-      const eventType = incomingData.ContentType === CONTENT_TYPE.typing ? CHAT_EVENTS.INCOMING_TYPING : CHAT_EVENTS.INCOMING_MESSAGE;
+      let eventType = incomingData?.ContentType && getEventTypeFromContentType(incomingData?.ContentType);
+      if (this.messageReceiptUtil.isMessageReceipt(eventType, incomingData)) {
+        eventType = this.messageReceiptUtil.getEventTypeFromMessageMetaData(incomingData?.MessageMetadata);
+        if (!eventType ||
+          !this.messageReceiptUtil.shouldShowMessageReceiptForCurrentParticipantId(this.participantId, incomingData)) {
+          //ignore bec we do not want to show messageReceipt to sender of receipt.
+          //messageReceipt needs to be shown to the sender of message.
+          return;
+        }
+      }
       this._forwardChatEvent(eventType, {
         data: incomingData,
         chatDetails: this.getChatDetails()
@@ -349,6 +379,10 @@ class ChatController {
 
     return logEntry;
   }
+}
+
+const getEventTypeFromContentType = (contentType) => {
+  return CHAT_EVENT_TYPE_MAPPING[contentType] || CHAT_EVENT_TYPE_MAPPING.default;
 }
 
 export { ChatController, NetworkLinkStatus };
