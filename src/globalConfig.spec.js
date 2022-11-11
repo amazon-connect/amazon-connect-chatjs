@@ -16,6 +16,11 @@ const stageRegion = {
     stage: "test-stage",
     region: "test-region",
 };
+
+const stageRegion2 = {
+    stage: "test-stage2",
+    region: "test-region2",
+};
  
 const configInput = {
     ...stageRegion,
@@ -36,6 +41,12 @@ afterAll(() => {
 });
 
 describe("Common globalConfig tests", () => {
+    it("should already have its class variables initialized to defaults without any other method having been invoked", () => {
+        expect(GlobalConfig.region).toEqual("us-west-2");
+        expect(GlobalConfig.stage).toEqual("prod");
+        expect(GlobalConfig.reconnect).toBe(true);
+    });
+
     it("should update all and fetch correct config", () => {
         GlobalConfig.update(configInput);
         expect(GlobalConfig.getStage()).toBe(configInput.stage);
@@ -47,6 +58,13 @@ describe("Common globalConfig tests", () => {
         GlobalConfig.updateStageRegion(stageRegion);
         expect(GlobalConfig.getStage()).toBe(stageRegion.stage);
         expect(GlobalConfig.getRegion()).toBe(stageRegion.region);
+    });
+
+    it("updateStageRegion should not update any class variables if the input object does not contain any of those fields", () => {
+        GlobalConfig.updateStageRegion(stageRegion2);
+        GlobalConfig.updateStageRegion({beep: "boop"});
+        expect(GlobalConfig.region).toEqual(stageRegion2.region);
+        expect(GlobalConfig.stage).toEqual(stageRegion2.stage);
     });
 });
 

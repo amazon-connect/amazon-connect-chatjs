@@ -1,10 +1,15 @@
 class GlobalConfigImpl {
+    constructor() {
+        this.stage = "prod";
+        this.region = "us-west-2";
+        this.reconnect = true;
+    }
     update(configInput) {
         var config = configInput || {};
-        this.stage = config.stage || this.stage || "prod";
-  	this.region = config.region || this.region || "us-west-2";
+        this.stage = config.stage || this.stage;
+        this.region = config.region || this.region;
         this.endpointOverride = config.endpoint || this.endpointOverride;
-        this.reconnect = config.reconnect === false ? false : true;
+        this.reconnect = config.reconnect === false ? false : this.reconnect;
     }
 
     getRegion() {
