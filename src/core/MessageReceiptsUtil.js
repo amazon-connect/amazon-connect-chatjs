@@ -70,9 +70,8 @@ export default class MessageReceiptsUtil {
     try {
       var self = this;
       var deliverEventThrottleTime = 300;
-      var size = args.length;
-      var eventType = args[size - 2];
-      var content = typeof args[size - 3] === "string" ? JSON.parse(args[size - 3]) : args[size - 3];
+      var eventType = args[3];
+      var content = typeof args[2] === "string" ? JSON.parse(args[2]) : args[2];
       var messageId = content.MessageId;
 
       //ignore repeat events - do not make sendEvent API call.
@@ -141,10 +140,9 @@ export default class MessageReceiptsUtil {
   */
   sendMessageReceipts(ChatClientContext, callback, ...args) {
     var self = this;
-    var size = args.length;
-    var throttleTime = args[size - 1] || DEFAULT_THROTTLE_TIME;
-    var eventType = args[size - 2];
-    var content = typeof args[size - 3] === "string" ? JSON.parse(args[size - 3]) : args[size - 3];
+    var throttleTime = args[4] || DEFAULT_THROTTLE_TIME;
+    var eventType = args[3];
+    var content = typeof args[2] === "string" ? JSON.parse(args[2]) : args[2];
     var messageId = content.MessageId;
     this.lastReadArgs = eventType === CHAT_EVENTS.INCOMING_READ_RECEIPT ? args : this.lastReadArgs;
 
@@ -160,7 +158,7 @@ export default class MessageReceiptsUtil {
           //fire read for latest messageId
           var PromiseArr = [callback.call(ChatClientContext, ...args)];
           if (this.lastReadArgs) {
-            var contentVal = typeof this.lastReadArgs[size - 3] === "string" ? JSON.parse(this.lastReadArgs[size - 3]) : this.lastReadArgs[size - 3];
+            var contentVal = typeof this.lastReadArgs[2] === "string" ? JSON.parse(this.lastReadArgs[2]) : this.lastReadArgs[2];
             var readEventMessageId = contentVal.MessageId;
             // if readPromise has been resolved for readEventMessageId; readPromiseMap should not contain readEventMessageId
             // if readPromiseMap contains readEventMessageId; read event has not been called!
