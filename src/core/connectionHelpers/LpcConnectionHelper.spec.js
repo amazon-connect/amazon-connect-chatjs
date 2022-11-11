@@ -2,7 +2,7 @@ import LpcConnectionHelper from "./LpcConnectionHelper";
 import WebSocketManager from "../../lib/amazon-connect-websocket-manager";
 import { ConnectionHelperStatus } from "./baseConnectionHelper";
 import { csmService } from "../../service/csmService";
-	 import { CSM_CATEGORY, WEBSOCKET_EVENTS } from "../../constants";
+import { CSM_CATEGORY, WEBSOCKET_EVENTS, CHAT_EVENTS } from "../../constants";
 
 describe("LpcConnectionHelper", () => {
 
@@ -130,15 +130,12 @@ describe("LpcConnectionHelper", () => {
         test("onMessage handler is called", () => {
             const websocketManager = createWebsocketManager();
             const onMessageHandler1 = jest.fn();
-            const onMessageHandler2 = jest.fn();
             getLpcConnectionHelper("id1", websocketManager).onMessage(onMessageHandler1);
-            getLpcConnectionHelper("id2", websocketManager).onMessage(onMessageHandler2);
             websocketManager.$simulateMessage({ content: JSON.stringify({ InitialContactId: "id1" }) });
-            websocketManager.$simulateMessage({ content: JSON.stringify({ InitialContactId: "id2" }) });
-            expect(onMessageHandler1).toHaveBeenCalledTimes(1);
+            websocketManager.$simulateMessage({ content: JSON.stringify({ Type: CHAT_EVENTS.MESSAGE_METADATA }) });
+            expect(onMessageHandler1).toHaveBeenCalledTimes(2);
             expect(onMessageHandler1).toHaveBeenCalledWith({ InitialContactId: "id1" }, expect.anything(), expect.anything());
-            expect(onMessageHandler2).toHaveBeenCalledTimes(1);
-            expect(onMessageHandler2).toHaveBeenCalledWith({ InitialContactId: "id2" }, expect.anything(), expect.anything());
+            expect(onMessageHandler1).toHaveBeenCalledWith({ Type: CHAT_EVENTS.MESSAGE_METADATA }, expect.anything(), expect.anything());
         });
 
         test("onEnded handler called for multiple connections using the same websocket manager", () => {

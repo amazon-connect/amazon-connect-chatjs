@@ -47,7 +47,7 @@ describe("MessageReceiptsUtil", () => {
             throw customError;
         });
         messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
-            CONTENT_TYPE.readReceipt, `{"MessageId":"messageId222"}`,
+            CONTENT_TYPE.readReceipt, `{"messageId":"messageId222"}`,
             CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000)
             .then((res) => console.log("resolve", res))
             .catch(err => {
@@ -59,10 +59,10 @@ describe("MessageReceiptsUtil", () => {
         jest.useRealTimers();
         const callback = jest.fn().mockImplementation(() => Promise.resolve("event_processed"));
         const p1 = messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
-            CONTENT_TYPE.readReceipt, `{"MessageId":"messageId2221", "disableThrottle": true}`,
+            CONTENT_TYPE.readReceipt, `{"messageId":"messageId2221", "disableThrottle": true}`,
             CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000);
         const p2 = messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
-            CONTENT_TYPE.readReceipt, `{"MessageId":"messageId2221", "disableThrottle": true}`,
+            CONTENT_TYPE.readReceipt, `{"messageId":"messageId2221", "disableThrottle": true}`,
             CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000);
         Promise.all([p1, p2]).then(res => {
             expect(res[0]).toEqual("event_processed");
@@ -76,17 +76,17 @@ describe("MessageReceiptsUtil", () => {
         jest.useRealTimers();
         const callback = jest.fn();
         const args = ["token", CONTENT_TYPE.deliveredReceipt,
-            `{"MessageId":"messageId11"}`, CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000];
+            `{"messageId":"messageId11"}`, CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000];
         messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
         messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
         messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
         await messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
-            CONTENT_TYPE.readReceipt, `{"MessageId":"messageId21"}`,
+            CONTENT_TYPE.readReceipt, `{"messageId":"messageId21"}`,
             CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000);
         expect(callback).toHaveBeenCalledTimes(1);
 
         await messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
-            CONTENT_TYPE.deliveredReceipt, `{"MessageId":"messageId21"}`,
+            CONTENT_TYPE.deliveredReceipt, `{"messageId":"messageId21"}`,
             CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000);
         expect(callback).toHaveBeenCalledTimes(1);
     });
@@ -94,16 +94,16 @@ describe("MessageReceiptsUtil", () => {
         jest.useRealTimers();
         const callback = jest.fn().mockImplementation(() => Promise.resolve("test"));
         const args = ["token", CONTENT_TYPE.deliveredReceipt,
-            `{"MessageId":"message1"}`, CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000];
+            `{"messageId":"message1"}`, CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000];
         messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
         messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
         messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
         messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
-            CONTENT_TYPE.readReceipt, `{"MessageId":"message2"}`,
+            CONTENT_TYPE.readReceipt, `{"messageId":"message2"}`,
             CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000).then(() => {
             setTimeout(() => {
                 messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
-                    CONTENT_TYPE.readReceipt, `{"MessageId":"message22"}`,
+                    CONTENT_TYPE.readReceipt, `{"messageId":"message22"}`,
                     CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000).then(() => {
                     expect(callback).toHaveBeenCalledTimes(2);
                     done();
@@ -115,12 +115,12 @@ describe("MessageReceiptsUtil", () => {
         jest.useRealTimers();
         const callback = jest.fn().mockImplementation(() => Promise.resolve("test"));
         const args = ["token", CONTENT_TYPE.deliveredReceipt,
-            `{"MessageId":"mess1"}`, CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000];
+            `{"messageId":"mess1"}`, CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000];
         messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
         messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
         messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
         messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
-            CONTENT_TYPE.readReceipt, `{"MessageId":"mess2"}`,
+            CONTENT_TYPE.readReceipt, `{"messageId":"mess2"}`,
             CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000).then(() => {
             setTimeout(() => {
                 messageReceiptsUtil.throttleInitialEventsToPrioritizeRead();
@@ -129,13 +129,13 @@ describe("MessageReceiptsUtil", () => {
                 messageReceiptsUtil.throttleInitialEventsToPrioritizeRead();
                 Promise.all([
                     messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
-                        CONTENT_TYPE.readReceipt, `{"MessageId":"mess3"}`,
+                        CONTENT_TYPE.readReceipt, `{"messageId":"mess3"}`,
                         CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000),
                     messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
-                        CONTENT_TYPE.deliveredReceipt, `{"MessageId":"mess4"}`,
+                        CONTENT_TYPE.deliveredReceipt, `{"messageId":"mess4"}`,
                         CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000),
                     messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
-                        CONTENT_TYPE.deliveredReceipt, `{"MessageId":"mess5"}`,
+                        CONTENT_TYPE.deliveredReceipt, `{"messageId":"mess5"}`,
                         CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000)]).then(() => {
                     expect(callback).toHaveBeenCalledTimes(3);
                     done();
@@ -152,7 +152,7 @@ describe("MessageReceiptsUtil", () => {
                     "Id": "sampleId3",
                     "Type": "MESSAGEMETADATA",
                     "MessageMetadata": {
-                        "MessageId": "messageIdABC",
+                        "messageId": "messageIdABC",
                         "Receipts": [
                             {
                                 "DeliverTimestamp": "2022-06-25T00:09:15.864Z",

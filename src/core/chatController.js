@@ -120,7 +120,7 @@ class ChatController {
         var parsedContent = typeof content === "string" ? JSON.parse(content) : content;
         if (this.messageReceiptUtil.isMessageReceipt(eventType, args)) {
             // Ignore all MessageReceipt events
-            if(!this.shouldSendMessageReceipts || !parsedContent.MessageId) {
+            if(!this.shouldSendMessageReceipts || !parsedContent.messageId) {
                 this.logger.warn("Ignoring messageReceipt: missing messageId", args);
                 return;
             }

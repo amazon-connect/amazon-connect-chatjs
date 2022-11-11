@@ -37,9 +37,12 @@ export default class MessageReceiptsUtil {
   */
     getEventTypeFromMessageMetaData(messageMetadata) {
         return Array.isArray(messageMetadata.Receipts) &&
-      messageMetadata.Receipts[0] &&
-      messageMetadata.Receipts[0].ReadTimestamp ? CHAT_EVENTS.INCOMING_READ_RECEIPT :
-            messageMetadata.Receipts[0].DeliverTimestamp ? CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT : null;
+            messageMetadata.Receipts[0] &&
+            messageMetadata.Receipts[0].ReadTimestamp ? 
+                CHAT_EVENTS.INCOMING_READ_RECEIPT :
+                messageMetadata.Receipts[0].DeliveredTimestamp ? 
+                    CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT : 
+                    null;
     }
 
     /** 
@@ -72,7 +75,7 @@ export default class MessageReceiptsUtil {
             var deliverEventThrottleTime = 300;
             var eventType = args[3];
             var content = typeof args[2] === "string" ? JSON.parse(args[2]) : args[2];
-            var messageId = content.MessageId;
+            var messageId = content.messageId;
 
             //ignore repeat events - do not make sendEvent API call.
             if (self.readSet.has(messageId) ||
@@ -159,7 +162,7 @@ export default class MessageReceiptsUtil {
         var throttleTime = args[4] || DEFAULT_THROTTLE_TIME;
         var eventType = args[3];
         var content = typeof args[2] === "string" ? JSON.parse(args[2]) : args[2];
-        var messageId = content.MessageId;
+        var messageId = content.messageId;
         this.lastReadArgs = eventType === CHAT_EVENTS.INCOMING_READ_RECEIPT ? args : this.lastReadArgs;
 
         self.throttleSendEventApiCall = function () {
@@ -175,7 +178,7 @@ export default class MessageReceiptsUtil {
                     var PromiseArr = [callback.call(ChatClientContext, ...args)];
                     if (this.lastReadArgs) {
                         var contentVal = typeof this.lastReadArgs[2] === "string" ? JSON.parse(this.lastReadArgs[2]) : this.lastReadArgs[2];
-                        var readEventMessageId = contentVal.MessageId;
+                        var readEventMessageId = contentVal.messageId;
                         // if readPromise has been resolved for readEventMessageId; readPromiseMap should not contain readEventMessageId
                         // if readPromiseMap contains readEventMessageId; read event has not been called!
                         if (self.readPromiseMap.has(readEventMessageId)) {
@@ -184,7 +187,7 @@ export default class MessageReceiptsUtil {
                     }
                     self.logger.debug('send Delivered event:', args, 'read event:', this.lastReadArgs);
                     Promise.all(PromiseArr).then(res => {
-                        self.resolveReadPromises(contentVal.MessageId, res[0]);
+                        self.resolveReadPromises(contentVal.messageId, res[0]);
                         self.resolveDeliveredPromises(messageId, res[0]);
                     });
                 }
@@ -263,12 +266,12 @@ export default class MessageReceiptsUtil {
                 Transcript.forEach(transcript => {
                     if (transcript?.Type === CHAT_EVENTS.MESSAGE_METADATA) {
                         const Receipt = transcript?.MessageMetadata?.Receipts?.[0];
-                        const MessageId = transcript?.MessageMetadata?.MessageId;
+                        const messageId = transcript?.MessageMetadata?.messageId;
                         if (Receipt?.ReadTimestamp) {
-                            this.readSet.add(MessageId);
+                            this.readSet.add(messageId);
                         }
-                        if (Receipt?.DeliverTimestamp) {
-                            this.deliveredSet.add(MessageId);
+                        if (Receipt?.DeliveredTimestamp) {
+                            this.deliveredSet.add(messageId);
                         }
                     }
                 });

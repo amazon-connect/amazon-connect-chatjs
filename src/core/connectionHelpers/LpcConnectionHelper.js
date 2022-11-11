@@ -6,7 +6,7 @@ import {
 } from "./baseConnectionHelper";
 import BaseConnectionHelper from "./baseConnectionHelper";
 import WebSocketManager from "../../lib/amazon-connect-websocket-manager";
-import { CSM_CATEGORY, TRANSPORT_LIFETIME_IN_SECONDS, WEBSOCKET_EVENTS } from "../../constants";
+import { CHAT_EVENTS, CSM_CATEGORY, TRANSPORT_LIFETIME_IN_SECONDS, WEBSOCKET_EVENTS } from "../../constants";
 import { csmService } from "../../service/csmService";
 
 class LpcConnectionHelper extends BaseConnectionHelper {
@@ -105,7 +105,7 @@ class LpcConnectionHelper extends BaseConnectionHelper {
     }
 
     handleMessage(message) {
-        if (message.InitialContactId === this.initialContactId || message.ContactId === this.contactId) {
+        if (message.InitialContactId === this.initialContactId || message.ContactId === this.contactId || message.Type === CHAT_EVENTS.MESSAGE_METADATA) {
             this.eventBus.trigger(ConnectionHelperEvents.IncomingMessage, message);
         }
     }

@@ -355,10 +355,10 @@ describe("ChatController", () => {
         const messageHandler = jest.fn();
         chatController.subscribe(CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, messageHandler);
         chatController.connectionHelper.$simulateDeliveredReceipt({
-            MessageId: "messageId",
+            messageId: "messageId",
             Receipts: [{
                 RecipientParticipantId: "RecipientParticipantId",
-                DeliverTimestamp: "2022-06-25T00:09:15.864Z",
+                DeliveredTimestamp : "2022-06-25T00:09:15.864Z",
             }]
         });
         await Utils.delay(1);
@@ -371,10 +371,10 @@ describe("ChatController", () => {
         const messageHandler = jest.fn();
         chatController.subscribe(CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, messageHandler);
         chatController.connectionHelper.$simulateDeliveredReceipt({
-            MessageId: "messageId",
+            messageId: "messageId",
             Receipts: [{
                 RecipientParticipantId: chatDetails.participantId,
-                DeliverTimestamp: "2022-06-25T00:09:15.864Z",
+                DeliveredTimestamp : "2022-06-25T00:09:15.864Z",
             }]
         });
         await Utils.delay(1);
@@ -386,7 +386,7 @@ describe("ChatController", () => {
             metadata: "metadata",
             contentType: CONTENT_TYPE.readReceipt,
             content: JSON.stringify({
-                MessageId: "messageId"
+                messageId: "messageId"
             })
         };
         const chatController = getChatController(false);
@@ -405,7 +405,7 @@ describe("ChatController", () => {
             metadata: "metadata",
             contentType: CONTENT_TYPE.readReceipt,
             content:  JSON.stringify({
-                MessageId: "messageId"
+                messageId: "messageId"
             })
         };
         const chatController = getChatController();
@@ -418,7 +418,7 @@ describe("ChatController", () => {
                 chatController.sendEvent(args),
                 chatController.sendEvent(args)]).then(() => {
                 expect(chatClient.sendEvent).toHaveBeenCalledTimes(1);
-                expect(chatClient.sendEvent).toHaveBeenCalledWith("token", CONTENT_TYPE.readReceipt, "{\"MessageId\":\"messageId\"}", "INCOMING_READ_RECEIPT", 1000);
+                expect(chatClient.sendEvent).toHaveBeenCalledWith("token", CONTENT_TYPE.readReceipt, "{\"messageId\":\"messageId\"}", "INCOMING_READ_RECEIPT", 1000);
                 done();
             });
         });
@@ -430,14 +430,14 @@ describe("ChatController", () => {
             metadata: "metadata",
             contentType: CONTENT_TYPE.readReceipt,
             content: JSON.stringify({
-                "MessageId": "messageId"
+                "messageId": "messageId"
             })
         };
         const deliveredArgs = {
             metadata: "metadata",
             contentType: CONTENT_TYPE.deliveredReceipt,
             content: JSON.stringify({
-                "MessageId": "messageId2"
+                "messageId": "messageId2"
             })
         };
         const chatController = getChatController();
@@ -453,7 +453,7 @@ describe("ChatController", () => {
         chatController.sendEvent(deliveredArgs);
         chatController.sendEvent(deliveredArgs);
         const finalContent = JSON.stringify({
-            "MessageId": "final-message"
+            "messageId": "final-message"
         });
         const response = await chatController.sendEvent({
             metadata: "metadata",
@@ -472,14 +472,14 @@ describe("ChatController", () => {
             metadata: "metadata",
             contentType: CONTENT_TYPE.readReceipt,
             content: JSON.stringify({
-                "MessageId": "messageId3"
+                "messageId": "messageId3"
             })
         };
         const deliveredArgs = {
             metadata: "metadata",
             contentType: CONTENT_TYPE.deliveredReceipt,
             content: JSON.stringify({
-                "MessageId": "messageId4"
+                "messageId": "messageId4"
             })
         };
         const chatController = getChatController();
@@ -496,7 +496,7 @@ describe("ChatController", () => {
                 chatController.sendEvent(deliveredArgs);
                 chatController.sendEvent(deliveredArgs);
                 const finalContent = JSON.stringify({
-                    "MessageId": "final-delivered-message"
+                    "messageId": "final-delivered-message"
                 });
                 chatController.sendEvent({
                     metadata: "metadata",
