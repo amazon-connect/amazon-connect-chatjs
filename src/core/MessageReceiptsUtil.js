@@ -75,7 +75,9 @@ export default class MessageReceiptsUtil {
       var messageId = content.MessageId;
 
       //ignore repeat events - do not make sendEvent API call.
-      if (self.readPromiseMap.has(messageId) || self.deliveredPromiseMap.has(messageId)) {
+      if (self.readSet.has(messageId) ||
+        (eventType === CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT && self.deliveredSet.has(messageId))) {
+        this.logger.info(`Event already fired ${messageId}: sending messageReceipt ${eventType}`);
         return Promise.resolve({
           message: 'Event already fired'
         });
@@ -95,13 +97,28 @@ export default class MessageReceiptsUtil {
 
       self.throttleInitialEventsToPrioritizeRead = function () {
         // ignore Delivered event if Read event has been triggered for the current messageId
-        if (eventType === CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT &&
-          self.readSet.has(messageId)) {
+        if (eventType === CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT) {
           self.deliveredSet.add(messageId);
-          self.resolveDeliveredPromises(messageId, 'Event already fired');
+          if (self.readSet.has(messageId)) {
+            self.resolveDeliveredPromises(messageId, 'Event already fired');
+            return resolve({
+              message: 'Event already fired'
+            });
+          }
+        }
+        if (self.readSet.has(messageId)) {
+          self.resolveReadPromises(messageId, 'Event already fired');
           return resolve({
             message: 'Event already fired'
           });
+        }
+        if (eventType === CHAT_EVENTS.INCOMING_READ_RECEIPT) {
+          self.readSet.add(messageId);
+        }
+
+        if (content.disableThrottle) {
+          this.logger.info(`throttleFn disabled for ${messageId}: sending messageReceipt ${eventType}`);
+          return resolve(callback.call(ChatClientContext, ...args));
         }
         self.logger.debug('call next throttleFn sendMessageReceipts', args);
         self.sendMessageReceipts.call(self, ChatClientContext, callback, ...args);
@@ -114,9 +131,8 @@ export default class MessageReceiptsUtil {
         }, deliverEventThrottleTime)
       }
 
-      //prevent multiple Read events for same messageId
+      //prevent multiple Read events for same messageId - call readEvent without delay
       if (eventType === CHAT_EVENTS.INCOMING_READ_RECEIPT && !self.readSet.has(messageId)) {
-        self.readSet.add(messageId);
         clearTimeout(self.timeout);
         self.timeout = null;
         self.throttleInitialEventsToPrioritizeRead();

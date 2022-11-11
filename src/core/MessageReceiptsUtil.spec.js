@@ -55,6 +55,23 @@ describe("MessageReceiptsUtil", () => {
         done();
       });
   });
+  test("should not throttle if throttling is disabled for the event", (done) => {
+    jest.useRealTimers();
+    const callback = jest.fn().mockImplementation(() => Promise.resolve("event_processed"));
+    const p1 = messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
+      CONTENT_TYPE.readReceipt, `{"MessageId":"messageId2221", "disableThrottle": true}`,
+      CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000);
+    const p2 = messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
+      CONTENT_TYPE.readReceipt, `{"MessageId":"messageId2221", "disableThrottle": true}`,
+      CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000);
+    Promise.all([p1, p2]).then(res => {
+      expect(res[0]).toEqual("event_processed");
+      expect(res[1]).toEqual({
+        message: 'Event already fired'
+      });
+      done();
+    })
+  });
   test("should throttle and call callback once", async () => {
     jest.useRealTimers();
     const callback = jest.fn();
@@ -98,23 +115,27 @@ describe("MessageReceiptsUtil", () => {
     jest.useRealTimers();
     const callback = jest.fn().mockImplementation(() => Promise.resolve("test"));
     const args = ["token", CONTENT_TYPE.deliveredReceipt,
-      `{"MessageId":"m1"}`, CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000];
+      `{"MessageId":"mess1"}`, CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000];
     messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
     messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
     messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
     messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
-      CONTENT_TYPE.readReceipt, `{"MessageId":"m2"}`,
+      CONTENT_TYPE.readReceipt, `{"MessageId":"mess2"}`,
       CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000).then(() => {
         setTimeout(() => {
+          messageReceiptsUtil.throttleInitialEventsToPrioritizeRead();
+          messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, ...args);
+          messageReceiptsUtil.readSet.add("mess1");
+          messageReceiptsUtil.throttleInitialEventsToPrioritizeRead();
           Promise.all([
             messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
-              CONTENT_TYPE.readReceipt, `{"MessageId":"m3"}`,
+              CONTENT_TYPE.readReceipt, `{"MessageId":"mess3"}`,
               CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000),
             messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
-              CONTENT_TYPE.deliveredReceipt, `{"MessageId":"m4"}`,
+              CONTENT_TYPE.deliveredReceipt, `{"MessageId":"mess4"}`,
               CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000),
             messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
-              CONTENT_TYPE.deliveredReceipt, `{"MessageId":"m5"}`,
+              CONTENT_TYPE.deliveredReceipt, `{"MessageId":"mess5"}`,
               CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT, 1000)]).then(() => {
                 expect(callback).toHaveBeenCalledTimes(3);
                 done();
