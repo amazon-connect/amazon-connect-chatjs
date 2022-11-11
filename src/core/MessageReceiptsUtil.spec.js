@@ -64,9 +64,15 @@ describe("MessageReceiptsUtil", () => {
         const p2 = messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
             CONTENT_TYPE.readReceipt, `{"messageId":"messageId2221", "disableThrottle": true}`,
             CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000);
-        Promise.all([p1, p2]).then(res => {
+            const p3 = messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token", 
+            CONTENT_TYPE.readReceipt, `{}`, 
+            CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000);
+        Promise.all([p1,p2,p3]).then(res => {
             expect(res[0]).toEqual("event_processed");
             expect(res[1]).toEqual({
+                message: 'Event already fired'
+            });
+            expect(res[2]).toEqual({
                 message: 'Event already fired'
             });
             done();

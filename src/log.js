@@ -68,7 +68,8 @@ class LogManagerImpl {
             this._advancedLogWriter = config.advancedLogWriter;
         }
         //enable clientLogger
-        if(config.customizedLogger && typeof config.customizedLogger === "object") {
+        if((config.customizedLogger && typeof config.customizedLogger === "object") || 
+            (config.logger && typeof config.logger === "object")) {
             this.useClientLogger = true;
         }
         this._clientLogger = this.selectLogger(config);
@@ -77,6 +78,9 @@ class LogManagerImpl {
     selectLogger(config) {
         if(config.customizedLogger && typeof config.customizedLogger === "object") {
             return config.customizedLogger;
+        }
+        if(config.logger && typeof config.logger === "object") {
+            return config.logger;
         }
         if(config.useDefaultLogger) {
             return createConsoleLogger();

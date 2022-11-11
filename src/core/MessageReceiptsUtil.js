@@ -75,11 +75,12 @@ export default class MessageReceiptsUtil {
             var deliverEventThrottleTime = 300;
             var eventType = args[3];
             var content = typeof args[2] === "string" ? JSON.parse(args[2]) : args[2];
-            var messageId = content.messageId;
+            var messageId = typeof content === "object" ? content.messageId : "";
 
             //ignore repeat events - do not make sendEvent API call.
-            if (self.readSet.has(messageId) ||
-        (eventType === CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT && self.deliveredSet.has(messageId))) {
+            if (self.readSet.has(messageId) || 
+                (eventType === CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT && self.deliveredSet.has(messageId)) ||
+                !messageId) {
                 this.logger.info(`Event already fired ${messageId}: sending messageReceipt ${eventType}`);
                 return Promise.resolve({
                     message: 'Event already fired'

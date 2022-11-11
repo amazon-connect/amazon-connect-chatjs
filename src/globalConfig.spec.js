@@ -186,6 +186,27 @@ describe("About using customized logger", () => {
         expect(testLogger.error.mock.calls[1][1]).toEqual(["error", 5]);
     });
 
+    it("should match log format when use custom logger", () => {
+        ChatSessionObject.setGlobalConfig({
+            loggerConfig: {
+                logger: testLogger,
+                level: LogLevel.WARN
+            }
+        });
+        var logger = LogManager.getLogger({ prefix: "prefix " });
+
+        logger.warn("warn", 3);
+        logger.error("error", 4);
+        logger.error("error", 5);
+
+        expect(testLogger.warn.mock.calls[0][0]).toEqual("WARN");
+        expect(testLogger.warn.mock.calls[0][1]).toEqual(["warn", 3]);
+        expect(testLogger.error.mock.calls[0][0]).toEqual("ERROR");
+        expect(testLogger.error.mock.calls[0][1]).toEqual(["error", 4]);
+        expect(testLogger.error.mock.calls[1][0]).toEqual("ERROR");
+        expect(testLogger.error.mock.calls[1][1]).toEqual(["error", 5]);
+    });
+
     test("default log level should be INFO", () => {
         ChatSessionObject.setGlobalConfig({
             // "level" property is not set, so it is using default log level(INFO). The DEBUG level in this test will not trigger.
