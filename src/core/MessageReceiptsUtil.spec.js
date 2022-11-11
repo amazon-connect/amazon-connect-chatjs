@@ -152,7 +152,7 @@ describe("MessageReceiptsUtil", () => {
                     "Id": "sampleId3",
                     "Type": "MESSAGEMETADATA",
                     "MessageMetadata": {
-                        "messageId": "messageIdABC",
+                        "MessageId": "messageIdABC",
                         "Receipts": [
                             {
                                 "DeliverTimestamp": "2022-06-25T00:09:15.864Z",

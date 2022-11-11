@@ -176,8 +176,8 @@ var ChatSessionConstructor = args => {
     //Message Receipts enabled by default
     const features = {
         messageReceipts: {
-            shouldSendMessageReceipts: true || args.features?.messageReceipts?.shouldSendMessageReceipts,
-            thorttleTime: DEFAULT_THROTTLE_TIME || args.features?.messageReceipts?.thorttleTime,
+            shouldSendMessageReceipts: args.features?.messageReceipts?.shouldSendMessageReceipts,
+            thorttleTime: args.features?.messageReceipts?.thorttleTime || DEFAULT_THROTTLE_TIME,
         }
     };
     var type = args.type || SESSION_TYPES.AGENT;

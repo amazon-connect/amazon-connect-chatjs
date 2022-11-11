@@ -266,7 +266,7 @@ export default class MessageReceiptsUtil {
                 Transcript.forEach(transcript => {
                     if (transcript?.Type === CHAT_EVENTS.MESSAGE_METADATA) {
                         const Receipt = transcript?.MessageMetadata?.Receipts?.[0];
-                        const messageId = transcript?.MessageMetadata?.messageId;
+                        const messageId = transcript?.MessageMetadata?.MessageId;
                         if (Receipt?.ReadTimestamp) {
                             this.readSet.add(messageId);
                         }
