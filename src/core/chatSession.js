@@ -176,7 +176,7 @@ var ChatSessionConstructor = args => {
     //Message Receipts enabled by default
     const features = {
         messageReceipts: {
-            shouldSendMessageReceipts: args.features?.messageReceipts?.shouldSendMessageReceipts,
+            shouldSendMessageReceipts: args.features?.messageReceipts?.shouldSendMessageReceipts ? args.features?.messageReceipts?.shouldSendMessageReceipts : true,
             thorttleTime: args.features?.messageReceipts?.thorttleTime || DEFAULT_THROTTLE_TIME,
         }
     };
