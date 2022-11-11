@@ -1,6 +1,5 @@
 import MessageReceiptsUtil from "./MessageReceiptsUtil";
 import { CHAT_EVENTS, CONTENT_TYPE } from "../constants";
-import { IllegalJsonException } from "./exceptions";
 
 jest.mock("../log", () => ({
   LogManager: {

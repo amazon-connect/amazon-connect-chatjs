@@ -1,10 +1,10 @@
 import { UnImplementedMethodException } from "../core/exceptions";
 import { GlobalConfig } from "../globalConfig";
 import {
-  REGION_CONFIG,
   REGIONS
 } from "../constants";
 import { LogManager } from "../log";
+//Note: this imports AWS instead from aws-sdk npm package - details in ReadMe
 import { ConnectParticipant } from "./aws-sdk-connectparticipant";
 
 const DEFAULT_PREFIX = "Amazon-Connect-ChatJS-ChatClient";

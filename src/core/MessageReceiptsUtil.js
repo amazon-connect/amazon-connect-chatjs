@@ -71,7 +71,7 @@ export default class MessageReceiptsUtil {
     var deliverEventThrottleTime = 300;
     var size = args.length;
     var eventType = args[size - 2];
-    var content = JSON.parse(args[size - 3]);
+    var content = typeof args[size-3] === "string" ? JSON.parse(args[size-3]) : args[size-3];
     var messageId = content.MessageId;
 
     //ignore repeat events - do not make sendEvent API call.
@@ -136,7 +136,7 @@ export default class MessageReceiptsUtil {
     var size = args.length;
     var throttleTime = args[size - 1] || DEFAULT_THROTTLE_TIME;
     var eventType = args[size - 2];
-    var content = JSON.parse(args[size - 3]);
+    var content = typeof args[size-3] === "string" ? JSON.parse(args[size-3]) : args[size-3];
     var messageId = content.MessageId;
     this.lastReadArgs = eventType === CHAT_EVENTS.INCOMING_READ_RECEIPT ? args : this.lastReadArgs;
 
