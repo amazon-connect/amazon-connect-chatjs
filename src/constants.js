@@ -59,7 +59,10 @@ export const CHAT_EVENTS = {
     CONNECTION_BROKEN: "CONNECTION_BROKEN",
     CONNECTION_ACK: "CONNECTION_ACK",
     CHAT_ENDED: "CHAT_ENDED",
-    MESSAGE_METADATA: "MESSAGEMETADATA"
+    MESSAGE_METADATA: "MESSAGEMETADATA",
+    PARTICIPANT_IDLE: "PARTICIPANT_IDLE",
+    PARTICIPANT_RETURNED: "PARTICIPANT_RETURNED",
+    AUTODISCONNECTION: "AUTODISCONNECTION"
 };
 
 export const CONTENT_TYPE = {
@@ -90,13 +93,19 @@ export const CONTENT_TYPE = {
     interactiveMessage: "application/vnd.amazonaws.connect.message.interactive",
     readReceipt: "application/vnd.amazonaws.connect.event.message.read",
     deliveredReceipt: "application/vnd.amazonaws.connect.event.message.delivered",
+    participantIdle: "application/vnd.amazonaws.connect.event.participant.idle",
+    participantReturned: "application/vnd.amazonaws.connect.event.participant.returned",
+    autoDisconnection: "application/vnd.amazonaws.connect.event.participant.autodisconnection"
 };
 
 export const CHAT_EVENT_TYPE_MAPPING = {
     [CONTENT_TYPE.typing]: CHAT_EVENTS.INCOMING_TYPING,
     [CONTENT_TYPE.readReceipt]: CHAT_EVENTS.INCOMING_READ_RECEIPT,
     [CONTENT_TYPE.deliveredReceipt]: CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT,
-    default: CHAT_EVENTS.INCOMING_MESSAGE
+    [CONTENT_TYPE.participantIdle]: CHAT_EVENTS.PARTICIPANT_IDLE,
+    [CONTENT_TYPE.participantReturned]: CHAT_EVENTS.PARTICIPANT_RETURNED,
+    [CONTENT_TYPE.autoDisconnection]: CHAT_EVENTS.AUTODISCONNECTION,
+    default: CHAT_EVENTS.INCOMING_MESSAGE,
 };
 
 export const EVENT = "EVENT";

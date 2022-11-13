@@ -63,13 +63,15 @@ export default class ConnectionDetailsProvider {
         return this.chatClient
             .createParticipantConnection(this.participantToken, Type ? [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS] : null, ConnectParticipant ? ConnectParticipant : null)
             .then((response) => {
-                this._handleCreateParticipantConnectionResponse(response.data);
-                csmService.addLatencyMetricWithStartTime(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, startTime, CSM_CATEGORY.API);
-                csmService.addCountAndErrorMetric(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, CSM_CATEGORY.API, false);
+                if (Type) {
+                    this._addParticipantConnectionMetric(startTime);
+                    return this._handleCreateParticipantConnectionResponse(response.data, ConnectParticipant);
+                }
             })
             .catch( error => {
-                csmService.addLatencyMetricWithStartTime(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, startTime, CSM_CATEGORY.API);
-                csmService.addCountAndErrorMetric(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, CSM_CATEGORY.API, true);
+                if (Type) {
+                    this._addParticipantConnectionMetric(startTime, true);
+                }
                 return Promise.reject({
                     reason: "Failed to fetch connectionDetails with createParticipantConnection",
                     _debug: error
@@ -78,7 +80,7 @@ export default class ConnectionDetailsProvider {
     }
 
     _addParticipantConnectionMetric(startTime, error = false) {
-        csmService.addLatencyMetric(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, startTime, CSM_CATEGORY.API);
+        csmService.addLatencyMetricWithStartTime(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, startTime, CSM_CATEGORY.API);
         csmService.addCountAndErrorMetric(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, CSM_CATEGORY.API, error);
     }
 

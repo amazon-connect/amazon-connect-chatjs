@@ -67,7 +67,7 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
     }
 }
 
-class ChatSession {
+export class ChatSession {
     constructor(controller) {
         this.controller = controller;
         csmService.addCountMetric(START_CHAT_SESSION, CSM_CATEGORY.UI);
@@ -99,6 +99,18 @@ class ChatSession {
 
     onEnded(callback) {
         this.controller.subscribe(CHAT_EVENTS.CHAT_ENDED, callback);
+    }
+
+    onParticipantIdle(callback) {
+        this.controller.subscribe(CHAT_EVENTS.PARTICIPANT_IDLE, callback);
+    }
+
+    onParticipantReturned(callback) {
+        this.controller.subscribe(CHAT_EVENTS.PARTICIPANT_RETURNED, callback);
+    }
+
+    onAutoDisconnection(callback) {
+        this.controller.subscribe(CHAT_EVENTS.AUTODISCONNECTION, callback);
     }
 
     sendMessage(args) {
