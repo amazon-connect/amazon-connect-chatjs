@@ -33,7 +33,7 @@ class GlobalConfigImpl {
         this.endpointOverride = config.endpoint || this.endpointOverride;
         this.reconnect = config.reconnect === false ? false : this.reconnect;
         this.messageReceiptThrottleTime = config.throttleTime ? config.throttleTime : 5000;
-        this.features["values"] = config.features ? [...config.features] : new Array();
+        this.features["values"] = Array.isArray(config.features) ? [...config.features] : new Array();
     }
 
     getRegion() {

@@ -54,6 +54,7 @@ describe("globalConfig", () => {
             expect(GlobalConfig.getStage()).toEqual(configInput.stage);
             expect(GlobalConfig.getRegion()).toEqual(configInput.region);
             expect(GlobalConfig.getEndpointOverride()).toEqual(configInput.endpoint);
+            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
         });
   
         it("should update stage, region and fetch correct config", () => {
@@ -302,7 +303,11 @@ describe("globalConfig", () => {
         });
         it("should update feature Flag and call the registered listeners only once", () => {
             GlobalConfig.update({
-                features: []
+                features: {
+                    messageReceipts: {
+                        shouldSendMessageReceipts: false
+                    }
+                }
             });
             const handler = jest.fn();
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler)).toEqual(false);
@@ -318,10 +323,18 @@ describe("globalConfig", () => {
 
         it("should update feature Flag and call multiple registered listeners only once", () => {
             GlobalConfig.update({
-                features: []
+                features: {
+                    messageReceipts: {
+                        shouldSendMessageReceipts: false
+                    }
+                }
             });
             const handler = jest.fn().mockReturnValue(true);
             const handler2 = jest.fn();
+            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler)).toEqual(false);
+            GlobalConfig.update({
+                features: []
+            });
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler)).toEqual(false);
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler2)).toEqual(false);
             GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
@@ -333,7 +346,7 @@ describe("globalConfig", () => {
                 features: []
             });
             GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
-            expect(handler).toHaveBeenCalledTimes(2);
+            expect(handler).toHaveBeenCalledTimes(3);
             expect(handler2).toHaveBeenCalledTimes(1);
         });
     });
