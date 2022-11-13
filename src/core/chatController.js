@@ -66,7 +66,7 @@ class ChatController {
                     }
                 ]
                 : [];
-            csmService.addLatencyMetric(method, startTime, CSM_CATEGORY.API, contentTypeDimension);
+            csmService.addLatencyMetricWithStartTime(method, startTime, CSM_CATEGORY.API, contentTypeDimension);
             csmService.addCountAndErrorMetric(method, CSM_CATEGORY.API, false, contentTypeDimension);
             response.metadata = metadata;
             return response;
@@ -83,7 +83,7 @@ class ChatController {
                     }
                 ]
                 : [];
-            csmService.addLatencyMetric(method, startTime, CSM_CATEGORY.API, contentTypeDimension);
+            csmService.addLatencyMetricWithStartTime(method, startTime, CSM_CATEGORY.API, contentTypeDimension);
             csmService.addCountAndErrorMetric(method, CSM_CATEGORY.API, true, contentTypeDimension);
             error.metadata = metadata;
             return Promise.reject(error);
@@ -371,12 +371,12 @@ class ChatController {
                 this._participantDisconnected = true;
                 this.cleanUpOnParticipantDisconnect();
                 this.breakConnection();
-                csmService.addLatencyMetric(ACPS_METHODS.DISCONNECT_PARTICIPANT, startTime, CSM_CATEGORY.API);
+                csmService.addLatencyMetricWithStartTime(ACPS_METHODS.DISCONNECT_PARTICIPANT, startTime, CSM_CATEGORY.API);
                 csmService.addCountAndErrorMetric(ACPS_METHODS.DISCONNECT_PARTICIPANT, CSM_CATEGORY.API, false);
                 return response;
             }, error => {
                 this._sendInternalLogToServer(this.logger.error("Disconnect participant failed. Error:", error));
-                csmService.addLatencyMetric(ACPS_METHODS.DISCONNECT_PARTICIPANT, startTime, CSM_CATEGORY.API);
+                csmService.addLatencyMetricWithStartTime(ACPS_METHODS.DISCONNECT_PARTICIPANT, startTime, CSM_CATEGORY.API);
                 csmService.addCountAndErrorMetric(ACPS_METHODS.DISCONNECT_PARTICIPANT, CSM_CATEGORY.API, true);
                 return Promise.reject(error);
             });

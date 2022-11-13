@@ -130,7 +130,7 @@ describe("ChatController", () => {
             sendAttachment: jest.fn(() => Promise.resolve({ testField: "test" })),
             downloadAttachment: jest.fn(() => Promise.resolve({ testField: "test" })),
         };
-        jest.spyOn(csmService, 'addLatencyMetric').mockImplementation(() => {});
+        jest.spyOn(csmService, 'addLatencyMetricWithStartTime').mockImplementation(() => {});
         jest.spyOn(csmService, 'addCountAndErrorMetric').mockImplementation(() => {});
     });
 
@@ -203,7 +203,7 @@ describe("ChatController", () => {
         const response = await chatController.sendMessage(args);
         expect(chatClient.sendMessage).toHaveBeenCalledWith("token", "message", CONTENT_TYPE.textPlain);
         expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.SEND_MESSAGE, CSM_CATEGORY.API, false, [{name: "ContentType", value: CONTENT_TYPE.textPlain}]);
-        expect(csmService.addLatencyMetric).toHaveBeenCalledWith(ACPS_METHODS.SEND_MESSAGE, expect.anything(), CSM_CATEGORY.API, [{name: "ContentType", value: CONTENT_TYPE.textPlain}]);
+        expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.SEND_MESSAGE, expect.anything(), CSM_CATEGORY.API, [{name: "ContentType", value: CONTENT_TYPE.textPlain}]);
         expect(response.metadata).toBe("metadata");
         expect(response.testField).toBe("test");
     });
@@ -223,7 +223,7 @@ describe("ChatController", () => {
         } catch (e) {
             expect(e.metadata).toEqual("metadata");
             expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.SEND_MESSAGE, CSM_CATEGORY.API, true, [{name: "ContentType", value: CONTENT_TYPE.textPlain}]);
-            expect(csmService.addLatencyMetric).toHaveBeenCalledWith(ACPS_METHODS.SEND_MESSAGE, expect.anything(), CSM_CATEGORY.API, [{name: "ContentType", value: CONTENT_TYPE.textPlain}]);
+            expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.SEND_MESSAGE, expect.anything(), CSM_CATEGORY.API, [{name: "ContentType", value: CONTENT_TYPE.textPlain}]);
         }
     });
   
@@ -239,7 +239,7 @@ describe("ChatController", () => {
         expect(response.metadata).toBe("metadata");
         expect(response.testField).toBe("test");
         expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.SEND_EVENT, CSM_CATEGORY.API, false, [{name: "ContentType", value: CONTENT_TYPE.participantJoined}]);
-        expect(csmService.addLatencyMetric).toHaveBeenCalledWith(ACPS_METHODS.SEND_EVENT, expect.anything(), CSM_CATEGORY.API, [{name: "ContentType", value: CONTENT_TYPE.participantJoined}]);
+        expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.SEND_EVENT, expect.anything(), CSM_CATEGORY.API, [{name: "ContentType", value: CONTENT_TYPE.participantJoined}]);
     });
 
     test("sendEvent throws an error", async () => {
@@ -256,7 +256,7 @@ describe("ChatController", () => {
         } catch (e) {
             expect(e.metadata).toEqual("metadata");
             expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.SEND_EVENT, CSM_CATEGORY.API, true, [{name: "ContentType", value: CONTENT_TYPE.participantJoined}]);
-            expect(csmService.addLatencyMetric).toHaveBeenCalledWith(ACPS_METHODS.SEND_EVENT, expect.anything(), CSM_CATEGORY.API, [{name: "ContentType", value: CONTENT_TYPE.participantJoined}]);
+            expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.SEND_EVENT, expect.anything(), CSM_CATEGORY.API, [{name: "ContentType", value: CONTENT_TYPE.participantJoined}]);
         }
     });
 
@@ -274,7 +274,7 @@ describe("ChatController", () => {
         expect(response.metadata).toBe("metadata");
         expect(response.testField).toBe("test");
         expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.SEND_ATTACHMENT, CSM_CATEGORY.API, false, [{name: "ContentType", value: "attachment-type"}]);
-        expect(csmService.addLatencyMetric).toHaveBeenCalledWith(ACPS_METHODS.SEND_ATTACHMENT, expect.anything(), CSM_CATEGORY.API, [{name: "ContentType", value: "attachment-type"}]);
+        expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.SEND_ATTACHMENT, expect.anything(), CSM_CATEGORY.API, [{name: "ContentType", value: "attachment-type"}]);
     });
 
     test("sendAttachment throws an error", async () => {
@@ -293,7 +293,7 @@ describe("ChatController", () => {
         } catch (e) {
             expect(e.metadata).toEqual("metadata");
             expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.SEND_ATTACHMENT, CSM_CATEGORY.API, true, [{name: "ContentType", value: "attachment-type"}]);
-            expect(csmService.addLatencyMetric).toHaveBeenCalledWith(ACPS_METHODS.SEND_ATTACHMENT, expect.anything(), CSM_CATEGORY.API, [{name: "ContentType", value: "attachment-type"}]);
+            expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.SEND_ATTACHMENT, expect.anything(), CSM_CATEGORY.API, [{name: "ContentType", value: "attachment-type"}]);
         }
     });
 
@@ -309,7 +309,7 @@ describe("ChatController", () => {
         expect(response.metadata).toBe("metadata");
         expect(response.testField).toBe("test");
         expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.DOWNLOAD_ATTACHMENT, CSM_CATEGORY.API, false, []);
-        expect(csmService.addLatencyMetric).toHaveBeenCalledWith(ACPS_METHODS.DOWNLOAD_ATTACHMENT, expect.anything(), CSM_CATEGORY.API, []);
+        expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.DOWNLOAD_ATTACHMENT, expect.anything(), CSM_CATEGORY.API, []);
     });
 
     test("downloadAttachment throws an error", async () => {
@@ -326,7 +326,7 @@ describe("ChatController", () => {
         } catch (e) {
             expect(e.metadata).toEqual("metadata");
             expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.DOWNLOAD_ATTACHMENT, CSM_CATEGORY.API, true, []);
-            expect(csmService.addLatencyMetric).toHaveBeenCalledWith(ACPS_METHODS.DOWNLOAD_ATTACHMENT, expect.anything(), CSM_CATEGORY.API, []);
+            expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.DOWNLOAD_ATTACHMENT, expect.anything(), CSM_CATEGORY.API, []);
         }
     });
 
@@ -350,7 +350,7 @@ describe("ChatController", () => {
         expect(response.metadata).toBe("metadata");
         expect(response.testField).toBe("test");
         expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.GET_TRANSCRIPT, CSM_CATEGORY.API, false, []);
-        expect(csmService.addLatencyMetric).toHaveBeenCalledWith(ACPS_METHODS.GET_TRANSCRIPT, expect.anything(), CSM_CATEGORY.API, []);
+        expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.GET_TRANSCRIPT, expect.anything(), CSM_CATEGORY.API, []);
     });
 
     test("getTranscript throws an error", async () => {
@@ -366,7 +366,7 @@ describe("ChatController", () => {
         } catch (e) {
             expect(e.metadata).toEqual("metadata");
             expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.GET_TRANSCRIPT, CSM_CATEGORY.API, true, []);
-            expect(csmService.addLatencyMetric).toHaveBeenCalledWith(ACPS_METHODS.GET_TRANSCRIPT, expect.anything(), CSM_CATEGORY.API, []);
+            expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.GET_TRANSCRIPT, expect.anything(), CSM_CATEGORY.API, []);
         }
     });
   
@@ -377,7 +377,7 @@ describe("ChatController", () => {
         expect(chatClient.disconnectParticipant).toHaveBeenCalledWith("token");
         expect(response.testField).toBe("test");
         expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.DISCONNECT_PARTICIPANT, CSM_CATEGORY.API, false);
-        expect(csmService.addLatencyMetric).toHaveBeenCalledWith(ACPS_METHODS.DISCONNECT_PARTICIPANT, expect.anything(), CSM_CATEGORY.API);
+        expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.DISCONNECT_PARTICIPANT, expect.anything(), CSM_CATEGORY.API);
     });
 
     test("disconnect throws an error", async () => {
@@ -390,7 +390,7 @@ describe("ChatController", () => {
         } catch (e) {
             expect(e).toEqual("Error");
             expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.DISCONNECT_PARTICIPANT, CSM_CATEGORY.API, true);
-            expect(csmService.addLatencyMetric).toHaveBeenCalledWith(ACPS_METHODS.DISCONNECT_PARTICIPANT, expect.anything(), CSM_CATEGORY.API);
+            expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.DISCONNECT_PARTICIPANT, expect.anything(), CSM_CATEGORY.API);
         }
     });
   

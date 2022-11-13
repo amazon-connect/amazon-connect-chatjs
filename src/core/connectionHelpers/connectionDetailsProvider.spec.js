@@ -26,7 +26,7 @@ describe("ConnectionDetailsProvider", () => {
             features: [FEATURES.PARTICIPANT_CONN_ACK]
         });
         jest.resetAllMocks();
-        jest.spyOn(csmService, 'addLatencyMetric').mockImplementation(() => {});
+        jest.spyOn(csmService, 'addLatencyMetricWithStartTime').mockImplementation(() => {});
         jest.spyOn(csmService, 'addCountAndErrorMetric').mockImplementation(() => {});
 
         fetchedConnectionDetails = {
@@ -117,7 +117,7 @@ describe("ConnectionDetailsProvider", () => {
                 expect(chatClient.createParticipantConnection).toHaveBeenCalledTimes(1);
                 expect(chatClient.createParticipantConnection).toHaveBeenLastCalledWith(participantToken, [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS], null);
                 expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, CSM_CATEGORY.API, false);
-                expect(csmService.addLatencyMetric).toHaveBeenCalledWith(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, expect.anything(), CSM_CATEGORY.API);
+                expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, expect.anything(), CSM_CATEGORY.API);
             });
 
             test("hits API on second call", async () => {
@@ -138,7 +138,7 @@ describe("ConnectionDetailsProvider", () => {
                     expect(chatClient.createParticipantConnection).toHaveBeenCalledTimes(1);
                     expect(chatClient.createParticipantConnection).toHaveBeenLastCalledWith(participantToken, [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS], null);
                     expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, CSM_CATEGORY.API, true);
-                    expect(csmService.addLatencyMetric).toHaveBeenCalledWith(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, expect.anything(), CSM_CATEGORY.API);
+                    expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, expect.anything(), CSM_CATEGORY.API);
                 }
             });
         });

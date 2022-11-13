@@ -152,13 +152,13 @@ class LpcConnectionHelperBase {
                         };
                         const logContent = { expiry: connectionDetails.expiry, transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS };
                         this.logger.debug("Websocket manager initialized. Connection details:", logContent);
-                        csmService.addLatencyMetricWithStartTime(WEBSOCKET_EVENTS.InitWebsocket, startTime, CSM_CATEGORY.API);
+                        csmService.addLatencyMetricWithStartTimeWithStartTime(WEBSOCKET_EVENTS.InitWebsocket, startTime, CSM_CATEGORY.API);
                         csmService.addCountAndErrorMetric(WEBSOCKET_EVENTS.InitWebsocket, CSM_CATEGORY.API, false);
                         return details;
                     }
                     ).catch(error => {
                         this.logger.error("Initializing Websocket Manager failed:", error);
-                        csmService.addLatencyMetricWithStartTime(WEBSOCKET_EVENTS.InitWebsocket, startTime, CSM_CATEGORY.API);
+                        csmService.addLatencyMetricWithStartTimeWithStartTime(WEBSOCKET_EVENTS.InitWebsocket, startTime, CSM_CATEGORY.API);
                         csmService.addCountAndErrorMetric(WEBSOCKET_EVENTS.InitWebsocket, CSM_CATEGORY.API, true);
                         throw error;
                     })

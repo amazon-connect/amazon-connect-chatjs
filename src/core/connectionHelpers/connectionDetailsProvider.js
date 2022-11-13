@@ -63,15 +63,13 @@ export default class ConnectionDetailsProvider {
         return this.chatClient
             .createParticipantConnection(this.participantToken, Type ? [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS] : null, ConnectParticipant ? ConnectParticipant : null)
             .then((response) => {
-                if (Type) {
-                    this._addParticipantConnectionMetric(startTime);
-                    return this._handleCreateParticipantConnectionResponse(response.data, ConnectParticipant);
-                }
+                this._handleCreateParticipantConnectionResponse(response.data);
+                csmService.addLatencyMetricWithStartTime(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, startTime, CSM_CATEGORY.API);
+                csmService.addCountAndErrorMetric(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, CSM_CATEGORY.API, false);
             })
             .catch( error => {
-                if (Type) {
-                    this._addParticipantConnectionMetric(startTime, true);
-                }
+                csmService.addLatencyMetricWithStartTime(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, startTime, CSM_CATEGORY.API);
+                csmService.addCountAndErrorMetric(ACPS_METHODS.CREATE_PARTICIPANT_CONNECTION, CSM_CATEGORY.API, true);
                 return Promise.reject({
                     reason: "Failed to fetch connectionDetails with createParticipantConnection",
                     _debug: error
