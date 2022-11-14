@@ -190,9 +190,10 @@ class ChatController {
         this.sessionMetadata = args.metadata || null;
         this.argsValidator.validateConnectChat(args);
         const connectionDetailsProvider = this._getConnectionDetailsProvider();
-        return connectionDetailsProvider.fetchConnectionToken()
+        return connectionDetailsProvider.fetchConnectionDetails()
             .then(
-                () => this._initConnectionHelper(connectionDetailsProvider)
+                (connectionDetails) => 
+                    this._initConnectionHelper(connectionDetailsProvider, connectionDetails)
             )
             .then(response => this._onConnectSuccess(response, connectionDetailsProvider))
             .catch(err => {
@@ -200,13 +201,14 @@ class ChatController {
             });
     }
 
-    _initConnectionHelper(connectionDetailsProvider) {
+    _initConnectionHelper(connectionDetailsProvider, connectionDetails) {
         this.connectionHelper = new LpcConnectionHelper(
             this.contactId,
             this.initialContactId,
             connectionDetailsProvider,
             this.websocketManager,
-            this.logMetaData
+            this.logMetaData,
+            connectionDetails
         );
         this.connectionHelper.onEnded(this._handleEndedConnection.bind(this));
         this.connectionHelper.onConnectionLost(this._handleLostConnection.bind(this));

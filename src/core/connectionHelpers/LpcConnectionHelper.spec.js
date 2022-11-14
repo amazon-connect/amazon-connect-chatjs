@@ -8,10 +8,15 @@ describe("LpcConnectionHelper", () => {
 
     let connectionDetailsProvider = {
         fetchConnectionDetails: () => { },
-        fetchConnectionToken: () => { }
     };
 
     let autoCreatedWebsocketManager;
+    const connectionDetailsMock = {
+        url: "existingUrl",
+        expiry: "existingExpiry",
+        connectionTokenExpiry: "connectionTokenExpiry",
+        connectionToken: "existingToken"
+    };
 
     function createWebsocketManager() {
         const messageHandlers = [];
@@ -67,7 +72,8 @@ describe("LpcConnectionHelper", () => {
 	     jest.spyOn(csmService, 'addCountMetric').mockImplementation(() => {});
         connectionDetailsProvider.fetchConnectionDetails = jest.fn(() => Promise.resolve({
             url: "url",
-            expiry: "expiry"
+            expiry: "expiry",
+            connectionToken: "token"
         }));
         connectionDetailsProvider.getConnectionTokenExpiry = jest.fn(() => Promise.resolve("expiry"));
         LpcConnectionHelper.agentBaseInstance = null;
@@ -79,8 +85,8 @@ describe("LpcConnectionHelper", () => {
         });
     });
 
-    function getLpcConnectionHelper(initialContactId, websocketManager) {
-        return new LpcConnectionHelper(initialContactId, initialContactId, connectionDetailsProvider, websocketManager);
+    function getLpcConnectionHelper(initialContactId, websocketManager, connectionDetails) {
+        return new LpcConnectionHelper(initialContactId, initialContactId, connectionDetailsProvider, websocketManager, {}, connectionDetails);
     }
 
     describe("Connections with provided WebsocketManager (agent connections)", () => {
@@ -181,7 +187,14 @@ describe("LpcConnectionHelper", () => {
         });
 
         test("call relevant methods on new WebsocketManager during initialization", () => {
-            getLpcConnectionHelper("id").start();
+            const lpcConnectionHelperInstance = getLpcConnectionHelper("id", undefined, connectionDetailsMock);
+            lpcConnectionHelperInstance.start();
+            expect(lpcConnectionHelperInstance.customerConnection).toEqual(true);
+            const lpcConnectionHelperBaseInstance = LpcConnectionHelper.customerBaseInstances["id"];
+            expect(lpcConnectionHelperBaseInstance.initialConnectionDetails).toEqual({"connectionToken": "existingToken", "connectionTokenExpiry": "connectionTokenExpiry", "expiry": "existingExpiry", "url": "existingUrl"});
+            autoCreatedWebsocketManager.$simulateRefresh().then(() => {
+                expect(lpcConnectionHelperBaseInstance.initialConnectionDetails).toEqual(null);
+            });
             expect(autoCreatedWebsocketManager.subscribeTopics).toHaveBeenCalledTimes(1);
             expect(autoCreatedWebsocketManager.subscribeTopics).toHaveBeenCalledWith(["aws/chat"]);
             expect(autoCreatedWebsocketManager.onMessage).toHaveBeenCalledTimes(1);

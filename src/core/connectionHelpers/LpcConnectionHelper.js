@@ -11,7 +11,7 @@ import { csmService } from "../../service/csmService";
 
 class LpcConnectionHelper extends BaseConnectionHelper {
 
-    constructor(contactId, initialContactId, connectionDetailsProvider, websocketManager, logMetaData) {
+    constructor(contactId, initialContactId, connectionDetailsProvider, websocketManager, logMetaData, connectionDetails) {
         super(connectionDetailsProvider, logMetaData);
 
         // WebsocketManager instance is only provided iff agent connections
@@ -21,7 +21,7 @@ class LpcConnectionHelper extends BaseConnectionHelper {
             // ensure customer base instance exists for this contact ID
             if (!LpcConnectionHelper.customerBaseInstances[contactId]) {
                 LpcConnectionHelper.customerBaseInstances[contactId] =
-          new LpcConnectionHelperBase(connectionDetailsProvider, undefined, logMetaData);
+          new LpcConnectionHelperBase(connectionDetailsProvider, undefined, logMetaData, connectionDetails);
             }
             this.baseInstance = LpcConnectionHelper.customerBaseInstances[contactId];
         } else {
@@ -115,7 +115,7 @@ LpcConnectionHelper.agentBaseInstance = null;
 
 
 class LpcConnectionHelperBase {
-    constructor(connectionDetailsProvider, websocketManager, logMetaData) {
+    constructor(connectionDetailsProvider, websocketManager, logMetaData, connectionDetails) {
         this.status = ConnectionHelperStatus.NeverStarted;
         this.eventBus = new EventBus();
         window.LpcConnectionHelperBase = {
@@ -125,6 +125,7 @@ class LpcConnectionHelperBase {
             prefix: "ChatJS-LPCConnectionHelperBase",
             logMetaData
         });
+        this.initialConnectionDetails = connectionDetails;
         this.initWebsocketManager(websocketManager, connectionDetailsProvider, logMetaData);
     }
 
@@ -140,30 +141,51 @@ class LpcConnectionHelperBase {
         this.logger.info("Initializing websocket manager.");
         if (!websocketManager) {
             const startTime = new Date().getTime();
-            this.websocketManager.init(
-                () => connectionDetailsProvider.fetchConnectionDetails()
-                    .then(connectionDetails => {
-                        const details = {
-                            webSocketTransport: {
-                                url: connectionDetails.url,
-                                expiry: connectionDetails.expiry,
-                                transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS
-                            }
-                        };
-                        const logContent = { expiry: connectionDetails.expiry, transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS };
-                        this.logger.debug("Websocket manager initialized. Connection details:", logContent);
-                        csmService.addLatencyMetricWithStartTimeWithStartTime(WEBSOCKET_EVENTS.InitWebsocket, startTime, CSM_CATEGORY.API);
-                        csmService.addCountAndErrorMetric(WEBSOCKET_EVENTS.InitWebsocket, CSM_CATEGORY.API, false);
-                        return details;
-                    }
-                    ).catch(error => {
-                        this.logger.error("Initializing Websocket Manager failed:", error);
-                        csmService.addLatencyMetricWithStartTimeWithStartTime(WEBSOCKET_EVENTS.InitWebsocket, startTime, CSM_CATEGORY.API);
-                        csmService.addCountAndErrorMetric(WEBSOCKET_EVENTS.InitWebsocket, CSM_CATEGORY.API, true);
-                        throw error;
-                    })
-            );
+            this.websocketManager.init(() =>
+                this._getConnectionDetails(connectionDetailsProvider, this.initialConnectionDetails, startTime).then((response) => {
+                    this.initialConnectionDetails = null;
+                    return response;
+            }));
         }
+    }
+
+    _getConnectionDetails(connectionDetailsProvider, connectionDetails, startTime) {
+        if (connectionDetails !== null && typeof connectionDetails === "object" && connectionDetails.expiry && connectionDetails.connectionTokenExpiry) {
+            const logContent = {expiry: connectionDetails.expiry, transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS};
+            this.logger.debug("Websocket manager initialized. Connection details:", logContent);
+            return Promise.resolve({
+                webSocketTransport: {
+                    url: connectionDetails.url,
+                    expiry: connectionDetails.expiry,
+                    transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS
+                }
+            });
+        } else {
+            return connectionDetailsProvider.fetchConnectionDetails()
+                .then(connectionDetails => {
+                    const details = {
+                        webSocketTransport: {
+                            url: connectionDetails.url,
+                            expiry: connectionDetails.expiry,
+                            transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS
+                        }
+                    };
+                    const logContent = { expiry: connectionDetails.expiry, transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS };
+                    this.logger.debug("Websocket manager initialized. Connection details:", logContent);
+                    this._addWebsocketInitCSMMetric(startTime);
+                    return details;
+                }
+                ).catch(error => {
+                    this.logger.error("Initializing Websocket Manager failed:", error);
+                    this._addWebsocketInitCSMMetric(startTime, true);
+                    throw error;
+                });
+        }
+    }
+
+    _addWebsocketInitCSMMetric(startTime, isError = false) {
+        csmService.addLatencyMetric(WEBSOCKET_EVENTS.InitWebsocket, startTime, CSM_CATEGORY.API);
+        csmService.addCountAndErrorMetric(WEBSOCKET_EVENTS.InitWebsocket, CSM_CATEGORY.API, isError);
     }
 
     end() {

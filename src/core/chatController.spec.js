@@ -65,11 +65,9 @@ describe("ChatController", () => {
                 fetchConnectionDetails: () => {
                     return Promise.resolve({
                         url: "url",
-                        expiry: "expiry"
+                        expiry: "expiry",
+                        connectionToken: "token"
                     });
-                },
-                fetchConnectionToken: () => {
-                    return Promise.resolve("token");
                 },
                 callCreateParticipantConnection: () => Promise.resolve("connAck"),
                 getConnectionDetails: () => {},
@@ -172,12 +170,10 @@ describe("ChatController", () => {
                 fetchConnectionDetails: () => {
                     return Promise.reject({
                         url: "url",
-                        expiry: "expiry"
+                        expiry: "expiry",
+                        connectionToken: "token"
                     });
                 },
-                fetchConnectionToken: () => {
-                    return Promise.reject("token");
-                }
             };
         });
         startResponse = Promise.resolve();

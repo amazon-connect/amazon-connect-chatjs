@@ -29,11 +29,7 @@ export default class ConnectionDetailsProvider {
     }
 
     fetchConnectionDetails() {
-        return this._fetchConnectionDetails().then(() => this.connectionDetails);
-    }
-
-    fetchConnectionToken() {
-        return this._fetchConnectionDetails().then(() => this.connectionToken);
+        return this._fetchConnectionDetails().then((connectionDetails) => connectionDetails);
     }
 
     _handleCreateParticipantConnectionResponse(connectionDetails, ConnectParticipant) {
@@ -42,20 +38,26 @@ export default class ConnectionDetailsProvider {
             expiry: connectionDetails.Websocket.ConnectionExpiry,
             transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS,
             connectionAcknowledged: ConnectParticipant,
+            connectionToken: connectionDetails.ConnectionCredentials.ConnectionToken,
+            connectionTokenExpiry: connectionDetails.ConnectionCredentials.Expiry,
         };
         this.connectionToken = connectionDetails.ConnectionCredentials.ConnectionToken;
         this.connectionTokenExpiry = connectionDetails.ConnectionCredentials.Expiry;
-        return connectionDetails;
+        return this.connectionDetails;
     }
 
     _handleGetConnectionTokenResponse(connectionTokenDetails) {
         this.connectionDetails = {
             url: null,
-            expiry: null
+            expiry: null,
+            connectionToken: connectionTokenDetails.participantToken,
+            connectionTokenExpiry: connectionTokenDetails.expiry,
+            transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS,
+            connectionAcknowledged: false,
         };
         this.connectionToken = connectionTokenDetails.participantToken;
         this.connectionTokenExpiry = connectionTokenDetails.expiry;
-        return Promise.resolve(connectionTokenDetails);
+        return Promise.resolve(this.connectionDetails);
     }
 
     callCreateParticipantConnection({ Type = true, ConnectParticipant = false } = {}){

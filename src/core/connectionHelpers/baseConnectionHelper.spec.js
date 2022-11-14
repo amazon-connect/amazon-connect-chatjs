@@ -4,12 +4,19 @@ describe("BaseConnectionHelper", () => {
 
     let baseConnectionHelper;
     const connectionDetailsProvider = {
-        fetchConnectionToken: () => {},
+        fetchConnectionDetails: () => {},
         getConnectionTokenExpiry: () => {}
     };
 
     beforeEach(() => {
-        connectionDetailsProvider.fetchConnectionToken = jest.fn(() => Promise.resolve());
+        connectionDetailsProvider.fetchConnectionDetails = jest.fn(() => Promise.resolve({
+            url: "url",
+            expiry: "expiry",
+            transportLifeTimeInSeconds: new Date(new Date().getTime() + 60*60*1000),
+            connectionAcknowledged: "connectionAcknowledged",
+            connectionToken: "connectionToken",
+            connectionTokenExpiry: new Date(new Date().getTime() + 22*60*60*1000),
+        }));
         // .getConnectionTokenExpiry usually returns the date, in ms since 1969, when this connection token expires)
         connectionDetailsProvider.getConnectionTokenExpiry = jest.fn(() => { return new Date(new Date().getTime() + 22*60*60*1000);});
         baseConnectionHelper = new BaseConnectionHelper(connectionDetailsProvider);
@@ -26,9 +33,9 @@ describe("BaseConnectionHelper", () => {
 
     test("start initiates fetch interval", () => {
         baseConnectionHelper.start();
-        expect(connectionDetailsProvider.fetchConnectionToken).toHaveBeenCalledTimes(0);
+        expect(connectionDetailsProvider.fetchConnectionDetails).toHaveBeenCalledTimes(0);
         jest.runOnlyPendingTimers();
-        expect(connectionDetailsProvider.fetchConnectionToken).toHaveBeenCalledTimes(1);
+        expect(connectionDetailsProvider.fetchConnectionDetails).toHaveBeenCalledTimes(1);
     });
 
     test("end stops fetch interval", () => {
@@ -36,7 +43,7 @@ describe("BaseConnectionHelper", () => {
         jest.runOnlyPendingTimers();
         baseConnectionHelper.end();
         jest.runOnlyPendingTimers();
-        expect(connectionDetailsProvider.fetchConnectionToken).toHaveBeenCalledTimes(1);
+        expect(connectionDetailsProvider.fetchConnectionDetails).toHaveBeenCalledTimes(1);
     });
 
     test("getTimeToConnectionTokenExpiry returns the expiry, not the date", () => {

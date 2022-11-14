@@ -29,7 +29,8 @@ export default class BaseConnectionHelper {
 
     startConnectionTokenPolling(isFirstCall=false, expiry=CONNECTION_TOKEN_POLLING_INTERVAL_IN_MS) {
         if (!isFirstCall){
-            return this.connectionDetailsProvider.fetchConnectionToken()
+            //TODO: use Type field to avoid fetching websocket connection
+            return this.connectionDetailsProvider.fetchConnectionDetails()
                 .then(response => {
                     this.logger.info("Connection token polling succeeded.");
                     expiry = this.getTimeToConnectionTokenExpiry();
