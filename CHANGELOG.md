@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1]
+### Added
+- Add browser and OS usage client side metric to enhance the proactive identify issues.
+
 ## [1.2.0]
 ### Added
 - Add client side metric service in order to enhance the customer experience and proactively identify issues. Detail: [README.md](https://github.com/amazon-connect/amazon-connect-chatjs#Client-side-metric).
