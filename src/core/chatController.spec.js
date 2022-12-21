@@ -7,7 +7,10 @@ import {
     EVENT,
     CSM_CATEGORY,
     ACPS_METHODS,
-    FEATURES
+    FEATURES,
+    SEND_EVENT_CONACK_THROTTLED,
+    SEND_EVENT_CONACK_FAILURE,
+    CREATE_PARTICIPANT_CONACK_FAILURE
 } from "../constants";
 import Utils from "../utils";
 import { ChatController } from "./chatController";
@@ -16,6 +19,7 @@ import LpcConnectionHelper from "./connectionHelpers/LpcConnectionHelper";
 import connectionDetailsProvider from "./connectionHelpers/connectionDetailsProvider";
 import { csmService } from "../service/csmService";
 import { GlobalConfig } from "../globalConfig";
+import { jest } from "@jest/globals";
 
 jest.mock("./connectionHelpers/LpcConnectionHelper");
 jest.mock("./connectionHelpers/connectionDetailsProvider");
@@ -130,6 +134,7 @@ describe("ChatController", () => {
         };
         jest.spyOn(csmService, 'addLatencyMetricWithStartTime').mockImplementation(() => {});
         jest.spyOn(csmService, 'addCountAndErrorMetric').mockImplementation(() => {});
+        jest.spyOn(csmService, 'addCountMetric').mockImplementation(() => {});
     });
 
     test("Connection gets established successfully", async () => {
@@ -150,6 +155,75 @@ describe("ChatController", () => {
         await Utils.delay(1);
         expect(connectionEstablishedHandler).toHaveBeenCalledTimes(1);
         expect(chatClient.sendEvent).not.toHaveBeenCalled();
+    });
+
+    test("Connect successfully, should call CreateParticipantConnection when SendEvent is throttled and message receipts is enabled", async () => {
+        const callOrder = [];
+        connectionDetailsProvider.mockImplementation(() => {
+            return {
+                fetchConnectionDetails: () => {
+                    return Promise.resolve({
+                        url: "url",
+                        expiry: "expiry",
+                        connectionToken: "token"
+                    });
+                },
+                callCreateParticipantConnection: jest.fn().mockImplementation(() => {
+                    callOrder.push('callCreateParticipantConnection');
+                }),
+                getConnectionDetails: () => {},
+            };
+        });
+        const chatController = getChatController();
+        chatClient.sendEvent = jest.fn().mockImplementation(() => {
+            callOrder.push('sendEvent');
+            return  Promise.reject({ statusCode: 429, message: "throttled" });
+        });
+        await chatController.connect();
+        await Utils.delay(1);
+        expect(chatClient.sendEvent).toHaveBeenCalledWith("token", CONTENT_TYPE.connectionAcknowledged, null);
+        expect(csmService.addCountMetric).toHaveBeenCalledWith(SEND_EVENT_CONACK_THROTTLED, CSM_CATEGORY.API);
+        expect(csmService.addCountMetric).toHaveBeenCalledWith(SEND_EVENT_CONACK_FAILURE, CSM_CATEGORY.API);
+        expect(connectionDetailsProvider.mock.results[0].value.callCreateParticipantConnection).toHaveBeenCalledWith({
+            "ConnectParticipant": true, 
+            "Type": false
+        });
+        expect(callOrder).toEqual(['sendEvent', 'callCreateParticipantConnection']);
+    });
+
+    test("Connect successfully, call CreateParticipantConnection fail, then call sendEvent", async () => {
+        const callOrder = [];
+        connectionDetailsProvider.mockImplementation(() => {
+            return {
+                fetchConnectionDetails: () => {
+                    return Promise.resolve({
+                        url: "url",
+                        expiry: "expiry",
+                        connectionToken: "token"
+                    });
+                },
+                callCreateParticipantConnection: jest.fn().mockImplementation(() =>{ 
+                    callOrder.push('callCreateParticipantConnection');
+                    return Promise.reject("connAck");
+                }),
+                getConnectionDetails: () => {},
+            };
+        });
+        chatClient.sendEvent = jest.fn().mockImplementation(() => {
+            callOrder.push('sendEvent');
+            return  Promise.resolve({ message: "sendEvent" });
+        });
+        const chatController = getChatController();
+        GlobalConfig.setFeatureFlag(FEATURES.PARTICIPANT_CONN_ACK);
+        await chatController.connect();
+        await Utils.delay(1);
+        expect(chatClient.sendEvent).toHaveBeenCalledWith("token", CONTENT_TYPE.connectionAcknowledged, null);
+        expect(connectionDetailsProvider.mock.results[0].value.callCreateParticipantConnection).toHaveBeenCalledWith({
+            "ConnectParticipant": true, 
+            "Type": false
+        });
+        expect(csmService.addCountMetric).toHaveBeenCalledWith(CREATE_PARTICIPANT_CONACK_FAILURE, CSM_CATEGORY.API);
+        expect(callOrder).toEqual(['callCreateParticipantConnection', 'sendEvent']);
     });
 
     test(".connect fails when connectionHelper can't establish connection", async () => {

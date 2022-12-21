@@ -63,7 +63,7 @@ class GlobalConfigImpl {
         if(this.isFeatureEnabled(feature)) {
             return;
         }
-        const featureValues = this.features["values"];
+        const featureValues = Array.isArray(this.features["values"]) ? this.features["values"] : [];
         this.features["values"] = [...featureValues, feature];
     }
 

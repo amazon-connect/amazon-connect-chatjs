@@ -8,7 +8,9 @@ import {
     CSM_CATEGORY,
     ACPS_METHODS,
     FEATURES,
-    CONN_ACK_FAILED
+    SEND_EVENT_CONACK_THROTTLED,
+    SEND_EVENT_CONACK_FAILURE,
+    CREATE_PARTICIPANT_CONACK_FAILURE
 } from "../constants";
 import { LogManager } from "../log";
 import { EventBus } from "./eventbus";
@@ -146,8 +148,8 @@ class ChatController {
                 content, 
                 eventType, 
                 GlobalConfig.getMessageReceiptsThrottleTime())
-                .then(this.handleRequestSuccess(metadata))
-                .catch(this.handleRequestFailure(metadata));
+                .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType))
+                .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType));
         }
         return this.chatClient
             .sendEvent(
@@ -314,11 +316,22 @@ class ChatController {
                     this.sendEvent({
                         contentType: CONTENT_TYPE.connectionAcknowledged
                     });
+                    csmService.addCountMetric(CREATE_PARTICIPANT_CONACK_FAILURE, CSM_CATEGORY.API);
                 });
             } else {
                 this.sendEvent({
                     contentType: CONTENT_TYPE.connectionAcknowledged
-                });
+                }).catch((error) => {
+                    if(error.statusCode && error.statusCode === 429) {
+                        csmService.addCountMetric(SEND_EVENT_CONACK_THROTTLED, CSM_CATEGORY.API);
+                    }
+                    csmService.addCountMetric(SEND_EVENT_CONACK_FAILURE, CSM_CATEGORY.API);
+                    connectionDetailsProvider.callCreateParticipantConnection({
+                        Type: false,
+                        ConnectParticipant: true
+                    });
+   
+                });;
             }
         }
         console.warn("onConnectionSuccess responseObject", responseObject);
@@ -332,15 +345,6 @@ class ChatController {
             connectCalled: true,
             metadata: this.sessionMetadata
         };
-        //TODO: remove featureEnabled check after connAck migration
-        if (error && error.type === CONN_ACK_FAILED) {
-            if (this._shouldAcknowledgeContact()) {
-                // fallback logic if connectParticipant API call fails to connAck.
-                this.sendEvent({
-                    contentType: CONTENT_TYPE.connectionAcknowledged
-                });
-            }
-        }
         this._sendInternalLogToServer(this.logger.error("Connect Failed. Error: ", errorObject));
 
         return Promise.reject(errorObject);
