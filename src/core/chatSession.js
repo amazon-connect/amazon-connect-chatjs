@@ -69,16 +69,16 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
 }
 
 export class ChatSession {
-  constructor(controller) {
-    this.controller = controller;
-    const browser = detect();
-    const dimensions = [
-        {name: 'Browser', value: `${browser.name}`},
-        {name: 'BrowserVersion', value: `${browser.version}`},
-        {name: 'Platform', value: `${browser.os}`},
-    ]
-    csmService.addCountMetric(START_CHAT_SESSION, CSM_CATEGORY.UI, dimensions);
-  }
+    constructor(controller) {
+        this.controller = controller;
+        const browser = detect();
+        const dimensions = [
+            {name: 'Browser', value: `${browser.name}`},
+            {name: 'BrowserVersion', value: `${browser.version}`},
+            {name: 'Platform', value: `${browser.os}`},
+        ];
+        csmService.addCountMetric(START_CHAT_SESSION, CSM_CATEGORY.UI, dimensions);
+    }
 
     onMessage(callback) {
         this.controller.subscribe(CHAT_EVENTS.INCOMING_MESSAGE, callback);

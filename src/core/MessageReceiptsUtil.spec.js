@@ -64,7 +64,7 @@ describe("MessageReceiptsUtil", () => {
         const p2 = messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token",
             CONTENT_TYPE.readReceipt, `{"messageId":"messageId2221", "disableThrottle": true}`,
             CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000);
-            const p3 = messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token", 
+        const p3 = messageReceiptsUtil.prioritizeAndSendMessageReceipt(this, callback, "token", 
             CONTENT_TYPE.readReceipt, `{}`, 
             CHAT_EVENTS.INCOMING_READ_RECEIPT, 1000);
         Promise.all([p1,p2,p3]).then(res => {

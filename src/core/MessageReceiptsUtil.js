@@ -40,10 +40,10 @@ export default class MessageReceiptsUtil {
         return Array.isArray(messageMetadata.Receipts) &&
             messageMetadata.Receipts[0] &&
             messageMetadata.Receipts[0].ReadTimestamp ? 
-                CHAT_EVENTS.INCOMING_READ_RECEIPT :
-                messageMetadata.Receipts[0].DeliveredTimestamp ? 
-                    CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT : 
-                    null;
+            CHAT_EVENTS.INCOMING_READ_RECEIPT :
+            messageMetadata.Receipts[0].DeliveredTimestamp ? 
+                CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT : 
+                null;
     }
 
     /** 

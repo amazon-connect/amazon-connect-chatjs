@@ -145,7 +145,7 @@ class LpcConnectionHelperBase {
                 this._getConnectionDetails(connectionDetailsProvider, this.initialConnectionDetails, startTime).then((response) => {
                     this.initialConnectionDetails = null;
                     return response;
-            }));
+                }));
         }
     }
 
