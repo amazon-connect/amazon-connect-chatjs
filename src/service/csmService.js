@@ -17,6 +17,8 @@ class CsmService {
         });
         this.csmInitialized = false;
         this.metricsToBePublished = [];
+        this.agentMetricToBePublished = [];
+        this.MAX_RETRY = 5;
         this.loadCsmScriptAndExecute();
     }
   
@@ -166,6 +168,35 @@ class CsmService {
         this.setDimensions(countMetric, dimensions);
         this.addMetric(countMetric);
         this.logger.debug(`Successfully published count metrics for method ${method}`);
+    }
+
+    addAgentCountMetric(metricName, count) {
+        const _self = this;
+        if (csm?.API?.addCount && metricName) {
+            csm.API.addCount(metricName, count);
+            _self.MAX_RETRY = 5;
+        } else {
+            //add to list and retry later
+            if (metricName) {
+                this.agentMetricToBePublished.push({
+   
+                    metricName,
+   
+                    count
+                });
+            }
+            setTimeout(() => {
+                if (csm?.API?.addCount) {
+                    this.agentMetricToBePublished.forEach(metricItem => {
+                        csm.API.addCount(metricItem.metricName, metricItem.count);
+                    });
+                    this.agentMetricToBePublished = [];
+                } else if(_self.MAX_RETRY > 0) {
+                    _self.MAX_RETRY -= 1;
+                    _self.addAgentCountMetric();
+                }
+            }, 3000);
+        }
     }
 }
 

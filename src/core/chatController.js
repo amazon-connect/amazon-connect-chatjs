@@ -11,6 +11,7 @@ import {
     SEND_EVENT_CONACK_THROTTLED,
     SEND_EVENT_CONACK_FAILURE,
     CREATE_PARTICIPANT_CONACK_FAILURE,
+    CREATE_PARTICIPANT_CONACK_API_CALL_COUNT
 } from "../constants";
 import { LogManager } from "../log";
 import { EventBus } from "./eventbus";
@@ -308,6 +309,7 @@ class ChatController {
         const connectionAcknowledged = connectionDetailsProvider.getConnectionDetails()?.connectionAcknowledged;
         if (this._shouldAcknowledgeContact() && !connectionAcknowledged) {
             if (ConnectionAckFeatureEnabled) {
+                csmService.addAgentCountMetric(CREATE_PARTICIPANT_CONACK_API_CALL_COUNT, 1);
                 connectionDetailsProvider.callCreateParticipantConnection({
                     Type: false,
                     ConnectParticipant: true
@@ -316,7 +318,7 @@ class ChatController {
                     this.sendEvent({
                         contentType: CONTENT_TYPE.connectionAcknowledged
                     });
-                    csmService.addCountMetric(CREATE_PARTICIPANT_CONACK_FAILURE, CSM_CATEGORY.API);
+                    csmService.addAgentCountMetric(CREATE_PARTICIPANT_CONACK_FAILURE, 1);
                 });
             } else {
                 this.sendEvent({
@@ -327,9 +329,9 @@ class ChatController {
                         ConnectParticipant: true
                     });
                     if (error.statusCode === 429) {
-                        csmService.addCountMetric(SEND_EVENT_CONACK_THROTTLED, CSM_CATEGORY.API);
+                        csmService.addAgentCountMetric(SEND_EVENT_CONACK_THROTTLED, 1);
                     }
-                    csmService.addCountMetric(SEND_EVENT_CONACK_FAILURE, CSM_CATEGORY.API);
+                    csmService.addAgentCountMetric(SEND_EVENT_CONACK_FAILURE, 1);
                     this.logger.warn("Send event conack failed: ", error);
                 });;
             }

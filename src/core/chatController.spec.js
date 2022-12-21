@@ -182,8 +182,8 @@ describe("ChatController", () => {
         await chatController.connect();
         await Utils.delay(1);
         expect(chatClient.sendEvent).toHaveBeenCalledWith("token", CONTENT_TYPE.connectionAcknowledged, null);
-        expect(csmService.addCountMetric).toHaveBeenCalledWith(SEND_EVENT_CONACK_THROTTLED, CSM_CATEGORY.API);
-        expect(csmService.addCountMetric).toHaveBeenCalledWith(SEND_EVENT_CONACK_FAILURE, CSM_CATEGORY.API);
+        expect(csmService.addAgentCountMetric).toHaveBeenCalledWith(SEND_EVENT_CONACK_THROTTLED, 1);
+        expect(csmService.addAgentCountMetric).toHaveBeenCalledWith(SEND_EVENT_CONACK_FAILURE, 1);
         expect(connectionDetailsProvider.mock.results[0].value.callCreateParticipantConnection).toHaveBeenCalledWith({
             "ConnectParticipant": true, 
             "Type": false
@@ -222,7 +222,7 @@ describe("ChatController", () => {
             "ConnectParticipant": true, 
             "Type": false
         });
-        expect(csmService.addCountMetric).toHaveBeenCalledWith(CREATE_PARTICIPANT_CONACK_FAILURE, CSM_CATEGORY.API);
+        expect(csmService.addAgentCountMetric).toHaveBeenCalledWith(CREATE_PARTICIPANT_CONACK_FAILURE, 1);
         expect(callOrder).toEqual(['callCreateParticipantConnection', 'sendEvent']);
     });
 

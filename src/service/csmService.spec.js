@@ -6,6 +6,8 @@ import {
 import * as CsmConfig from "../configs/csmConfig";
 import { GlobalConfig } from "../globalConfig";
 
+jest.useFakeTimers();
+jest.spyOn(global, 'setTimeout');
 const mockCsmConfig = {
     widgetType: "test-widget-type"
 };
@@ -158,6 +160,34 @@ describe("Common csmService tests", () => {
         it("should not be able to publish metrics before csmService is initialized, which should be then published once csmService is initialized", () => {
             expect(mockInitCSM).toHaveBeenCalled();
             expect(mockAddMetric).toHaveBeenCalledTimes(4);
+        });
+    });
+
+    describe("publish metric for Agent", () => {
+        it("should call addCount to add metric", () => {
+            csm.API.addCount = jest.fn();
+            csmService.addAgentCountMetric("test", 1);
+            expect(csm.API.addCount).toHaveBeenCalled();
+            expect(csm.API.addCount).toHaveBeenCalledWith("test", 1);
+        });
+        it("should call addCount to add metric", () => {
+            csm.API.addCount = undefined;
+            csmService.addAgentCountMetric("test", 1);
+            expect(csmService.agentMetricToBePublished).toEqual([{
+                count: 1,
+                metricName: "test"
+            }]);
+            expect(setTimeout).toHaveBeenCalledTimes(1);
+            expect(setTimeout).toHaveBeenLastCalledWith(expect.any(Function), 3000);
+            expect(csmService.MAX_RETRY).toEqual(5);
+            while(csmService.MAX_RETRY > 0) {
+                setTimeout.mock.calls[5-csmService.MAX_RETRY][0]();
+            }
+            expect(csmService.MAX_RETRY).toEqual(0);
+            csm.API.addCount = jest.fn();
+            setTimeout.mock.calls[0][0]();
+            expect(csm.API.addCount).toHaveBeenCalled();
+            expect(csm.API.addCount).toHaveBeenCalledWith("test", 1);
         });
     });
 });
