@@ -240,24 +240,22 @@ class AWSChatClient extends ChatClient {
         this.logger.debug("Successfully send event", {...logContent, id: res.data?.Id, });
         return res;
       }).catch((err) => {
-        this.logger.error("Send event error", err, logContent)
         return Promise.reject(err);
       });
   }
 
   _sendRequest(request) {
-    const self = this;
     return new Promise((resolve, reject) => {
       request
         .on("success", function(res) {
           resolve(res);
         })
         .on("error", function(err) {
-          self.logger.debug('constructing sendRequest error: ', err);
           const errObj = {
             type: err.code,
             message: err.message,
             stack: err.stack ? err.stack.split('\n') : [],
+            statusCode: err.statusCode,
           }
           reject(errObj);
         })
