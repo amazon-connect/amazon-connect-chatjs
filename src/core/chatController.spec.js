@@ -10,7 +10,8 @@ import {
     FEATURES,
     SEND_EVENT_CONACK_THROTTLED,
     SEND_EVENT_CONACK_FAILURE,
-    CREATE_PARTICIPANT_CONACK_FAILURE
+    CREATE_PARTICIPANT_CONACK_FAILURE,
+    TOO_MANY_REQUESTS
 } from "../constants";
 import Utils from "../utils";
 import { ChatController } from "./chatController";
@@ -177,7 +178,7 @@ describe("ChatController", () => {
         const chatController = getChatController();
         chatClient.sendEvent = jest.fn().mockImplementation(() => {
             callOrder.push('sendEvent');
-            return  Promise.reject({ statusCode: 429, message: "throttled" });
+            return  Promise.reject({ message: TOO_MANY_REQUESTS });
         });
         await chatController.connect();
         await Utils.delay(1);

@@ -246,12 +246,14 @@ class AWSChatClient extends ChatClient {
   }
 
   _sendRequest(request) {
+    const self = this;
     return new Promise((resolve, reject) => {
       request
         .on("success", function(res) {
           resolve(res);
         })
         .on("error", function(err) {
+          self.logger.debug('constructing sendRequest error: ', err);
           const errObj = {
             type: err.code,
             message: err.message,

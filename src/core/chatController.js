@@ -10,7 +10,8 @@ import {
     FEATURES,
     SEND_EVENT_CONACK_THROTTLED,
     SEND_EVENT_CONACK_FAILURE,
-    CREATE_PARTICIPANT_CONACK_FAILURE
+    CREATE_PARTICIPANT_CONACK_FAILURE,
+    TOO_MANY_REQUESTS 
 } from "../constants";
 import { LogManager } from "../log";
 import { EventBus } from "./eventbus";
@@ -322,15 +323,15 @@ class ChatController {
                 this.sendEvent({
                     contentType: CONTENT_TYPE.connectionAcknowledged
                 }).catch((error) => {
-                    if(error.statusCode && error.statusCode === 429) {
-                        csmService.addCountMetric(SEND_EVENT_CONACK_THROTTLED, CSM_CATEGORY.API);
-                    }
-                    csmService.addCountMetric(SEND_EVENT_CONACK_FAILURE, CSM_CATEGORY.API);
                     connectionDetailsProvider.callCreateParticipantConnection({
                         Type: false,
                         ConnectParticipant: true
                     });
-   
+                    if (error.message && error.message === TOO_MANY_REQUESTS) {
+                        csmService.addCountMetric(SEND_EVENT_CONACK_THROTTLED, CSM_CATEGORY.API);
+                    }
+                    csmService.addCountMetric(SEND_EVENT_CONACK_FAILURE, CSM_CATEGORY.API);
+                    this.logger.warn("Send event conack failed: ", error);
                 });;
             }
         }
