@@ -1,10 +1,10 @@
 import { UnImplementedMethodException } from "../core/exceptions";
 import { GlobalConfig } from "../globalConfig";
 import {
-  REGION_CONFIG,
   REGIONS
 } from "../constants";
 import { LogManager } from "../log";
+//Note: this imports AWS instead from aws-sdk npm package - details in ReadMe
 import { ConnectParticipant } from "./aws-sdk-connectparticipant";
 
 const DEFAULT_PREFIX = "Amazon-Connect-ChatJS-ChatClient";
@@ -84,22 +84,24 @@ class AWSChatClient extends ChatClient {
     this.logger = LogManager.getLogger({ prefix: DEFAULT_PREFIX, logMetaData: args.logMetaData });
   }
 
-  createParticipantConnection(participantToken, type) {
+  createParticipantConnection(participantToken, type, acknowledgeConnection) {
     let self = this;
-      var params = {
-        Type: type,
-        ParticipantToken: participantToken
-      };
-      var createParticipantConnectionRequest = self.chatClient.createParticipantConnection(
-        params
-      );
-      return self._sendRequest(createParticipantConnectionRequest).then((res) => {
-        self.logger.info("Successfully create connection request")?.sendInternalLogToServer?.();
-        return res;
-      }).catch((err) => {
-        self.logger.error("Error when creating connection request ", err)?.sendInternalLogToServer?.();
-        return Promise.reject(err);
-      });
+    var params = {
+      ParticipantToken: participantToken,
+      Type: type,
+      ConnectParticipant: acknowledgeConnection
+    };
+    
+    var createParticipantConnectionRequest = self.chatClient.createParticipantConnection(
+      params
+    );
+    return self._sendRequest(createParticipantConnectionRequest).then((res) => {
+      self.logger.info("Successfully create connection request")?.sendInternalLogToServer?.();
+      return res;
+    }).catch((err) => {
+      self.logger.error("Error when creating connection request ", err)?.sendInternalLogToServer?.();
+      return Promise.reject(err);
+    });
   }
 
   disconnectParticipant(connectionToken) {
@@ -238,7 +240,6 @@ class AWSChatClient extends ChatClient {
         this.logger.debug("Successfully send event", {...logContent, id: res.data?.Id, });
         return res;
       }).catch((err) => {
-        this.logger.error("Send event error", err, logContent)
         return Promise.reject(err);
       });
   }
@@ -254,6 +255,7 @@ class AWSChatClient extends ChatClient {
             type: err.code,
             message: err.message,
             stack: err.stack ? err.stack.split('\n') : [],
+            statusCode: err.statusCode,
           }
           reject(errObj);
         })

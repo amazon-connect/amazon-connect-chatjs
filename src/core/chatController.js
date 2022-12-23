@@ -1,354 +1,441 @@
 import { ConnectionHelperStatus } from "./connectionHelpers/baseConnectionHelper";
 import {
-  CHAT_EVENTS,
-  TRANSCRIPT_DEFAULT_PARAMS,
-  SESSION_TYPES,
-  CONTENT_TYPE,
-  CSM_CATEGORY,
-  ACPS_METHODS
+    CHAT_EVENTS,
+    TRANSCRIPT_DEFAULT_PARAMS,
+    SESSION_TYPES,
+    CONTENT_TYPE,
+    CHAT_EVENT_TYPE_MAPPING,
+    CSM_CATEGORY,
+    ACPS_METHODS,
+    FEATURES,
+    SEND_EVENT_CONACK_THROTTLED,
+    SEND_EVENT_CONACK_FAILURE,
+    CREATE_PARTICIPANT_CONACK_FAILURE,
+    CREATE_PARTICIPANT_CONACK_API_CALL_COUNT
 } from "../constants";
 import { LogManager } from "../log";
 import { EventBus } from "./eventbus";
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
 import ConnectionDetailsProvider from "./connectionHelpers/connectionDetailsProvider";
 import LpcConnectionHelper from "./connectionHelpers/LpcConnectionHelper";
+import MessageReceiptsUtil from './MessageReceiptsUtil';
 import { csmService } from "../service/csmService";
+import { GlobalConfig } from "../globalConfig";
 
 var NetworkLinkStatus = {
-  NeverEstablished: "NeverEstablished",
-  Establishing: "Establishing",
-  Established: "Established",
-  Broken: "Broken"
+    NeverEstablished: "NeverEstablished",
+    Establishing: "Establishing",
+    Established: "Established",
+    Broken: "Broken"
 };
-
-var ACCESS_DENIED_EXCEPTION = "AccessDeniedException";
 
 class ChatController {
 
-  constructor(args) {
-    this.argsValidator = new ChatServiceArgsValidator();
-    this.pubsub = new EventBus();
-    this.sessionType = args.sessionType;
-    this.getConnectionToken = args.chatDetails.getConnectionToken;
-    this.connectionDetails = args.chatDetails.connectionDetails;
-    this.initialContactId = args.chatDetails.initialContactId;
-    this.contactId = args.chatDetails.contactId;
-    this.participantId = args.chatDetails.participantId;
-    this.chatClient = args.chatClient;
-    this.participantToken = args.chatDetails.participantToken;
-    this.websocketManager = args.websocketManager;
-    this._participantDisconnected = false;
-    this.sessionMetadata = {};
-    this.logger = LogManager.getLogger({
-      prefix: "ChatJS-ChatController",
-      logMetaData: args.logMetaData
-    });
-    this.logMetaData = args.logMetaData;
-    this.logger.info("Browser info:", window.navigator.userAgent)
-  }
+    constructor(args) {
+        this.argsValidator = new ChatServiceArgsValidator();
+        this.pubsub = new EventBus();
+        this.sessionType = args.sessionType;
+        this.getConnectionToken = args.chatDetails.getConnectionToken;
+        this.connectionDetails = args.chatDetails.connectionDetails;
+        this.initialContactId = args.chatDetails.initialContactId;
+        this.contactId = args.chatDetails.contactId;
+        this.participantId = args.chatDetails.participantId;
+        this.chatClient = args.chatClient;
+        this.participantToken = args.chatDetails.participantToken;
+        this.websocketManager = args.websocketManager;
+        this._participantDisconnected = false;
+        this.sessionMetadata = {};
+        this.logger = LogManager.getLogger({
+            prefix: "ChatJS-ChatController",
+            logMetaData: args.logMetaData
+        });
+        this.logMetaData = args.logMetaData;
+        this.messageReceiptUtil = new MessageReceiptsUtil(args.logMetaData);
+        this.logger.info("Browser info:", window.navigator.userAgent);
+    }
 
-  subscribe(eventName, callback) {
-    this.pubsub.subscribe(eventName, callback);
-    this._sendInternalLogToServer(this.logger.info("Subscribed successfully to event:", eventName));
-  }
+    subscribe(eventName, callback) {
+        this.pubsub.subscribe(eventName, callback);
+        this._sendInternalLogToServer(this.logger.info("Subscribed successfully to event:", eventName));
+    }
 
-  handleRequestSuccess(metadata, method, startTime, contentType) {
-    return response => this.handleResponse(metadata, method, startTime, contentType, response, false);
-  }
+    handleRequestSuccess(metadata, method, startTime, contentType) {
+        return response => {
+            const contentTypeDimension = contentType?
+                [
+                    {
+                        name: "ContentType",
+                        value: contentType
+                    }
+                ]
+                : [];
+            csmService.addLatencyMetricWithStartTime(method, startTime, CSM_CATEGORY.API, contentTypeDimension);
+            csmService.addCountAndErrorMetric(method, CSM_CATEGORY.API, false, contentTypeDimension);
+            response.metadata = metadata;
+            return response;
+        };
+    }
 
-  handleRequestFailure(metadata, method, startTime, contentType) {
-    return error => this.handleResponse(metadata, method, startTime, contentType, error, true);
-  }
+    handleRequestFailure(metadata, method, startTime, contentType) {
+        return error => {
+            const contentTypeDimension = contentType?
+                [
+                    {
+                        name: "ContentType",
+                        value: contentType
+                    }
+                ]
+                : [];
+            csmService.addLatencyMetricWithStartTime(method, startTime, CSM_CATEGORY.API, contentTypeDimension);
+            csmService.addCountAndErrorMetric(method, CSM_CATEGORY.API, true, contentTypeDimension);
+            error.metadata = metadata;
+            return Promise.reject(error);
+        };
+    }
 
-  handleResponse(metadata, method, startTime, contentType, responseData, isFailed) {
-    const contentTypeDimension = contentType ?
-      [
-        {
-          name: "ContentType",
-          value: contentType
+    sendMessage(args) {
+        const startTime = new Date().getTime();
+        const metadata = args.metadata || null;
+        this.argsValidator.validateSendMessage(args);
+        const connectionToken = this.connectionHelper.getConnectionToken();
+        return this.chatClient
+            .sendMessage(connectionToken, args.message, args.contentType)
+            .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_MESSAGE, startTime, args.contentType))
+            .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_MESSAGE, startTime, args.contentType));
+    }
+
+    sendAttachment(args){
+        const startTime = new Date().getTime();
+        const metadata = args.metadata || null;
+        //TODO: validation
+        const connectionToken = this.connectionHelper.getConnectionToken();
+        return this.chatClient
+            .sendAttachment(connectionToken, args.attachment, args.metadata)
+            .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_ATTACHMENT, startTime, args.attachment.type))
+            .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_ATTACHMENT, startTime, args.attachment.type));
+    }
+
+    downloadAttachment(args){
+        const startTime = new Date().getTime();
+        const metadata = args.metadata || null;
+        const connectionToken = this.connectionHelper.getConnectionToken();
+        return this.chatClient
+            .downloadAttachment(connectionToken, args.attachmentId)
+            .then(this.handleRequestSuccess(metadata, ACPS_METHODS.DOWNLOAD_ATTACHMENT, startTime))
+            .catch(this.handleRequestFailure(metadata, ACPS_METHODS.DOWNLOAD_ATTACHMENT, startTime));
+    }
+
+    sendEvent(args) {
+        const startTime = new Date().getTime();
+        const metadata = args.metadata || null;
+        this.argsValidator.validateSendEvent(args);
+        const connectionToken = this.connectionHelper.getConnectionToken();
+        const content = args.content || null;
+        var eventType = getEventTypeFromContentType(args.contentType);
+        var parsedContent = typeof content === "string" ? JSON.parse(content) : content;
+        if (this.messageReceiptUtil.isMessageReceipt(eventType, args)) {
+            // Ignore all MessageReceipt events
+            if(!GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED) || !parsedContent.messageId) {
+                this.logger.warn(`Ignoring messageReceipt: ${GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED) && "missing messageId"}`, args);
+                return Promise.reject({
+                    errorMessage: `Ignoring messageReceipt: ${GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED) && "missing messageId"}`,
+                    data: args
+                });
+            }
+            // Prioritize and send selective message receipts
+            return this.messageReceiptUtil.prioritizeAndSendMessageReceipt(this.chatClient, this.chatClient.sendEvent,
+                connectionToken,
+                args.contentType,
+                content, 
+                eventType, 
+                GlobalConfig.getMessageReceiptsThrottleTime())
+                .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType))
+                .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType));
         }
-      ]
-      : [];
-    csmService.addLatencyMetricWithStartTime(method, startTime, CSM_CATEGORY.API, contentTypeDimension);
-    csmService.addCountAndErrorMetric(method, CSM_CATEGORY.API, isFailed, contentTypeDimension);
-    responseData.metadata = metadata;
-    return isFailed ? Promise.reject(responseData) : responseData;
-  }
-
-  sendMessage(args) {
-    const startTime = new Date().getTime();
-    const metadata = args.metadata || null;
-    this.argsValidator.validateSendMessage(args);
-    const connectionToken = this.connectionHelper.getConnectionToken();
-    return this.chatClient
-      .sendMessage(connectionToken, args.message, args.contentType)
-      .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_MESSAGE, startTime, args.contentType))
-      .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_MESSAGE, startTime, args.contentType));
-  }
-
-  sendAttachment(args) {
-    const startTime = new Date().getTime();
-    const metadata = args.metadata || null;
-    //TODO: validation
-    const connectionToken = this.connectionHelper.getConnectionToken();
-    return this.chatClient
-      .sendAttachment(connectionToken, args.attachment, args.metadata)
-      .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_ATTACHMENT, startTime, args.attachment.type))
-      .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_ATTACHMENT, startTime, args.attachment.type));
-  }
-
-  downloadAttachment(args) {
-    const startTime = new Date().getTime();
-    const metadata = args.metadata || null;
-    const connectionToken = this.connectionHelper.getConnectionToken();
-    return this.chatClient
-      .downloadAttachment(connectionToken, args.attachmentId)
-      .then(this.handleRequestSuccess(metadata, ACPS_METHODS.DOWNLOAD_ATTACHMENT, startTime))
-      .catch(this.handleRequestFailure(metadata, ACPS_METHODS.DOWNLOAD_ATTACHMENT, startTime));
-  }
-
-  sendEvent(args) {
-    const startTime = new Date().getTime();
-    const metadata = args.metadata || null;
-    this.argsValidator.validateSendEvent(args);
-    const connectionToken = this.connectionHelper.getConnectionToken();
-    const content = args.content || null;
-    return this.chatClient
-      .sendEvent(
-        connectionToken,
-        args.contentType,
-        content
-      )
-      .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType))
-      .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType));
-  }
-
-  getTranscript(inputArgs) {
-    const startTime = new Date().getTime();
-    const metadata = inputArgs.metadata || null;
-    const args = {
-      startPosition: inputArgs.startPosition || {},
-      scanDirection: inputArgs.scanDirection || TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
-      sortOrder: inputArgs.sortOrder || TRANSCRIPT_DEFAULT_PARAMS.SORT_ORDER,
-      maxResults: inputArgs.maxResults || TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS,
-    };
-    if (inputArgs.nextToken) {
-      args.nextToken = inputArgs.nextToken;
+        return this.chatClient
+            .sendEvent(
+                connectionToken,
+                args.contentType,
+                content
+            )
+            .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType))
+            .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType));
     }
-    if (inputArgs.contactId) {
-      args.contactId = inputArgs.contactId;
+
+    getTranscript(inputArgs) {
+        const startTime = new Date().getTime();
+        const metadata = inputArgs.metadata || null;
+        const args = {
+            startPosition: inputArgs.startPosition || {},
+            scanDirection: inputArgs.scanDirection || TRANSCRIPT_DEFAULT_PARAMS.SCAN_DIRECTION,
+            sortOrder: inputArgs.sortOrder || TRANSCRIPT_DEFAULT_PARAMS.SORT_ORDER,
+            maxResults: inputArgs.maxResults || TRANSCRIPT_DEFAULT_PARAMS.MAX_RESULTS,
+        };
+        if (inputArgs.nextToken) {
+            args.nextToken = inputArgs.nextToken;
+        }
+        if (inputArgs.contactId) {
+            args.contactId = inputArgs.contactId;
+        }
+        const connectionToken = this.connectionHelper.getConnectionToken();
+        return this.chatClient
+            .getTranscript(connectionToken, args)
+            .then(
+                this.messageReceiptUtil.rehydrateReceiptMappers(
+                    this.handleRequestSuccess(metadata, ACPS_METHODS.GET_TRANSCRIPT, startTime), 
+                    GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)
+                )
+            )
+            .catch(this.handleRequestFailure(metadata, ACPS_METHODS.GET_TRANSCRIPT, startTime));
     }
-    const connectionToken = this.connectionHelper.getConnectionToken();
-    return this.chatClient
-      .getTranscript(connectionToken, args)
-      .then(this.handleRequestSuccess(metadata, ACPS_METHODS.GET_TRANSCRIPT, startTime))
-      .catch(this.handleRequestFailure(metadata, ACPS_METHODS.GET_TRANSCRIPT, startTime));
 
-  }
+    connect(args={}) {
+        this.sessionMetadata = args.metadata || null;
+        this.argsValidator.validateConnectChat(args);
+        const connectionDetailsProvider = this._getConnectionDetailsProvider();
+        return connectionDetailsProvider.fetchConnectionDetails()
+            .then(
+                (connectionDetails) => 
+                    this._initConnectionHelper(connectionDetailsProvider, connectionDetails)
+            )
+            .then(response => this._onConnectSuccess(response, connectionDetailsProvider))
+            .catch(err => {
+                return this._onConnectFailure(err);
+            });
+    }
 
-  connect(args = {}) {
-    this.sessionMetadata = args.metadata || null;
-    this.argsValidator.validateConnectChat(args);
-    const connectionDetailsProvider = this._getConnectionDetailsProvider();
-    return connectionDetailsProvider.fetchConnectionToken()
-      .then(
-        this._initConnectionHelper.bind(this, connectionDetailsProvider)
-      )
-      .then(
-        this._onConnectSuccess.bind(this),
-        this._onConnectFailure.bind(this)
-      );
-  }
+    _initConnectionHelper(connectionDetailsProvider, connectionDetails) {
+        this.connectionHelper = new LpcConnectionHelper(
+            this.contactId,
+            this.initialContactId,
+            connectionDetailsProvider,
+            this.websocketManager,
+            this.logMetaData,
+            connectionDetails
+        );
+        this.connectionHelper.onEnded(this._handleEndedConnection.bind(this));
+        this.connectionHelper.onConnectionLost(this._handleLostConnection.bind(this));
+        this.connectionHelper.onConnectionGain(this._handleGainedConnection.bind(this));
+        this.connectionHelper.onMessage(this._handleIncomingMessage.bind(this));
+        return this.connectionHelper.start();
+    }
 
-  _initConnectionHelper(connectionDetailsProvider) {
-    this.connectionHelper = new LpcConnectionHelper(
-      this.contactId,
-      this.initialContactId,
-      connectionDetailsProvider,
-      this.websocketManager,
-      this.logMetaData
-    );
-    this.connectionHelper.onEnded(this._handleEndedConnection.bind(this));
-    this.connectionHelper.onConnectionLost(this._handleLostConnection.bind(this));
-    this.connectionHelper.onConnectionGain(this._handleGainedConnection.bind(this));
-    this.connectionHelper.onMessage(this._handleIncomingMessage.bind(this));
-    return this.connectionHelper.start();
-  }
+    _getConnectionDetailsProvider() {
+        return new ConnectionDetailsProvider(
+            this.participantToken, 
+            this.chatClient,
+            this.sessionType,
+            this.getConnectionToken
+        );
+    }
 
-  _getConnectionDetailsProvider() {
-    return new ConnectionDetailsProvider(
-      this.participantToken,
-      this.chatClient,
-      this.sessionType,
-      this.getConnectionToken
-    );
-  }
-
-  _handleEndedConnection(eventData) {
-    this._forwardChatEvent(CHAT_EVENTS.CONNECTION_BROKEN, {
-      data: eventData,
-      chatDetails: this.getChatDetails()
-    });
-    this.breakConnection();
-  }
-
-  _handleLostConnection(eventData) {
-    this._forwardChatEvent(CHAT_EVENTS.CONNECTION_LOST, {
-      data: eventData,
-      chatDetails: this.getChatDetails()
-    });
-  }
-
-  _handleGainedConnection(eventData) {
-    this._forwardChatEvent(CHAT_EVENTS.CONNECTION_ESTABLISHED, {
-      data: eventData,
-      chatDetails: this.getChatDetails()
-    });
-  }
-
-  _handleIncomingMessage(incomingData) {
-    try {
-      const eventType = incomingData.ContentType === CONTENT_TYPE.typing ? CHAT_EVENTS.INCOMING_TYPING : CHAT_EVENTS.INCOMING_MESSAGE;
-      this._forwardChatEvent(eventType, {
-        data: incomingData,
-        chatDetails: this.getChatDetails()
-      });
-      if (incomingData.ContentType === CONTENT_TYPE.chatEnded) {
-        this._forwardChatEvent(CHAT_EVENTS.CHAT_ENDED, {
-          data: null,
-          chatDetails: this.getChatDetails()
+    _handleEndedConnection(eventData) {
+        this._forwardChatEvent(CHAT_EVENTS.CONNECTION_BROKEN, {
+            data: eventData,
+            chatDetails: this.getChatDetails()
         });
         this.breakConnection();
-      }
-    } catch (e) {
-      this._sendInternalLogToServer(this.logger.error(
-        "Error occured while handling message from Connection. eventData:",
-        incomingData,
-        " Causing exception:",
-        e
-      ));
-    }
-  }
-
-  _forwardChatEvent(eventName, eventData) {
-    this.pubsub.triggerAsync(eventName, eventData);
-  }
-
-  _onConnectSuccess(response) {
-    this._sendInternalLogToServer(this.logger.info("Connect successful!"));
-
-    const responseObject = {
-      _debug: response,
-      connectSuccess: true,
-      connectCalled: true,
-      metadata: this.sessionMetadata
-    };
-    const eventData = Object.assign({
-      chatDetails: this.getChatDetails()
-    }, responseObject);
-    this.pubsub.triggerAsync(CHAT_EVENTS.CONNECTION_ESTABLISHED, eventData);
-
-    if (this._shouldAcknowledgeContact()) {
-      this.sendEvent({
-        contentType: CONTENT_TYPE.connectionAcknowledged
-      });
     }
 
-    return responseObject;
-  }
-
-  _onConnectFailure(error) {
-    const errorObject = {
-      _debug: error,
-      connectSuccess: false,
-      connectCalled: true,
-      metadata: this.sessionMetadata
-    };
-    this._sendInternalLogToServer(this.logger.error("Connect Failed. Error: ", errorObject));
-
-    return Promise.reject(errorObject);
-  }
-
-  _shouldAcknowledgeContact() {
-    return this.sessionType === SESSION_TYPES.AGENT;
-  }
-
-  breakConnection() {
-    return this.connectionHelper
-      ? this.connectionHelper.end()
-      : Promise.resolve();
-  }
-
-  // Do any clean up that needs to be done upon the participant being disconnected from the chat -
-  // disconnected here means that the participant is no longer part of ther chat.
-  cleanUpOnParticipantDisconnect() {
-    this.pubsub.unsubscribeAll();
-  }
-
-  disconnectParticipant() {
-    const startTime = new Date().getTime();
-    const connectionToken = this.connectionHelper.getConnectionToken();
-    return this.chatClient
-      .disconnectParticipant(connectionToken)
-      .then(response => {
-        this._sendInternalLogToServer(this.logger.info("Disconnect participant successfully"));
-
-        this._participantDisconnected = true;
-        this.cleanUpOnParticipantDisconnect();
-        this.breakConnection();
-        csmService.addLatencyMetricWithStartTime(ACPS_METHODS.DISCONNECT_PARTICIPANT, startTime, CSM_CATEGORY.API);
-        csmService.addCountAndErrorMetric(ACPS_METHODS.DISCONNECT_PARTICIPANT, CSM_CATEGORY.API, false);
-        return response;
-      }, error => {
-        csmService.addLatencyMetricWithStartTime(ACPS_METHODS.DISCONNECT_PARTICIPANT, startTime, CSM_CATEGORY.API);
-        csmService.addCountAndErrorMetric(ACPS_METHODS.DISCONNECT_PARTICIPANT, CSM_CATEGORY.API, true);
-        this._sendInternalLogToServer(this.logger.error("Disconnect participant failed. Error:", error));
-
-        return Promise.reject(error);
-      });
-  }
-
-  getChatDetails() {
-    return {
-      initialContactId: this.initialContactId,
-      contactId: this.contactId,
-      participantId: this.participantId,
-      participantToken: this.participantToken,
-      connectionDetails: this.connectionDetails
-    };
-  }
-
-  _convertConnectionHelperStatus(connectionHelperStatus) {
-    switch (connectionHelperStatus) {
-      case ConnectionHelperStatus.NeverStarted:
-        return NetworkLinkStatus.NeverEstablished;
-      case ConnectionHelperStatus.Starting:
-        return NetworkLinkStatus.Establishing;
-      case ConnectionHelperStatus.Ended:
-        return NetworkLinkStatus.Broken;
-      case ConnectionHelperStatus.ConnectionLost:
-        return NetworkLinkStatus.Broken;
-      case ConnectionHelperStatus.Connected:
-        return NetworkLinkStatus.Established;
+    _handleLostConnection(eventData) {
+        this._forwardChatEvent(CHAT_EVENTS.CONNECTION_LOST, {
+            data: eventData,
+            chatDetails: this.getChatDetails()
+        });
     }
-    this._sendInternalLogToServer(this.logger.error(
-      "Reached invalid state. Unknown connectionHelperStatus: ",
-      connectionHelperStatus
-    ));
-  }
 
-  getConnectionStatus() {
-    return this._convertConnectionHelperStatus(
-      this.connectionHelper.getStatus()
-    );
-  }
+    _handleGainedConnection(eventData) {
+        this._forwardChatEvent(CHAT_EVENTS.CONNECTION_ESTABLISHED, {
+            data: eventData,
+            chatDetails: this.getChatDetails()
+        });
+    }
 
-  _sendInternalLogToServer(logEntry) {
-    if (logEntry && typeof logEntry.sendInternalLogToServer === "function")
-      logEntry.sendInternalLogToServer();
+    _handleIncomingMessage(incomingData) {
+        try {
+            let eventType = getEventTypeFromContentType(incomingData?.ContentType);
+            if (this.messageReceiptUtil.isMessageReceipt(eventType, incomingData)) {
+                eventType = this.messageReceiptUtil.getEventTypeFromMessageMetaData(incomingData?.MessageMetadata);
+                if (!eventType || 
+            !this.messageReceiptUtil.shouldShowMessageReceiptForCurrentParticipantId(this.participantId, incomingData)) {
+                    //ignore bec we do not want to show messageReceipt to sender of receipt.
+                    //messageReceipt needs to be shown to the sender of message.
+                    return;
+                }
+            }
 
-    return logEntry;
-  }
+            this._forwardChatEvent(eventType, {
+                data: incomingData,
+                chatDetails: this.getChatDetails()
+            });
+            if (incomingData.ContentType === CONTENT_TYPE.chatEnded) {
+                this._forwardChatEvent(CHAT_EVENTS.CHAT_ENDED, {
+                    data: null,
+                    chatDetails: this.getChatDetails()
+                });
+                this.breakConnection();
+            }
+        } catch (e) {
+            this._sendInternalLogToServer(this.logger.error(
+                "Error occured while handling message from Connection. eventData:",
+                incomingData,
+                " Causing exception:",
+                e
+            ));
+        }
+    }
+
+    _forwardChatEvent(eventName, eventData) {
+        this.pubsub.triggerAsync(eventName, eventData);
+    }
+
+    _onConnectSuccess(response, connectionDetailsProvider) {
+        this._sendInternalLogToServer(this.logger.info("Connect successful!"));
+        console.warn("onConnectionSuccess response", response);
+        const responseObject = {
+            _debug: response,
+            connectSuccess: true,
+            connectCalled: true,
+            metadata: this.sessionMetadata
+        };
+        const eventData = Object.assign({
+            chatDetails: this.getChatDetails()
+        }, responseObject);
+        this.pubsub.triggerAsync(CHAT_EVENTS.CONNECTION_ESTABLISHED, eventData);
+        // Currently we are in phase-1 ConnAck Migration: https://quip-amazon.com/qbT6AaXZM8aH/120122-Status-Message-Receipts-ConnAck-Migration-Program-Review
+        // phase-1. Use CreateParticipantConnection for ConnAck only when SendEvent is throttled
+        // phase-2. Migrate connAck from SendEvent to CreateParticipantConnection
+        // TODO: migrating connAck from SendEvent to CreateParticipantConnection
+        const ConnectionAckFeatureEnabled = GlobalConfig.isFeatureEnabled(FEATURES.PARTICIPANT_CONN_ACK);
+        const connectionAcknowledged = connectionDetailsProvider.getConnectionDetails()?.connectionAcknowledged;
+        if (this._shouldAcknowledgeContact() && !connectionAcknowledged) {
+            if (ConnectionAckFeatureEnabled) {
+                csmService.addAgentCountMetric(CREATE_PARTICIPANT_CONACK_API_CALL_COUNT, 1);
+                connectionDetailsProvider.callCreateParticipantConnection({
+                    Type: false,
+                    ConnectParticipant: true
+                }).catch(err => {
+                    this.logger.warn("ConnectParticipant failed to acknowledge Agent connection ", err);
+                    this.sendEvent({
+                        contentType: CONTENT_TYPE.connectionAcknowledged
+                    });
+                    csmService.addAgentCountMetric(CREATE_PARTICIPANT_CONACK_FAILURE, 1);
+                });
+            } else {
+                this.sendEvent({
+                    contentType: CONTENT_TYPE.connectionAcknowledged
+                }).catch((error) => {
+                    connectionDetailsProvider.callCreateParticipantConnection({
+                        Type: false,
+                        ConnectParticipant: true
+                    });
+                    if (error.statusCode === 429) {
+                        csmService.addAgentCountMetric(SEND_EVENT_CONACK_THROTTLED, 1);
+                    }
+                    csmService.addAgentCountMetric(SEND_EVENT_CONACK_FAILURE, 1);
+                    this.logger.warn("Send event conack failed: ", error);
+                });
+            }
+        }
+        console.warn("onConnectionSuccess responseObject", responseObject);
+        return responseObject;
+    }
+
+    _onConnectFailure(error) {
+        const errorObject = {
+            _debug: error,
+            connectSuccess: false,
+            connectCalled: true,
+            metadata: this.sessionMetadata
+        };
+        this._sendInternalLogToServer(this.logger.error("Connect Failed. Error: ", errorObject));
+
+        return Promise.reject(errorObject);
+    }
+
+    _shouldAcknowledgeContact() {
+        return this.sessionType === SESSION_TYPES.AGENT;
+    }
+
+    breakConnection() {
+        return this.connectionHelper
+            ? this.connectionHelper.end()
+            : Promise.resolve();
+    }
+
+    // Do any clean up that needs to be done upon the participant being disconnected from the chat -
+    // disconnected here means that the participant is no longer part of ther chat.
+    cleanUpOnParticipantDisconnect() {
+        this.pubsub.unsubscribeAll();
+    }
+
+    disconnectParticipant() {
+        const startTime = new Date().getTime();
+        const connectionToken = this.connectionHelper.getConnectionToken();
+        return this.chatClient
+            .disconnectParticipant(connectionToken)
+            .then(response => {
+                this._sendInternalLogToServer(this.logger.info("Disconnect participant successfully"));
+
+                this._participantDisconnected = true;
+                this.cleanUpOnParticipantDisconnect();
+                this.breakConnection();
+                csmService.addLatencyMetricWithStartTime(ACPS_METHODS.DISCONNECT_PARTICIPANT, startTime, CSM_CATEGORY.API);
+                csmService.addCountAndErrorMetric(ACPS_METHODS.DISCONNECT_PARTICIPANT, CSM_CATEGORY.API, false);
+                return response;
+            }, error => {
+                this._sendInternalLogToServer(this.logger.error("Disconnect participant failed. Error:", error));
+                csmService.addLatencyMetricWithStartTime(ACPS_METHODS.DISCONNECT_PARTICIPANT, startTime, CSM_CATEGORY.API);
+                csmService.addCountAndErrorMetric(ACPS_METHODS.DISCONNECT_PARTICIPANT, CSM_CATEGORY.API, true);
+                return Promise.reject(error);
+            });
+    }
+
+    getChatDetails() {
+        return {
+            initialContactId: this.initialContactId,
+            contactId: this.contactId,
+            participantId: this.participantId,
+            participantToken: this.participantToken,
+            connectionDetails: this.connectionDetails
+        };
+    }
+
+    _convertConnectionHelperStatus(connectionHelperStatus) {
+        switch (connectionHelperStatus) {
+        case ConnectionHelperStatus.NeverStarted:
+            return NetworkLinkStatus.NeverEstablished;
+        case ConnectionHelperStatus.Starting:
+            return NetworkLinkStatus.Establishing;
+        case ConnectionHelperStatus.Ended:
+            return NetworkLinkStatus.Broken;
+        case ConnectionHelperStatus.ConnectionLost:
+            return NetworkLinkStatus.Broken;
+        case ConnectionHelperStatus.Connected:
+            return NetworkLinkStatus.Established;
+        }
+        this._sendInternalLogToServer(this.logger.error(
+            "Reached invalid state. Unknown connectionHelperStatus: ",
+            connectionHelperStatus
+        ));
+    }
+
+    getConnectionStatus() {
+        return this._convertConnectionHelperStatus(
+            this.connectionHelper.getStatus()
+        );
+    }
+
+    _sendInternalLogToServer(logEntry) {
+        if (logEntry && typeof logEntry.sendInternalLogToServer === "function")
+            logEntry.sendInternalLogToServer();
+
+        return logEntry;
+    }
 }
+
+export const getEventTypeFromContentType = (contentType) => {
+    return CHAT_EVENT_TYPE_MAPPING[contentType] || CHAT_EVENT_TYPE_MAPPING.default;
+};
 
 export { ChatController, NetworkLinkStatus };

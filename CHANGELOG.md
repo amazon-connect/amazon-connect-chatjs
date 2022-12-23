@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0]
+### Added
+- Add message receipt. Message Receipts allow the sender of a chat message to view when their message has been delivered and read (seen) by the recipient.
+- Add browser and OS usage client side metric to enhance the proactive identify issues.
+### Changed
+- fix global declaration.
+
 ## [1.2.0]
 ### Added
 - Add client side metric service in order to enhance the customer experience and proactively identify issues. Detail: [README.md](https://github.com/amazon-connect/amazon-connect-chatjs#Client-side-metric).

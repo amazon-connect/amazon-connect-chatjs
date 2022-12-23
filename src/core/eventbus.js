@@ -6,10 +6,10 @@ const ALL_EVENTS = "<<all>>";
  * An object representing an event subscription in an EventBus.
  */
 var Subscription = function(subMap, eventName, f) {
-  this.subMap = subMap;
-  this.id = Utils.randomId();
-  this.eventName = eventName;
-  this.f = f;
+    this.subMap = subMap;
+    this.id = Utils.randomId();
+    this.eventName = eventName;
+    this.f = f;
 };
 
 /**
@@ -17,15 +17,15 @@ var Subscription = function(subMap, eventName, f) {
  * from which it was created.
  */
 Subscription.prototype.unsubscribe = function() {
-  this.subMap.unsubscribe(this.eventName, this.id);
+    this.subMap.unsubscribe(this.eventName, this.id);
 };
 
 /**
  * A map of event subscriptions, used by the EventBus.
  */
 var SubscriptionMap = function() {
-  this.subIdMap = {};
-  this.subEventNameMap = {};
+    this.subIdMap = {};
+    this.subEventNameMap = {};
 };
 
 /**
@@ -33,43 +33,43 @@ var SubscriptionMap = function() {
  * object and returns it.  This object can be used to unsubscribe.
  */
 SubscriptionMap.prototype.subscribe = function(eventName, f) {
-  var sub = new Subscription(this, eventName, f);
+    var sub = new Subscription(this, eventName, f);
 
-  this.subIdMap[sub.id] = sub;
-  var subList = this.subEventNameMap[eventName] || [];
-  subList.push(sub);
-  this.subEventNameMap[eventName] = subList;
-  return () => sub.unsubscribe();
+    this.subIdMap[sub.id] = sub;
+    var subList = this.subEventNameMap[eventName] || [];
+    subList.push(sub);
+    this.subEventNameMap[eventName] = subList;
+    return () => sub.unsubscribe();
 };
 
 /**
  * Unsubscribe a subscription matching the given event name and id.
  */
 SubscriptionMap.prototype.unsubscribe = function(eventName, subId) {
-  if (Utils.contains(this.subEventNameMap, eventName)) {
-    this.subEventNameMap[eventName] = this.subEventNameMap[eventName].filter(
-      function(s) {
-        return s.id !== subId;
-      }
-    );
+    if (Utils.contains(this.subEventNameMap, eventName)) {
+        this.subEventNameMap[eventName] = this.subEventNameMap[eventName].filter(
+            function(s) {
+                return s.id !== subId;
+            }
+        );
 
-    if (this.subEventNameMap[eventName].length < 1) {
-      delete this.subEventNameMap[eventName];
+        if (this.subEventNameMap[eventName].length < 1) {
+            delete this.subEventNameMap[eventName];
+        }
     }
-  }
 
-  if (Utils.contains(this.subIdMap, subId)) {
-    delete this.subIdMap[subId];
-  }
+    if (Utils.contains(this.subIdMap, subId)) {
+        delete this.subIdMap[subId];
+    }
 };
 
 /**
  * Get a list of all subscriptions in the subscription map.
  */
 SubscriptionMap.prototype.getAllSubscriptions = function() {
-  return Utils.values(this.subEventNameMap).reduce(function(a, b) {
-    return a.concat(b);
-  }, []);
+    return Utils.values(this.subEventNameMap).reduce(function(a, b) {
+        return a.concat(b);
+    }, []);
 };
 
 /**
@@ -77,7 +77,7 @@ SubscriptionMap.prototype.getAllSubscriptions = function() {
  * list if there are no subscriptions.
  */
 SubscriptionMap.prototype.getSubscriptions = function(eventName) {
-  return this.subEventNameMap[eventName] || [];
+    return this.subEventNameMap[eventName] || [];
 };
 
 /**
@@ -85,10 +85,10 @@ SubscriptionMap.prototype.getSubscriptions = function(eventName) {
  * mechanism for triggering events to be handled by subscribers.
  */
 var EventBus = function(paramsIn) {
-  var params = paramsIn || {};
+    var params = paramsIn || {};
 
-  this.subMap = new SubscriptionMap();
-  this.logEvents = params.logEvents || false;
+    this.subMap = new SubscriptionMap();
+    this.logEvents = params.logEvents || false;
 };
 
 /**
@@ -96,19 +96,19 @@ var EventBus = function(paramsIn) {
  * which can be used to unsubscribe.
  */
 EventBus.prototype.subscribe = function(eventName, f) {
-  Utils.assertNotNull(eventName, "eventName");
-  Utils.assertNotNull(f, "f");
-  Utils.assertTrue(Utils.isFunction(f), "f must be a function");
-  return this.subMap.subscribe(eventName, f);
+    Utils.assertNotNull(eventName, "eventName");
+    Utils.assertNotNull(f, "f");
+    Utils.assertTrue(Utils.isFunction(f), "f must be a function");
+    return this.subMap.subscribe(eventName, f);
 };
 
 /**
  * Subscribe a function to be called on all events.
  */
 EventBus.prototype.subscribeAll = function(f) {
-  Utils.assertNotNull(f, "f");
-  Utils.assertTrue(Utils.isFunction(f), "f must be a function");
-  return this.subMap.subscribe(ALL_EVENTS, f);
+    Utils.assertNotNull(f, "f");
+    Utils.assertTrue(Utils.isFunction(f), "f must be a function");
+    return this.subMap.subscribe(ALL_EVENTS, f);
 };
 
 /**
@@ -116,7 +116,7 @@ EventBus.prototype.subscribeAll = function(f) {
  * list if there are no subscriptions.
  */
 EventBus.prototype.getSubscriptions = function(eventName) {
-  return this.subMap.getSubscriptions(eventName);
+    return this.subMap.getSubscriptions(eventName);
 };
 
 /**
@@ -125,25 +125,25 @@ EventBus.prototype.getSubscriptions = function(eventName) {
  * data object and the name of the event, in that order.
  */
 EventBus.prototype.trigger = function(eventName, data) {
-  Utils.assertNotNull(eventName, "eventName");
-  var self = this;
-  var allEventSubs = this.subMap.getSubscriptions(ALL_EVENTS);
-  var eventSubs = this.subMap.getSubscriptions(eventName);
+    Utils.assertNotNull(eventName, "eventName");
+    var self = this;
+    var allEventSubs = this.subMap.getSubscriptions(ALL_EVENTS);
+    var eventSubs = this.subMap.getSubscriptions(eventName);
 
-  // if (this.logEvents && (eventName !== connect.EventType.LOG && eventName !== connect.EventType.MASTER_RESPONSE && eventName !== connect.EventType.API_METRIC)) {
-  //    connect.getLog().trace("Publishing event: %s", eventName);
-  // }
+    // if (this.logEvents && (eventName !== connect.EventType.LOG && eventName !== connect.EventType.MASTER_RESPONSE && eventName !== connect.EventType.API_METRIC)) {
+    //    connect.getLog().trace("Publishing event: %s", eventName);
+    // }
 
-  allEventSubs.concat(eventSubs).forEach(function(sub) {
-    try {
-      sub.f(data || null, eventName, self);
-    } catch (e) {
-      //   connect
-      //     .getLog()
-      //     .error("'%s' event handler failed.", eventName)
-      //     .withException(e);
-    }
-  });
+    allEventSubs.concat(eventSubs).forEach(function(sub) {
+        try {
+            sub.f(data || null, eventName, self);
+        } catch (e) {
+            //   connect
+            //     .getLog()
+            //     .error("'%s' event handler failed.", eventName)
+            //     .withException(e);
+        }
+    });
 };
 
 /**
@@ -152,7 +152,7 @@ EventBus.prototype.trigger = function(eventName, data) {
  * data object and the name of the event, in that order.
  */
 EventBus.prototype.triggerAsync = function(eventName, data) {
-  setTimeout(() => this.trigger(eventName, data), 0);
+    setTimeout(() => this.trigger(eventName, data), 0);
 };
 
 /**
@@ -162,19 +162,19 @@ EventBus.prototype.triggerAsync = function(eventName, data) {
  * conduit.onUpstream("MyEvent", bus.bridge());
  */
 EventBus.prototype.bridge = function() {
-  var self = this;
-  return function(data, event) {
-    self.trigger(event, data);
-  };
+    var self = this;
+    return function(data, event) {
+        self.trigger(event, data);
+    };
 };
 
 /**
  * Unsubscribe all events in the event bus.
  */
 EventBus.prototype.unsubscribeAll = function() {
-  this.subMap.getAllSubscriptions().forEach(function(sub) {
-    sub.unsubscribe();
-  });
+    this.subMap.getAllSubscriptions().forEach(function(sub) {
+        sub.unsubscribe();
+    });
 };
 
 export { EventBus };
