@@ -4,13 +4,13 @@ import {
 } from "./exceptions";
 import { ChatClientFactory } from "../client/client";
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
-import { SESSION_TYPES, CHAT_EVENTS, CSM_CATEGORY, START_CHAT_SESSION, FEATURES } from "../constants";
+import { SESSION_TYPES, CHAT_EVENTS, FEATURES } from "../constants";
 import { GlobalConfig } from "../globalConfig";
 import { ChatController } from "./chatController";
 import { LogManager, LogLevel, Logger } from "../log";
-import WebSocketManager from "../lib/amazon-connect-websocket-manager";
 import { csmService } from "../service/csmService";
-import { detect } from 'detect-browser';
+import WebSocketManager from "../lib/amazon-connect-websocket-manager";
+
 class ChatSessionFactory {
     /*eslint-disable no-unused-vars*/
 
@@ -43,7 +43,7 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
         } else {
             throw new IllegalArgumentException(
                 "Unkown value for session type, Allowed values are: " +
-        Object.values(SESSION_TYPES),
+          Object.values(SESSION_TYPES),
                 sessionType
             );
         }
@@ -56,7 +56,9 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
             participantId: chatDetails.participantId,
             sessionType
         };
+
         var chatClient = ChatClientFactory.getCachedClient(options, logMetaData);
+    
         var args = {
             sessionType: sessionType,
             chatDetails,
@@ -64,6 +66,7 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
             websocketManager: websocketManager,
             logMetaData,
         };
+
         return new ChatController(args);
     }
 }
@@ -71,13 +74,6 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
 export class ChatSession {
     constructor(controller) {
         this.controller = controller;
-        const browser = detect();
-        const dimensions = [
-            {name: 'Browser', value: `${browser.name}`},
-            {name: 'BrowserVersion', value: `${browser.version}`},
-            {name: 'Platform', value: `${browser.os}`},
-        ];
-        csmService.addCountMetric(START_CHAT_SESSION, CSM_CATEGORY.UI, dimensions);
     }
 
     onMessage(callback) {
@@ -124,11 +120,11 @@ export class ChatSession {
         return this.controller.sendMessage(args);
     }
 
-    sendAttachment(args) {
+    sendAttachment(args){
         return this.controller.sendAttachment(args);
     }
 
-    downloadAttachment(args) {
+    downloadAttachment(args){
         return this.controller.downloadAttachment(args);
     }
 
@@ -174,15 +170,15 @@ export const CHAT_SESSION_FACTORY = new PersistentConnectionAndChatServiceSessio
 var setGlobalConfig = config => {
     var loggerConfig = config.loggerConfig;
     var csmConfig = config.csmConfig;
-    /**
-    * if config.loggerConfig.logger is present - use it in websocketManager
-    * if config.loggerConfig.customizedLogger is present - use it in websocketManager
-    * if config.loggerConfig.useDefaultLogger is true - use default window.console + default level INFO
-    * config.loggerConfig.advancedLogWriter to customize where you want to log advancedLog messages. Default is warn.
-    * else no logs from websocketManager - DEFAULT
-    */
-    WebSocketManager.setGlobalConfig(config);
     GlobalConfig.update(config);
+    /**
+   * if config.loggerConfig.logger is present - use it in websocketManager
+   * if config.loggerConfig.customizedLogger is present - use it in websocketManager
+   * if config.loggerConfig.useDefaultLogger is true - use default window.console + default level INFO
+   * config.loggerConfig.advancedLogWriter to customize where you want to log advancedLog messages. Default is warn.
+   * else no logs from websocketManager - DEFAULT
+   */
+    WebSocketManager.setGlobalConfig(config);
     LogManager.updateLoggerConfig(loggerConfig);
     if (csmConfig) {
         csmService.updateCsmConfig(csmConfig);
@@ -204,7 +200,8 @@ var ChatSessionConstructor = args => {
     var type = args.type || SESSION_TYPES.AGENT;
     GlobalConfig.updateStageRegion(options);
     // initialize CSM Service for only customer chat widget
-    if (!args.disableCSM && type === SESSION_TYPES.CUSTOMER) {
+    // Disable CSM service from canary test
+    if(!args.disableCSM && type === SESSION_TYPES.CUSTOMER) {
         csmService.initializeCSM();
     }
     return CHAT_SESSION_FACTORY.createChatSession(

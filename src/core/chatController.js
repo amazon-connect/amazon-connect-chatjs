@@ -302,9 +302,10 @@ class ChatController {
             chatDetails: this.getChatDetails()
         }, responseObject);
         this.pubsub.triggerAsync(CHAT_EVENTS.CONNECTION_ESTABLISHED, eventData);
-
-        //TODO: remove featureEnabled check and connAck using sendEvent API after connAck migration
-        //Note on page refresh - FAC is available later so we will ack event both using `sendEvent` and `ConnectParticipant` API.
+        // Currently we are in phase-1 ConnAck Migration: https://quip-amazon.com/qbT6AaXZM8aH/120122-Status-Message-Receipts-ConnAck-Migration-Program-Review
+        // phase-1. Use CreateParticipantConnection for ConnAck only when SendEvent is throttled
+        // phase-2. Migrate connAck from SendEvent to CreateParticipantConnection
+        // TODO: migrating connAck from SendEvent to CreateParticipantConnection
         const ConnectionAckFeatureEnabled = GlobalConfig.isFeatureEnabled(FEATURES.PARTICIPANT_CONN_ACK);
         const connectionAcknowledged = connectionDetailsProvider.getConnectionDetails()?.connectionAcknowledged;
         if (this._shouldAcknowledgeContact() && !connectionAcknowledged) {
@@ -333,7 +334,7 @@ class ChatController {
                     }
                     csmService.addAgentCountMetric(SEND_EVENT_CONACK_FAILURE, 1);
                     this.logger.warn("Send event conack failed: ", error);
-                });;
+                });
             }
         }
         console.warn("onConnectionSuccess responseObject", responseObject);

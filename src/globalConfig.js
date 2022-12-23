@@ -6,6 +6,8 @@ class GlobalConfigImpl {
         let self = this;
         this.features = new Proxy([], {
             set: function(target, property, value) {
+                console.log("new features added, initialValue: "
+                + target[property] + " , newValue: " + value, Array.isArray(target[property]));
                 let oldVal = target[property];
                 //fire change listeners
                 if (Array.isArray(value)) {
@@ -36,14 +38,6 @@ class GlobalConfigImpl {
         this.features["values"] = Array.isArray(config.features) ? [...config.features] : new Array();
     }
 
-    getRegion() {
-        return this.region;
-    }
-
-    getEndpointOverride() {
-        return this.endpointOverride;
-    }
-
     updateStageRegion(config) {
         if (config) {
             this.stage = config.stage || this.stage;
@@ -57,6 +51,18 @@ class GlobalConfigImpl {
 
     getMessageReceiptsThrottleTime() {
         return this.messageReceiptThrottleTime;
+    }
+
+    getStage() {
+        return this.stage;
+    }
+
+    getRegion() {
+        return this.region;
+    }
+
+    getEndpointOverride() {
+        return this.endpointOverride;
     }
 
     setFeatureFlag(feature) {
@@ -92,10 +98,6 @@ class GlobalConfigImpl {
             this._registerFeatureChangeListener(feature, callback);
         }
         return false;
-    }
- 
-    getStage() {
-        return this.stage;
     }
 }
 

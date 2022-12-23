@@ -1,6 +1,6 @@
 import { EventBus } from "../eventbus";
 import { LogManager } from "../../log";
-import {
+import { 
     ConnectionHelperEvents,
     ConnectionHelperStatus
 } from "./baseConnectionHelper";
@@ -118,9 +118,6 @@ class LpcConnectionHelperBase {
     constructor(connectionDetailsProvider, websocketManager, logMetaData, connectionDetails) {
         this.status = ConnectionHelperStatus.NeverStarted;
         this.eventBus = new EventBus();
-        window.LpcConnectionHelperBase = {
-            eventBus: this.eventBus
-        };
         this.logger = LogManager.getLogger({
             prefix: "ChatJS-LPCConnectionHelperBase",
             logMetaData
@@ -145,7 +142,7 @@ class LpcConnectionHelperBase {
                 this._getConnectionDetails(connectionDetailsProvider, this.initialConnectionDetails, startTime).then((response) => {
                     this.initialConnectionDetails = null;
                     return response;
-                }));
+            }));
         }
     }
 
@@ -170,7 +167,7 @@ class LpcConnectionHelperBase {
                             transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS
                         }
                     };
-                    const logContent = { expiry: connectionDetails.expiry, transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS };
+                    const logContent = {expiry: connectionDetails.expiry, transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS};
                     this.logger.debug("Websocket manager initialized. Connection details:", logContent);
                     this._addWebsocketInitCSMMetric(startTime);
                     return details;
@@ -202,7 +199,9 @@ class LpcConnectionHelperBase {
         if (this.status === ConnectionHelperStatus.NeverStarted) {
             this.status = ConnectionHelperStatus.Starting;
         }
-        return Promise.resolve();
+        return Promise.resolve({
+            websocketStatus: this.status
+        });
     }
 
     onEnded(handler) {
@@ -212,8 +211,8 @@ class LpcConnectionHelperBase {
     handleEnded() {
         this.status = ConnectionHelperStatus.Ended;
         this.eventBus.trigger(ConnectionHelperEvents.Ended, {});
-        this.logger.info("Websocket connection ended.");
         csmService.addCountMetric(WEBSOCKET_EVENTS.Ended, CSM_CATEGORY.API);
+        this.logger.info("Websocket connection ended.");
     }
 
     onConnectionGain(handler) {
@@ -223,8 +222,8 @@ class LpcConnectionHelperBase {
     handleConnectionGain() {
         this.status = ConnectionHelperStatus.Connected;
         this.eventBus.trigger(ConnectionHelperEvents.ConnectionGained, {});
-        this.logger.info("Websocket connection gained.");
         csmService.addCountMetric(WEBSOCKET_EVENTS.ConnectionGained, CSM_CATEGORY.API);
+        this.logger.info("Websocket connection gained.");
     }
 
     onConnectionLost(handler) {
@@ -234,8 +233,8 @@ class LpcConnectionHelperBase {
     handleConnectionLost() {
         this.status = ConnectionHelperStatus.ConnectionLost;
         this.eventBus.trigger(ConnectionHelperEvents.ConnectionLost, {});
-        this.logger.info("Websocket connection lost.");
         csmService.addCountMetric(WEBSOCKET_EVENTS.ConnectionLost, CSM_CATEGORY.API);
+        this.logger.info("Websocket connection lost.");
     }
 
     onMessage(handler) {
@@ -247,8 +246,8 @@ class LpcConnectionHelperBase {
         try {
             parsedMessage = JSON.parse(message.content);
             this.eventBus.trigger(ConnectionHelperEvents.IncomingMessage, parsedMessage);
-            this.logger.info("this.eventBus trigger Websocket incoming message", ConnectionHelperEvents.IncomingMessage, parsedMessage);
             csmService.addCountMetric(WEBSOCKET_EVENTS.IncomingMessage, CSM_CATEGORY.API);
+            this.logger.info("this.eventBus trigger Websocket incoming message", ConnectionHelperEvents.IncomingMessage, parsedMessage);
         } catch (e) {
             this._sendInternalLogToServer(this.logger.error("Wrong message format"));
         }

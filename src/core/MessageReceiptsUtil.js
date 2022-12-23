@@ -17,59 +17,56 @@ export default class MessageReceiptsUtil {
     }
 
     /**
-   * check if message is of type read or delivered event
-   *
-   * @param {string} eventType either INCOMING_READ_RECEIPT or INCOMING_DELIVERED_RECEIPT.
-   * @param {Object} incomingData object contains messageDetails
-   * @return {boolean} returns true if read or delivered event else false
-  */
+     * check if message is of type read or delivered event
+     *
+     * @param {string} eventType either INCOMING_READ_RECEIPT or INCOMING_DELIVERED_RECEIPT.
+     * @param {Object} incomingData object contains messageDetails
+     * @return {boolean} returns true if read or delivered event else false
+    */
     isMessageReceipt(eventType, incomingData) {
         return [CHAT_EVENTS.INCOMING_READ_RECEIPT, CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT]
             .indexOf(eventType) !== -1 || incomingData.Type === CHAT_EVENTS.MESSAGE_METADATA;
     }
-
+        
     /** 
-   * check if message is for currentParticipantId 
-   * 
-   * @param {string} currentParticipantId of the contact
-   * @param {Object} incomingData object contains messageDetails
-   * @return {boolean} returns true if we need to display messageReceipt for the currentParticipantId
-   * 
-  */
+     * check if message is for currentParticipantId 
+     * 
+     * @param {string} currentParticipantId of the contact
+     * @param {Object} incomingData object contains messageDetails
+     * @return {boolean} returns true if we need to display messageReceipt for the currentParticipantId
+     * 
+    */
     getEventTypeFromMessageMetaData(messageMetadata) {
         return Array.isArray(messageMetadata.Receipts) &&
-            messageMetadata.Receipts[0] &&
-            messageMetadata.Receipts[0].ReadTimestamp ? 
-            CHAT_EVENTS.INCOMING_READ_RECEIPT :
-            messageMetadata.Receipts[0].DeliveredTimestamp ? 
-                CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT : 
-                null;
+                messageMetadata.Receipts[0] &&
+                messageMetadata.Receipts[0].ReadTimestamp ? CHAT_EVENTS.INCOMING_READ_RECEIPT :
+            messageMetadata.Receipts[0].DeliveredTimestamp ? CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT : null;
     }
 
     /** 
-   * check if message is for currentParticipantId 
-   * 
-   * @param {string} currentParticipantId of the contact
-   * @param {Object} incomingData object contains messageDetails
-   * @return {boolean} returns true if we need to display messageReceipt for the currentParticipantId
-   * 
-  */
+     * check if message is for currentParticipantId 
+     * 
+     * @param {string} currentParticipantId of the contact
+     * @param {Object} incomingData object contains messageDetails
+     * @return {boolean} returns true if we need to display messageReceipt for the currentParticipantId
+     * 
+    */
     shouldShowMessageReceiptForCurrentParticipantId(currentParticipantId, incomingData) {
-        const recipientParticipantId = incomingData.MessageMetadata &&
-      Array.isArray(incomingData.MessageMetadata.Receipts) &&
-      incomingData.MessageMetadata.Receipts[0] &&
-      incomingData.MessageMetadata.Receipts[0].RecipientParticipantId;
+        const recipientParticipantId = incomingData.MessageMetadata && 
+                        Array.isArray(incomingData.MessageMetadata.Receipts) &&
+                        incomingData.MessageMetadata.Receipts[0] &&
+                        incomingData.MessageMetadata.Receipts[0].RecipientParticipantId;
         return currentParticipantId !== recipientParticipantId;
     }
 
     /**
-   * Assumption: sendMessageReceipts are called in correct order of time the messages are Delivered or Read
-   * Prioritize Read Event by Throttling Delivered events for 300ms but firing Read events immediately!
-   *
-   * @param {function} callback The callback fn to throttle and invoke.
-   * @param {Array} args array of params [connectionToken, contentType, content, eventType, throttleTime]
-   * @return {promise} returnPromise for Read and Delivered events
-  */
+     * Assumption: sendMessageReceipts are called in correct order of time the messages are Delivered or Read
+     * Prioritize Read Event by Throttling Delivered events for 300ms but firing Read events immediately!
+     *
+     * @param {function} callback The callback fn to throttle and invoke.
+     * @param {Array} args array of params [connectionToken, contentType, content, eventType, throttleTime]
+     * @return {promise} returnPromise for Read and Delivered events
+    */
     prioritizeAndSendMessageReceipt(ChatClientContext, callback, ...args) {
         try {
             var self = this;
@@ -77,7 +74,7 @@ export default class MessageReceiptsUtil {
             var eventType = args[3];
             var content = typeof args[2] === "string" ? JSON.parse(args[2]) : args[2];
             var messageId = typeof content === "object" ? content.messageId : "";
-
+            
             //ignore repeat events - do not make sendEvent API call.
             if (self.readSet.has(messageId) || 
                 (eventType === CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT && self.deliveredSet.has(messageId)) ||
@@ -87,20 +84,20 @@ export default class MessageReceiptsUtil {
                     message: 'Event already fired'
                 });
             }
-
+    
             var resolve, reject;
-            var returnPromise = new Promise(function (res, rej) {
+            var returnPromise = new Promise(function(res,rej) {
                 resolve = res;
                 reject = rej;
             });
-
+    
             if (eventType === CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT) {
                 self.deliveredPromiseMap.set(messageId, [resolve, reject]);
             } else {
                 self.readPromiseMap.set(messageId, [resolve, reject]);
             }
-
-            self.throttleInitialEventsToPrioritizeRead = function () {
+    
+            self.throttleInitialEventsToPrioritizeRead = function() {
                 // ignore Delivered event if Read event has been triggered for the current messageId
                 if (eventType === CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT) {
                     self.deliveredSet.add(messageId);
@@ -128,25 +125,25 @@ export default class MessageReceiptsUtil {
                 self.logger.debug('call next throttleFn sendMessageReceipts', args);
                 self.sendMessageReceipts.call(self, ChatClientContext, callback, ...args);
             };
-
-            if (!self.timeout) {
-                self.timeout = setTimeout(function () {
+    
+            if(!self.timeout) {
+                self.timeout = setTimeout(function() {
                     self.timeout = null;
                     self.throttleInitialEventsToPrioritizeRead();
                 }, deliverEventThrottleTime);
             }
-
+    
             //prevent multiple Read events for same messageId - call readEvent without delay
             if (eventType === CHAT_EVENTS.INCOMING_READ_RECEIPT && !self.readSet.has(messageId)) {
                 clearTimeout(self.timeout);
                 self.timeout = null;
                 self.throttleInitialEventsToPrioritizeRead();
             }
-
+            
             return returnPromise;
         } catch (Err) {
             return Promise.reject({
-                message: "Failed to send messageReceipt",
+                message: "Failed to send messageReceipt", 
                 args,
                 ...Err
             });
@@ -154,11 +151,11 @@ export default class MessageReceiptsUtil {
     }
 
     /**
-   * Throttle for ${GlobalConfig.getMessageReceiptsThrottleTime()} and then fire Read and Delivered events
-   *
-   * @param {function} callback The callback fn to throttle and invoke.
-   * @param {Array} args array of params [connectionToken, contentType, content, eventType, throttleTime]
-  */
+     * Throttle for ${GlobalConfig.getMessageReceiptsThrottleTime()} and then fire Read and Delivered events
+     *
+     * @param {function} callback The callback fn to throttle and invoke.
+     * @param {Array} args array of params [connectionToken, contentType, content, eventType, throttleTime]
+    */
     sendMessageReceipts(ChatClientContext, callback, ...args) {
         var self = this;
         var throttleTime = args[4] || GlobalConfig.getMessageReceiptsThrottleTime();
@@ -167,9 +164,9 @@ export default class MessageReceiptsUtil {
         var messageId = content.messageId;
         this.lastReadArgs = eventType === CHAT_EVENTS.INCOMING_READ_RECEIPT ? args : this.lastReadArgs;
 
-        self.throttleSendEventApiCall = function () {
+        self.throttleSendEventApiCall = function() {
             try {
-                if (eventType === CHAT_EVENTS.INCOMING_READ_RECEIPT) {
+                if(eventType === CHAT_EVENTS.INCOMING_READ_RECEIPT) {
                     var sendEventPromise = callback.call(ChatClientContext, ...args);
                     self.resolveReadPromises(messageId, sendEventPromise);
                     self.logger.debug('send Read event:', callback, args);
@@ -178,7 +175,7 @@ export default class MessageReceiptsUtil {
                     //fire delivered for latest messageId
                     //fire read for latest messageId
                     var PromiseArr = [callback.call(ChatClientContext, ...args)];
-                    if (this.lastReadArgs) {
+                    if(this.lastReadArgs) {
                         var contentVal = typeof this.lastReadArgs[2] === "string" ? JSON.parse(this.lastReadArgs[2]) : this.lastReadArgs[2];
                         var readEventMessageId = contentVal.messageId;
                         // if readPromise has been resolved for readEventMessageId; readPromiseMap should not contain readEventMessageId
@@ -193,7 +190,7 @@ export default class MessageReceiptsUtil {
                         self.resolveDeliveredPromises(messageId, res[0]);
                     });
                 }
-            } catch (err) {
+            } catch(err) {
                 self.logger.error('send message receipt failed', err);
                 self.resolveReadPromises(messageId, err, true);
                 self.resolveDeliveredPromises(messageId, err, true);
@@ -201,7 +198,7 @@ export default class MessageReceiptsUtil {
         };
 
         if (!self.timeoutId) {
-            self.timeoutId = setTimeout(function () {
+            self.timeoutId = setTimeout(function() {
                 self.timeoutId = null;
                 self.throttleSendEventApiCall();
             }, throttleTime);
@@ -209,39 +206,39 @@ export default class MessageReceiptsUtil {
     }
 
     /**
-   * resolve All Delivered promises till messageId
-   *
-   * @param {string} messageId of the latest message receipt event
-   * @param {Object} result of the latest message receipt event
-  */
+     * resolve All Delivered promises till messageId
+     *
+     * @param {string} messageId of the latest message receipt event
+     * @param {Object} result of the latest message receipt event
+    */
     resolveDeliveredPromises(messageId, result, isError) {
         return this.resolvePromises(this.deliveredPromiseMap, messageId, result, isError);
     }
 
     /**
-   * resolve All Read promises till messageId
-   *
-   * @param {string} messageId of the latest message receipt event
-   * @param {Object} result of the latest message receipt event
-  */
+     * resolve All Read promises till messageId
+     *
+     * @param {string} messageId of the latest message receipt event
+     * @param {Object} result of the latest message receipt event
+    */
     resolveReadPromises(messageId, result, isError) {
         return this.resolvePromises(this.readPromiseMap, messageId, result, isError);
     }
 
     /**
-   * resolve All promises till messageId
-   *
-   * @param {Map} promiseMap of either send or delivered promises
-   * @param {string} messageId of the latest message receipt event
-   * @param {Object} result of the latest message receipt event
-  */
+     * resolve All promises till messageId
+     *
+     * @param {Map} promiseMap of either send or delivered promises
+     * @param {string} messageId of the latest message receipt event
+     * @param {Object} result of the latest message receipt event
+    */
     resolvePromises(promiseMap, messageId, result, isError) {
         var arr = Array.from(promiseMap.keys());
         var indexToResolve = arr.indexOf(messageId);
-
+        
         if (indexToResolve !== -1) {
-            for (let i = 0; i <= indexToResolve; i++) {
-                var callbackFn = promiseMap.get(arr[i])?.[isError ? 1 : 0];
+            for(let i=0;i<=indexToResolve;i++) {
+                var callbackFn = promiseMap.get(arr[i])?.[ isError ? 1 : 0 ];
                 if (typeof callbackFn === 'function') {
                     promiseMap.delete(arr[i]);
                     callbackFn(result);
@@ -253,12 +250,12 @@ export default class MessageReceiptsUtil {
     }
 
     /**
-   * getTranscript API call should hydrate readSet and deliveredSet
-   *
-   * @param {function} callback to call with getTranscript response object.
-   * @param {boolean} shouldSendMessageReceipts decides whether to hydrate mappers or not
-   * @return {function} function which takes in input response from API call and calls callback with response.
-  */
+     * getTranscript API call should hydrate readSet and deliveredSet
+     *
+     * @param {function} callback to call with getTranscript response object.
+     * @param {boolean} shouldSendMessageReceipts decides whether to hydrate mappers or not
+     * @return {function} function which takes in input response from API call and calls callback with response.
+    */
     rehydrateReceiptMappers(callback, shouldSendMessageReceipts) {
         var self = this;
         return response => {

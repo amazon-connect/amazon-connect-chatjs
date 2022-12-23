@@ -17,14 +17,10 @@ const stageRegion = {
     stage: "test-stage",
     region: "test-region",
 };
-const stageRegion2 = {
-    stage: "test-stage2",
-    region: "test-region2",
-};
 
 const configInput = {
     ...stageRegion,
-    endpoint: "test-endpoint",
+    endpoint: "test-endpoint"
 };
 const logMetaData = {contactId: "abc"};
 const defaultMessageReceiptsError = "enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false";
@@ -56,17 +52,10 @@ describe("globalConfig", () => {
             expect(GlobalConfig.getEndpointOverride()).toEqual(configInput.endpoint);
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
         });
-  
         it("should update stage, region and fetch correct config", () => {
             GlobalConfig.updateStageRegion(stageRegion);
             expect(GlobalConfig.getStage()).toEqual(stageRegion.stage);
             expect(GlobalConfig.getRegion()).toEqual(stageRegion.region);
-        });
-        it("updateStageRegion should not update any class variables if the input object does not contain any of those fields", () => {
-            GlobalConfig.updateStageRegion(stageRegion2);
-            GlobalConfig.updateStageRegion({beep: "boop"});
-            expect(GlobalConfig.region).toEqual(stageRegion2.region);
-            expect(GlobalConfig.stage).toEqual(stageRegion2.stage);
         });
     });
   
@@ -303,18 +292,18 @@ describe("globalConfig", () => {
         });
         it("should update feature Flag and call the registered listeners only once", () => {
             GlobalConfig.update({
-                features: {
-                    messageReceipts: {
-                        shouldSendMessageReceipts: false
-                    }
-                }
+                features: []
             });
             const handler = jest.fn();
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler)).toEqual(false);
             GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
             expect(handler).toHaveBeenCalled();
             GlobalConfig.update({
-                features: []
+                features: {
+                    messageReceipts: {
+                        shouldSendMessageReceipts: false
+                    }
+                }
             });
             GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
             GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
@@ -325,7 +314,7 @@ describe("globalConfig", () => {
             GlobalConfig.update({
                 features: {
                     messageReceipts: {
-                        shouldSendMessageReceipts: false
+                        shouldSendMessageReceipts: true
                     }
                 }
             });
