@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1]
+### Changed
+- fix csm initialization to add try-catch to prevent csm webworker initialization failures from affecting the main application.
+
 ## [1.3.0]
 ### Added
 - Add message receipt. Message Receipts allow the sender of a chat message to view when their message has been delivered and read (seen) by the recipient.
