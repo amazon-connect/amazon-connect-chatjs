@@ -435,7 +435,7 @@ Subscribes an event handler that triggers whenever a `application/vnd.amazonaws.
 The `data` field has the same schema as `chatSession.onMessage()`.
 
 ### Client side metric
-In version `1.2.0` the client side metric(CSM) service is added into this library. Client side metric can provide insights into the real performance and usability, it helps us to understnad how customers are actually using the website and what UI experiences they prefer. This feature is enabled by default. User can also disable this feature by passing a flag: `disableCSM` when they create a new chat session:
+In version `1.2.0` the client side metric(CSM) service is added into this library. Client side metric can provide insights into the real performance and usability, it helps us to understand how customers are actually using the website and what UI experiences they prefer. This feature is enabled by default. User can also disable this feature by passing a flag: `disableCSM` when they create a new chat session:
 ```
 const customerChatSession = connect.ChatSession.create({
   ...,
