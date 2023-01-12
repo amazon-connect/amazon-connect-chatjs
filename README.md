@@ -419,7 +419,7 @@ chatSession.onMessage(event => {
 ```
 
 Subscribes an event handler that triggers whenever a message or an event (except for `application/vnd.amazonaws.connect.event.typing`) is created by any participant.
-The `data` field has the same schema as the [`Item` data type](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_Item.html) from the Amazon Connect Participant Service with the addition of the following **optional** fields: `contactId`, `initialContactId`.
+The `data` field has the same schema as the [`Item` data type](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_Item.html) from the Amazon Connect Participant Service with the addition of the following **optional** fields: `ContactId`, `InitialContactId`.
 
 #### `chatSession.onTyping()`
 ```js
@@ -433,6 +433,73 @@ chatSession.onTyping(event => {
 
 Subscribes an event handler that triggers whenever a `application/vnd.amazonaws.connect.event.typing` event is created by any participant.
 The `data` field has the same schema as `chatSession.onMessage()`.
+
+
+#### `chatSession.onParticipantIdle()`
+```js
+/**
+ * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.idle" event is created by any participant. 
+ * @param {
+    AbsoluteTime?: string,
+    ContentType?: string,
+    Type?: string,
+    ParticipantId?: string,
+    DisplayName?: string,
+    ParticipantRole?: string,
+    InitialContactId?: string
+ } event.data
+ */
+chatSession.onParticipantIdle(event => {
+  const { chatDetails, data } = event;
+  if (data.ParticipantRole === "AGENT") {
+    // ...
+  }
+});
+```
+#### `chatSession.onParticipantReturned()`
+```js
+/**
+ * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.returned" event is created by any participant. 
+ * @param {
+    AbsoluteTime?: string,
+    ContentType?: string,
+    Type?: string,
+    ParticipantId?: string,
+    DisplayName?: string,
+    ParticipantRole?: string,
+    InitialContactId?: string
+ } event.data
+ */
+chatSession.onParticipantReturned(event => {
+  const { chatDetails, data } = event;
+  if (data.ParticipantRole === "AGENT") {
+    // ...
+  }
+});
+```
+#### `chatSession.onAutoDisconnection()`
+```js
+/**
+ * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.autodisconnection" event is created by any participant. 
+ * @param {
+    AbsoluteTime?: string,
+    ContentType?: string,
+    Type?: string,
+    ParticipantId?: string,
+    DisplayName?: string,
+    ParticipantRole?: string,
+    InitialContactId?: string
+ } event.data
+ */
+chatSession.onAutoDisconnection(event => {
+  const { chatDetails, data } = event;
+  if (data.ParticipantRole === "AGENT") {
+    // ...
+  }
+});
+```
+`onParticipantIdle`, `onParticipantReturned`, and `onAutoDisconnection` are related to [set up chat timeouts for chat participants](https://docs.aws.amazon.com/connect/latest/adminguide/setup-chat-timeouts.html).
+
 
 ### Client side metric
 In version `1.2.0` the client side metric(CSM) service is added into this library. Client side metric can provide insights into the real performance and usability, it helps us to understnad how customers are actually using the website and what UI experiences they prefer. This feature is enabled by default. User can also disable this feature by passing a flag: `disableCSM` when they create a new chat session:
