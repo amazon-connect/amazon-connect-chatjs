@@ -99,7 +99,7 @@ connect.ChatSession.setGlobalConfig({
   //message receipts use sendEvent API for sending Read/Delivered events https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html
   features: {
     messageReceipts: {
-      shouldSendMessageReceipts: false, // by default messageReceipts is enabled
+      shouldSendMessageReceipts: true, // DEFAULT: true, set to false to disable Read/Delivered receipts
       throttleTime: 5000 //default throttle time - time to wait before sending Read/Delivered receipt.
     }
   }
