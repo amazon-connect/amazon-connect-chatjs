@@ -213,6 +213,7 @@ class ChatController {
             this.logMetaData,
             connectionDetails
         );
+        this.connectionDetails = connectionDetails
         this.connectionHelper.onEnded(this._handleEndedConnection.bind(this));
         this.connectionHelper.onConnectionLost(this._handleLostConnection.bind(this));
         this.connectionHelper.onConnectionGain(this._handleGainedConnection.bind(this));
