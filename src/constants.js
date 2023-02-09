@@ -71,6 +71,7 @@ export const CONTENT_TYPE = {
     textCsv: "text/csv",
     applicationDoc: "application/msword",
     applicationDocx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    applicationJson: "application/json",
     applicationPdf: "application/pdf",
     applicationPpt: "application/vnd.ms-powerpoint",
     applicationPptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
