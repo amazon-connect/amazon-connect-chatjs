@@ -421,6 +421,75 @@ chatSession.onMessage(event => {
 Subscribes an event handler that triggers whenever a message or an event (except for `application/vnd.amazonaws.connect.event.typing`) is created by any participant.
 The `data` field has the same schema as the [`Item` data type](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_Item.html) from the Amazon Connect Participant Service with the addition of the following **optional** fields: `contactId`, `initialContactId`.
 
+ > **Warning**
+The `messages` received over websocket are not guranteed to be in order!
+
+Here is the code reference on how messages should be handled in the FrontEnd [Amazon-Connect-Chat-Interface](https://github.com/amazon-connect/amazon-connect-chat-interface/blob/master/src/components/Chat/ChatSession.js#L514) (This code handles removing messages with missing messageIds, duplicate messageIds and, sorting messages to handle display order of messages):
+```js
+
+this.ChatJSClient.onMessage((data) => {
+  //deserialize message based on what UI component understands
+  const message = createTranscriptItem(
+        PARTICIPANT_MESSAGE,
+      {
+        data: data.text,
+        type: data.type || ContentType.MESSAGE_CONTENT_TYPE.TEXT_PLAIN,
+      },
+      this.thisParticipant
+  );
+
+  this._addItemsToTranscript([message]);
+});
+
+const _addItemsToTranscript = (items) => {
+  //filter and ignore messages not required for display
+  items = items.filter((item) => !_isSystemEvent(item));
+
+  //remove duplicate messageIds
+  const newItemMap = items.reduce((acc, item) => 
+                      ({ ...acc, [item.id]: item }), {});
+  //remove messages missing messageIds
+  const newTranscript = this.transcript.filter((item) =>
+                         newItemMap[item.id] === undefined);
+
+  newTranscript.push(...items);
+  newTranscript.sort((a, b) => {
+    const isASending = a.transportDetails.status === Status.Sending;
+    const isBSending = b.transportDetails.status === Status.Sending;
+    if ((isASending && !isBSending) || (!isASending && isBSending)) {
+      return isASending ? 1 : -1;
+    }
+    return a.transportDetails.sentTime - b.transportDetails.sentTime;
+  });
+
+ this._updateTranscript(newTranscript);
+}
+
+const _isSystemEvent = (item) {
+  return Object.values(EVENT_CONTENT_TYPE).indexOf(item.contentType) !== -1;
+}
+
+const EVENT_CONTENT_TYPE: {
+    TYPING: "application/vnd.amazonaws.connect.event.typing",
+    READ_RECEIPT: "application/vnd.amazonaws.connect.event.message.read",
+    DELIVERED_RECEIPT: "application/vnd.amazonaws.connect.event.message.delivered",
+    PARTICIPANT_JOINED: "application/vnd.amazonaws.connect.event.participant.joined",
+    PARTICIPANT_LEFT: "application/vnd.amazonaws.connect.event.participant.left",
+    TRANSFER_SUCCEEDED: "application/vnd.amazonaws.connect.event.transfer.succeed",
+    TRANSFER_FAILED: "application/vnd.amazonaws.connect.event.transfer.failed",
+    CONNECTION_ACKNOWLEDGED: "application/vnd.amazonaws.connect.event.connection.acknowledged",
+    CHAT_ENDED: "application/vnd.amazonaws.connect.event.chat.ended"
+}
+
+
+//send data to update Store or UI component waiting for next chat-message
+_updateTranscript(transcript) {
+  this._triggerEvent("transcript-changed", transcript);
+}
+
+```
+
+
 #### `chatSession.onTyping()`
 ```js
 chatSession.onTyping(event => {
