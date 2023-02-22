@@ -5,6 +5,9 @@ module.exports = {
   entry: "./src/index",
   mode: "development",
   devtool: "source-map",
+  node: {
+    global: false
+  },
   output: {
     filename: "amazon-connect-chat.js",
     path: path.resolve(__dirname, "dist")

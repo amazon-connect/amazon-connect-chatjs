@@ -19,7 +19,6 @@ class CsmService {
         this.metricsToBePublished = [];
         this.agentMetricToBePublished = [];
         this.MAX_RETRY = 5;
-        this.loadCsmScriptAndExecute();
     }
   
     loadCsmScriptAndExecute() {
@@ -28,6 +27,7 @@ class CsmService {
             script.type = 'text/javascript';
             script.innerHTML = csmJsString;
             document.head.appendChild(script);
+            this.initializeCSM();
         } catch (error) {
             this.logger.error("Load csm script error: ", error);
         }
