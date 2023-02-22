@@ -6,6 +6,8 @@ import {
 import { LogManager } from "../log";
 //Note: this imports AWS instead from aws-sdk npm package - details in ReadMe
 import { ConnectParticipant } from "./aws-sdk-connectparticipant";
+import throttle from "lodash/throttle";
+import { CONTENT_TYPE, TYPING_VALIDITY_TIME } from '../constants';
 
 const DEFAULT_PREFIX = "Amazon-Connect-ChatJS-ChatClient";
 
@@ -227,21 +229,35 @@ class AWSChatClient extends ChatClient {
       .catch(err => { return Promise.reject(err); });
   }
 
+  
   sendEvent(connectionToken, contentType, content) {
     let self = this;
-      var params = {
-        ConnectionToken: connectionToken,
-        ContentType: contentType,
-        Content: content
-      };
-      var sendEventRequest = self.chatClient.sendEvent(params);
-      const logContent = {contentType};
-      return self._sendRequest(sendEventRequest).then((res) => {
-        this.logger.debug("Successfully send event", {...logContent, id: res.data?.Id, });
-        return res;
-      }).catch((err) => {
-        return Promise.reject(err);
-      });
+    if(contentType === CONTENT_TYPE.typing) {
+      return self.throttleEvent(connectionToken, contentType, content)
+    }
+    return self._submitEvent(connectionToken, contentType, content);
+  }
+  
+  throttleEvent = throttle((connectionToken, contentType, content) => {
+    return this._submitEvent(connectionToken, contentType, content);
+  }, TYPING_VALIDITY_TIME, { trailing: false, leading: true })
+  
+  async _submitEvent(connectionToken, contentType, content) {
+    let self = this;
+    var params = {
+      ConnectionToken: connectionToken,
+      ContentType: contentType,
+      Content: content
+    };
+    var sendEventRequest = self.chatClient.sendEvent(params);
+    const logContent = {contentType};
+    try {
+      const res = await self._sendRequest(sendEventRequest);
+      this.logger.debug("Successfully send event", { ...logContent, id: res.data?.Id, });
+      return res;
+    } catch (err) {
+      return await Promise.reject(err);
+    }
   }
 
   _sendRequest(request) {
