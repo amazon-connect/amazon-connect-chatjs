@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.3]
+### Changed
+- fix unsafe-eval usage in code by updating webpack config.
+- do not load CSM bundle if CSM is disabled.
+
 ## [1.3.2]
 ### Changed
 - add application/json as a supported ContentType.

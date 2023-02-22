@@ -202,7 +202,7 @@ var ChatSessionConstructor = args => {
     // initialize CSM Service for only customer chat widget
     // Disable CSM service from canary test
     if(!args.disableCSM && type === SESSION_TYPES.CUSTOMER) {
-        csmService.initializeCSM();
+        csmService.loadCsmScriptAndExecute();
     }
     return CHAT_SESSION_FACTORY.createChatSession(
         type,
