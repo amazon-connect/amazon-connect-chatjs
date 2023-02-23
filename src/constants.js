@@ -92,6 +92,7 @@ export const CONTENT_TYPE = {
     transferFailed: "application/vnd.amazonaws.connect.event.transfer.failed",
     chatEnded: "application/vnd.amazonaws.connect.event.chat.ended",
     interactiveMessage: "application/vnd.amazonaws.connect.message.interactive",
+    interactiveMessageResponse: "application/vnd.amazonaws.connect.message.interactive.response",
     readReceipt: "application/vnd.amazonaws.connect.event.message.read",
     deliveredReceipt: "application/vnd.amazonaws.connect.event.message.delivered",
     participantIdle: "application/vnd.amazonaws.connect.event.participant.idle",

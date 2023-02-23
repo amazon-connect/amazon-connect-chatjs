@@ -262,20 +262,28 @@ describe("ChatController", () => {
         expect(flag).toEqual(true);
     });
 
-    test("sendMessage works as expected", async () => {
-        const args = {
-            metadata: "metadata",
-            message: "message",
-            contentType: CONTENT_TYPE.textPlain
-        };
-        const chatController = getChatController();
-        await chatController.connect();
-        const response = await chatController.sendMessage(args);
-        expect(chatClient.sendMessage).toHaveBeenCalledWith("token", "message", CONTENT_TYPE.textPlain);
-        expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.SEND_MESSAGE, CSM_CATEGORY.API, false, [{name: "ContentType", value: CONTENT_TYPE.textPlain}]);
-        expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.SEND_MESSAGE, expect.anything(), CSM_CATEGORY.API, [{name: "ContentType", value: CONTENT_TYPE.textPlain}]);
-        expect(response.metadata).toBe("metadata");
-        expect(response.testField).toBe("test");
+    const chatMessageContentTypes = [
+        CONTENT_TYPE.textPlain,
+        CONTENT_TYPE.applicationJson,
+        CONTENT_TYPE.interactiveMessageResponse
+    ];
+    test("sendMessage works as expected for all chatMessage content-types", async () => {
+        for(const chatMessageContentType of chatMessageContentTypes) {
+            const args = {
+                metadata: "metadata",
+                message: "message",
+                contentType: chatMessageContentType
+            };
+            const chatController = getChatController();
+            await chatController.connect();
+            const response = await chatController.sendMessage(args);
+            expect(chatClient.sendMessage).toHaveBeenCalledWith("token", "message", chatMessageContentType);
+            expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.SEND_MESSAGE, CSM_CATEGORY.API, false, [{name: "ContentType", value: chatMessageContentType}]);
+            expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.SEND_MESSAGE, expect.anything(), CSM_CATEGORY.API, [{name: "ContentType", value: chatMessageContentType}]);
+            expect(response.metadata).toBe("metadata");
+            expect(response.testField).toBe("test");
+
+        }
     });
 
     test("sendMessage throws an error", async () => {
