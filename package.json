@@ -58,7 +58,8 @@
       "json",
       "html",
       "cobertura",
-      "lcov"
+      "lcov",
+      "text"
     ]
   },
   "author": "Amazon Web Services",
