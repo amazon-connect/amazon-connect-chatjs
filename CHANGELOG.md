@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.4]
+### Added
+- Throttle typing event. Throttle wait time is set to 10 seconds.
+
 ## [1.3.3]
 ### Changed
 - fix unsafe-eval usage in code by updating webpack config.
