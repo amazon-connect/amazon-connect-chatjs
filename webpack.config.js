@@ -1,5 +1,6 @@
-const path = require("path");
-const webpack = require("webpack");
+const path = require('path');
+/* eslint-disable-next-line no-unused-vars */
+const webpack = require('webpack');
 
 module.exports = {
   entry: "./src/index",
@@ -9,18 +10,18 @@ module.exports = {
     global: false
   },
   output: {
-    filename: "amazon-connect-chat.js",
-    path: path.resolve(__dirname, "dist")
+    filename: 'amazon-connect-chat.js',
+    path: path.resolve(__dirname, 'dist')
   },
   resolve: {
-    extensions: [".js"]
+    extensions: ['.js']
   },
   module: {
     rules: [
       {
         test: /\.(js|mjs|jsx|ts|tsx)$/,
         exclude: /node_modules/,
-        loader: require.resolve("babel-loader"),
+        loader: require.resolve('babel-loader'),
         options: {
           // This is a feature of `babel-loader` for webpack (not Babel itself).
           // It enables caching results in ./node_modules/.cache/babel-loader/
@@ -37,7 +38,7 @@ module.exports = {
     compress: false,
     hot: true,
     static: {
-      directory: path.resolve(__dirname, "showcase"),
+      directory: path.resolve(__dirname, 'showcase'),
       watch: true
     }
   }
