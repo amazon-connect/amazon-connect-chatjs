@@ -116,6 +116,10 @@ export class ChatSession {
         this.controller.subscribe(CHAT_EVENTS.AUTODISCONNECTION, callback);
     }
 
+    onConnectionLost(callback) {
+      this.controller.subscribe(CHAT_EVENTS.CONNECTION_LOST, callback);
+    }
+
     sendMessage(args) {
         return this.controller.sendMessage(args);
     }
