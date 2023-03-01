@@ -245,7 +245,7 @@ declare namespace connect {
      * @param handler The event handler.
      */
     onConnectionLost(
-      handler: (event: ChatConnectionEstablishedEvent) => void
+      handler: (event: ChatConnectionLostEvent) => void
     ): void;
 
     /**
@@ -622,6 +622,10 @@ declare namespace connect {
   }
 
   interface ChatEndedEvent {
+    readonly chatDetails: ChatDetails;
+  }
+
+  interface ChatConnectionLostEvent {
     readonly chatDetails: ChatDetails;
   }
 
