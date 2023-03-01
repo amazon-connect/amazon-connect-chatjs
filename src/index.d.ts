@@ -241,6 +241,14 @@ declare namespace connect {
     onEnded(handler: (event: ChatEndedEvent) => void): void;
 
     /**
+     * Subscribes an event handler that triggers when the session connection is lost.
+     * @param handler The event handler.
+     */
+    onConnectionLost(
+      handler: (event: ChatConnectionEstablishedEvent) => void
+    ): void;
+
+    /**
      * Subscribes an event handler that triggers when a message event is received.
      * @param handler The event handler.
      */

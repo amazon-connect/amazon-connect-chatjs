@@ -82,6 +82,7 @@ describe("chatSession", () => {
         const cb8 = jest.fn();
         const cb9 = jest.fn();
         const cb10 = jest.fn();
+        const cb11 = jest.fn();
 
         session.onParticipantIdle(cb1);
         session.onParticipantReturned(cb2);
@@ -93,6 +94,7 @@ describe("chatSession", () => {
         session.onConnectionBroken(cb8);
         session.onConnectionEstablished(cb9);
         session.onEnded(cb10);
+        session.onConnectionLost(cb11);
 
         controller._forwardChatEvent(CHAT_EVENTS.PARTICIPANT_IDLE, eventData);
         controller._forwardChatEvent(CHAT_EVENTS.PARTICIPANT_RETURNED, eventData);
@@ -104,6 +106,7 @@ describe("chatSession", () => {
         controller._forwardChatEvent(CHAT_EVENTS.CONNECTION_BROKEN, eventData);
         controller._forwardChatEvent(CHAT_EVENTS.CONNECTION_ESTABLISHED, eventData);
         controller._forwardChatEvent(CHAT_EVENTS.CHAT_ENDED, eventData);
+        controller._forwardChatEvent(CHAT_EVENTS.CONNECTION_LOST, eventData);
 
         await new Promise((r) => setTimeout(r, 0));
 
@@ -117,6 +120,7 @@ describe("chatSession", () => {
         expect(cb8).toHaveBeenCalled();
         expect(cb9).toHaveBeenCalled();
         expect(cb10).toHaveBeenCalled();
+        expect(cb11).toHaveBeenCalled();
     });
 
     test('events', () => {
