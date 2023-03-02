@@ -573,9 +573,7 @@ chatSession.onAutoDisconnection(event => {
 ```js
 chatSession.onConnectionLost(event => {
   const { chatDetails, data } = event;
-  switch (data.ContentType) {
-    // ...
-  }
+  // ...
 });
 ```
 
