@@ -7,7 +7,6 @@ export const PARTICIPANT_TOKEN_HEADER = "x-amzn-connect-participant-token";
 export const AUTH_HEADER = "X-Amz-Bearer";
 
 export const FEATURES = {
-    PARTICIPANT_CONN_ACK: "PARTICIPANT_CONN_ACK",
     MESSAGE_RECEIPTS_ENABLED: "MESSAGE_RECEIPTS_ENABLED"
 };
 

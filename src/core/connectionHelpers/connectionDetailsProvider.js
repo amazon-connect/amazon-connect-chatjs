@@ -1,8 +1,7 @@
 import { IllegalArgumentException } from "../exceptions";
 import { ConnectionInfoType } from "./baseConnectionHelper";
-import { ACPS_METHODS, CSM_CATEGORY, SESSION_TYPES, TRANSPORT_LIFETIME_IN_SECONDS, FEATURES, CONN_ACK_FAILED } from "../../constants";
+import { ACPS_METHODS, CSM_CATEGORY, SESSION_TYPES, TRANSPORT_LIFETIME_IN_SECONDS, CONN_ACK_FAILED } from "../../constants";
 import { csmService } from "../../service/csmService";
-import { GlobalConfig } from "../../globalConfig";
 
 export default class ConnectionDetailsProvider {
 
@@ -100,11 +99,6 @@ export default class ConnectionDetailsProvider {
                     return this._handleGetConnectionTokenResponse(response.chatTokenTransport);
                 })
                 .catch(() => {
-                    if (!GlobalConfig.isFeatureEnabled(FEATURES.PARTICIPANT_CONN_ACK)) {
-                        //current behaviour
-                        return this.callCreateParticipantConnection();
-                    }
-                    //new behaviour for connAck
                     return this.callCreateParticipantConnection({
                         Type: true,
                         ConnectParticipant: true

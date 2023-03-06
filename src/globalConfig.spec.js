@@ -327,7 +327,6 @@ describe("globalConfig", () => {
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler)).toEqual(false);
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler2)).toEqual(false);
             GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
-            GlobalConfig.setFeatureFlag(FEATURES.PARTICIPANT_CONN_ACK);
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler)).toEqual(true);
             expect(handler).toHaveBeenCalled();
             expect(handler2).toHaveBeenCalled();
