@@ -22,9 +22,6 @@ describe("ConnectionDetailsProvider", () => {
         connectionDetailsProvider = new ConnectionDetailsProvider(null, chatClient, SESSION_TYPES.AGENT, getConnectionToken);
     }
     beforeEach(() => {
-        GlobalConfig.update({
-            features: [FEATURES.PARTICIPANT_CONN_ACK]
-        });
         jest.resetAllMocks();
         jest.spyOn(csmService, 'addLatencyMetricWithStartTime').mockImplementation(() => {});
         jest.spyOn(csmService, 'addCountAndErrorMetric').mockImplementation(() => {});

@@ -8,8 +8,6 @@ import {
     CSM_CATEGORY,
     ACPS_METHODS,
     FEATURES,
-    SEND_EVENT_CONACK_THROTTLED,
-    SEND_EVENT_CONACK_FAILURE,
     CREATE_PARTICIPANT_CONACK_FAILURE,
     CREATE_PARTICIPANT_CONACK_API_CALL_COUNT
 } from "../constants";
@@ -302,40 +300,18 @@ class ChatController {
             chatDetails: this.getChatDetails()
         }, responseObject);
         this.pubsub.triggerAsync(CHAT_EVENTS.CONNECTION_ESTABLISHED, eventData);
-        // Currently we are in phase-1 ConnAck Migration: https://quip-amazon.com/qbT6AaXZM8aH/120122-Status-Message-Receipts-ConnAck-Migration-Program-Review
-        // phase-1. Use CreateParticipantConnection for ConnAck only when SendEvent is throttled
-        // phase-2. Migrate connAck from SendEvent to CreateParticipantConnection
-        // TODO: migrating connAck from SendEvent to CreateParticipantConnection
-        const ConnectionAckFeatureEnabled = GlobalConfig.isFeatureEnabled(FEATURES.PARTICIPANT_CONN_ACK);
+        
+        // TODO: Fix the floating promise issue: https://app.asana.com/0/1203611591691532/1203880194668408/f
         const connectionAcknowledged = connectionDetailsProvider.getConnectionDetails()?.connectionAcknowledged;
         if (this._shouldAcknowledgeContact() && !connectionAcknowledged) {
-            if (ConnectionAckFeatureEnabled) {
-                csmService.addAgentCountMetric(CREATE_PARTICIPANT_CONACK_API_CALL_COUNT, 1);
-                connectionDetailsProvider.callCreateParticipantConnection({
-                    Type: false,
-                    ConnectParticipant: true
-                }).catch(err => {
-                    this.logger.warn("ConnectParticipant failed to acknowledge Agent connection ", err);
-                    this.sendEvent({
-                        contentType: CONTENT_TYPE.connectionAcknowledged
-                    });
-                    csmService.addAgentCountMetric(CREATE_PARTICIPANT_CONACK_FAILURE, 1);
-                });
-            } else {
-                this.sendEvent({
-                    contentType: CONTENT_TYPE.connectionAcknowledged
-                }).catch((error) => {
-                    connectionDetailsProvider.callCreateParticipantConnection({
-                        Type: false,
-                        ConnectParticipant: true
-                    });
-                    if (error.statusCode === 429) {
-                        csmService.addAgentCountMetric(SEND_EVENT_CONACK_THROTTLED, 1);
-                    }
-                    csmService.addAgentCountMetric(SEND_EVENT_CONACK_FAILURE, 1);
-                    this.logger.warn("Send event conack failed: ", error);
-                });
-            }
+            csmService.addAgentCountMetric(CREATE_PARTICIPANT_CONACK_API_CALL_COUNT, 1);
+            connectionDetailsProvider.callCreateParticipantConnection({
+                Type: false,
+                ConnectParticipant: true
+            }).catch(err => {
+                this.logger.warn("ConnectParticipant failed to acknowledge Agent connection in CreateParticipantConnection: ", err);
+                csmService.addAgentCountMetric(CREATE_PARTICIPANT_CONACK_FAILURE, 1);
+            });
         }
         console.warn("onConnectionSuccess responseObject", responseObject);
         return responseObject;

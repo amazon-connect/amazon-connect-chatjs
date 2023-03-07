@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0]
+### Added
+- Migrate critical **connectionAcknowledge** event to CreateParticipantConnection API, and keep **sendEvent API** for  non-critical events like typing/read/delivered.
+- Adding chatSession.onConnectionLost method which subscribes to the CHAT_EVENTS.CONNECTION_LOST event.
+
 ## [1.3.4]
 ### Added
 - Throttle typing event. Throttle wait time is set to 10 seconds.
