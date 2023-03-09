@@ -1,25 +1,36 @@
 {
-    "rules": {
-        "no-console": "off",
-        "eqeqeq": ["error", "always"],
-        "semi": ["error", "always"]
-    },
-    "env": {
-        "es6": true,
-        "browser": true,
-        "node": true
-    },
-    "extends": [
-        "eslint:recommended"
-    ],
-    "globals": {
-        "module": true,
-        "require": true,
-        "process": true,
-        "connect": true
-    },
-    "parserOptions": {
-        "ecmaVersion": 2017,
-        "sourceType": "module"
+  "rules": {
+    "no-console": "off",
+    "eqeqeq": ["error", "always"],
+    "semi": ["error", "always"],
+    "no-undef": "off"
+  },
+  "env": {
+    "es6": true,
+    "browser": true,
+    "node": true,
+    "commonjs": true
+  },
+  "plugins": ["jest"],
+  "parser": "@babel/eslint-parser",
+  "extends": ["eslint:recommended"],
+  "globals": {
+    "module": true,
+    "require": true,
+    "process": true,
+    "connect": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2017,
+    "sourceType": "module"
+  },
+  "ignorePatterns": ["dist"],
+  "overrides": [
+    {
+      "files": ["**/*.spec.js", "**/*.spec.jsx"],
+      "env": {
+        "jest": true
+      }
     }
+  ]
 }
