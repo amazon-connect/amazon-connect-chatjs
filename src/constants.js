@@ -6,6 +6,8 @@ export const CHAT_CONFIGURATIONS = {
 export const PARTICIPANT_TOKEN_HEADER = "x-amzn-connect-participant-token";
 export const AUTH_HEADER = "X-Amz-Bearer";
 
+export const DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS = 5000;
+
 export const FEATURES = {
     MESSAGE_RECEIPTS_ENABLED: "MESSAGE_RECEIPTS_ENABLED"
 };

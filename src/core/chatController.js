@@ -43,6 +43,7 @@ class ChatController {
         this.websocketManager = args.websocketManager;
         this._participantDisconnected = false;
         this.sessionMetadata = {};
+        this.connectionDetailsProvider = null;
         this.logger = LogManager.getLogger({
             prefix: "ChatJS-ChatController",
             logMetaData: args.logMetaData
@@ -134,9 +135,14 @@ class ChatController {
         if (this.messageReceiptUtil.isMessageReceipt(eventType, args)) {
             // Ignore all MessageReceipt events
             if(!GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED) || !parsedContent.messageId) {
-                this.logger.warn(`Ignoring messageReceipt: ${GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED) && "missing messageId"}`, args);
+                const cause = GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED) ?
+                    "missing messageId"
+                    : "message receipts are disabled";
+                const msg = `Ignoring messageReceipt: ${cause}`;
+
+                this.logger.warn(msg, args);
                 return Promise.reject({
-                    errorMessage: `Ignoring messageReceipt: ${GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED) && "missing messageId"}`,
+                    errorMessage: msg,
                     data: args
                 });
             }
@@ -160,7 +166,7 @@ class ChatController {
             .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType));
     }
 
-    getTranscript(inputArgs) {
+    getTranscript(inputArgs = {}) {
         const startTime = new Date().getTime();
         const metadata = inputArgs.metadata || null;
         const args = {
@@ -190,16 +196,20 @@ class ChatController {
     connect(args={}) {
         this.sessionMetadata = args.metadata || null;
         this.argsValidator.validateConnectChat(args);
-        const connectionDetailsProvider = this._getConnectionDetailsProvider();
-        return connectionDetailsProvider.fetchConnectionDetails()
-            .then(
-                (connectionDetails) => 
-                    this._initConnectionHelper(connectionDetailsProvider, connectionDetails)
-            )
-            .then(response => this._onConnectSuccess(response, connectionDetailsProvider))
-            .catch(err => {
-                return this._onConnectFailure(err);
-            });
+        if (!this.connectionDetailsProvider) {
+            this.connectionDetailsProvider = this._getConnectionDetailsProvider();
+            return this.connectionDetailsProvider.fetchConnectionDetails()
+                .then(
+                    (connectionDetails) =>
+                        this._initConnectionHelper(this.connectionDetailsProvider, connectionDetails)
+                )
+                .then((response) => this._onConnectSuccess(response, this.connectionDetailsProvider))
+                .catch(err => {
+                    return this._onConnectFailure(err);
+                });
+        } else {
+            this.logger.warn("Ignoring duplicate call to connect. Method can only be invoked once", args);
+        }
     }
 
     _initConnectionHelper(connectionDetailsProvider, connectionDetails) {
@@ -296,11 +306,7 @@ class ChatController {
             connectCalled: true,
             metadata: this.sessionMetadata
         };
-        const eventData = Object.assign({
-            chatDetails: this.getChatDetails()
-        }, responseObject);
-        this.pubsub.triggerAsync(CHAT_EVENTS.CONNECTION_ESTABLISHED, eventData);
-        
+
         // TODO: Fix the floating promise issue: https://app.asana.com/0/1203611591691532/1203880194668408/f
         const connectionAcknowledged = connectionDetailsProvider.getConnectionDetails()?.connectionAcknowledged;
         if (this._shouldAcknowledgeContact() && !connectionAcknowledged) {
