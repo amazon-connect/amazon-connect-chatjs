@@ -95,8 +95,8 @@ connect.ChatSession.setGlobalConfig({
     useDefaultLogger: true
   },
   region: "us-east-1", // optional, defaults to: "us-west-2"
-  //Control switch for enabling/disabling message-receipts (Read/Delivered) for messages
-  //message receipts use sendEvent API for sending Read/Delivered events https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html
+  // Control switch for enabling/disabling message-receipts (Read/Delivered) for messages
+  // message receipts use sendEvent API for sending Read/Delivered events https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html
   features: {
     messageReceipts: {
       shouldSendMessageReceipts: true, // DEFAULT: true, set to false to disable Read/Delivered receipts
@@ -106,7 +106,7 @@ connect.ChatSession.setGlobalConfig({
 });
 ```
 
-Set the global configuration to use. If this method is not called, the defaults of `loggerConfig` and `region` are used.
+Set the global configuration to use. If this method is not called, the defaults of `loggerConfig`, `region`,  `features` are used.
 This method should be called before `connect.ChatSession.create()`.
 
 Customizing `loggerConfig` for ChatJS:
@@ -296,11 +296,9 @@ The arguments are based on the [API request body](https://docs.aws.amazon.com/co
 - Fields are in `camelCase`.
 - `ClientToken` cannot be specified.
 - `ContentType` allows the following values:
-  - `"application/vnd.amazonaws.connect.event.chat.ended"`
-  - `"application/vnd.amazonaws.connect.event.participant.joined"`
-  - `"application/vnd.amazonaws.connect.event.participant.left"`
-  - `"application/vnd.amazonaws.connect.event.transfer.succeeded"`
-  - `"application/vnd.amazonaws.connect.event.transfer.failed"`
+  - `"application/vnd.amazonaws.connect.event.connection.acknowledged"`
+  - `"application/vnd.amazonaws.connect.event.message.delivered"`
+  - `"application/vnd.amazonaws.connect.event.message.read"`
   - `"application/vnd.amazonaws.connect.event.typing"`
 
 The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html#API_SendEvent_ResponseSyntax).

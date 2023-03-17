@@ -42,10 +42,10 @@ describe("ChatController", () => {
     let endResponse;
 
     function getChatController(shouldSendMessageReceipts = true) {
-        GlobalConfig.update({
-            features: shouldSendMessageReceipts ? [FEATURES.MESSAGE_RECEIPTS_ENABLED] : [],
-            throttleTime: 1000
-        });
+        if (!shouldSendMessageReceipts) {
+            GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+        }
+        GlobalConfig.updateMessageReceiptsThrottleTime(1000);
 
         return new ChatController({
             sessionType: SESSION_TYPES.AGENT,
@@ -60,6 +60,7 @@ describe("ChatController", () => {
 
         const messageHandlers = [];
         const onEndedHandlers = [];
+        const onGainedHandlers = [];
         startResponse = Promise.resolve();
         endResponse = Promise.resolve();
         connectionDetailsProvider.mockImplementation(() => {
@@ -81,7 +82,9 @@ describe("ChatController", () => {
                     onEndedHandlers.push(handlers);
                 },
                 onConnectionLost: () => {},
-                onConnectionGain: () => {},
+                onConnectionGain: (handlers) => {
+                    onGainedHandlers.push(handlers);
+                },
                 onMessage: (handler) => {
                     messageHandlers.push(handler);
                 },
@@ -119,6 +122,9 @@ describe("ChatController", () => {
                         Type: EVENT,
                         ContentType: CONTENT_TYPE.chatEnded
                     }));
+                },
+                $simulateConnectionGained: () => {
+                    onGainedHandlers.forEach(f => f());
                 }
             };
         });
@@ -135,19 +141,67 @@ describe("ChatController", () => {
         jest.spyOn(csmService, 'addCountMetric').mockImplementation(() => {});
     });
 
-    test("Connection gets established successfully via CreateParticipantConnection by default", async () => {
+    test("Connection gets established successfully via SendEvent ConnAck when local storage is set", async () => {
         const chatController = getChatController();
+        global.localStorage.setItem("isConnAckMigrationCanary", "true");
         const connectionEstablishedHandler = jest.fn();
         chatController.subscribe(CHAT_EVENTS.CONNECTION_ESTABLISHED, connectionEstablishedHandler);
         await chatController.connect();
+        chatController.connectionHelper.$simulateConnectionGained();
+        await Utils.delay(1);
+        expect(connectionEstablishedHandler).toHaveBeenCalledTimes(1);
+        expect(chatClient.sendEvent).toHaveBeenCalledWith("token", CONTENT_TYPE.connectionAcknowledged, null);
+        global.localStorage.removeItem("isConnAckMigrationCanary");
+    });
+
+    test("Connection gets established successfully via CreateParticipantConnection by default", async () => {
+        const chatController = getChatController();
+        GlobalConfig.addFeatureFlag(FEATURES.PARTICIPANT_CONN_ACK);
+        const connectionEstablishedHandler = jest.fn();
+        chatController.subscribe(CHAT_EVENTS.CONNECTION_ESTABLISHED, connectionEstablishedHandler);
+        await chatController.connect();
+        chatController.connectionHelper.$simulateConnectionGained();
         await Utils.delay(1);
         expect(connectionEstablishedHandler).toHaveBeenCalledTimes(1);
         expect(chatClient.sendEvent).not.toHaveBeenCalled();
     });
 
+    test("Connection gets established successfully via CreateParticipantConnection and is idempotent", async () => {
+        console.warn = jest.fn();
+        const chatController = getChatController();
+        GlobalConfig.addFeatureFlag(FEATURES.PARTICIPANT_CONN_ACK);
+        const connectionEstablishedHandler = jest.fn();
+        chatController.subscribe(CHAT_EVENTS.CONNECTION_ESTABLISHED, connectionEstablishedHandler);
+        await chatController.connect();
+        await chatController.connect();
+        chatController.connectionHelper.$simulateConnectionGained();
+        await Utils.delay(1);
+        expect(connectionEstablishedHandler).toHaveBeenCalledTimes(1);
+        expect(chatClient.sendEvent).not.toHaveBeenCalled();
+        expect(console.warn.mock.calls[2][0]).toBe("Ignoring duplicate call to connect. Method can only be invoked once");
+    });
+
+    test("Should publish CSM when SendEvent ConnAck is throttled", async () => {
+        const chatController = getChatController();
+        global.localStorage.setItem("isConnAckMigrationCanary", "true");
+        chatClient.sendEvent = jest.fn().mockImplementation(() => {
+            return  Promise.reject({ statusCode: 429 });
+        });
+        try {
+            await chatController.connect();
+            expect(false).toEqual(true);
+        } catch (e) {
+            await Utils.delay(1);
+            expect(chatClient.sendEvent).toHaveBeenCalledWith("token", CONTENT_TYPE.connectionAcknowledged, null);
+            expect(csmService.addAgentCountMetric).toHaveBeenCalledWith(SEND_EVENT_CONACK_THROTTLED, 1);
+            expect(csmService.addAgentCountMetric).toHaveBeenCalledWith(SEND_EVENT_CONACK_FAILURE, 1);
+        }
+        global.localStorage.removeItem("isConnAckMigrationCanary");
+    });
+
     test("Should publish CSM when CreateParticipantConnection ConnAck is failed", async () => {
         const mockCallCreateParticipantConnection = jest.fn().mockImplementation(() =>{
-                return Promise.reject("connAck");
+            return Promise.reject("connAck");
         });
         connectionDetailsProvider.mockImplementation(() => {
             return {
@@ -626,7 +680,7 @@ describe("ChatController", () => {
             await chatController.sendEvent(args);
             await chatController.sendEvent(args);
         } catch (err) {
-            expect(err.errorMessage).toEqual("Ignoring messageReceipt: false");
+            expect(err.errorMessage).toEqual("Ignoring messageReceipt: message receipts are disabled");
         }
         expect(chatClient.sendEvent).toHaveBeenCalledTimes(0);
     });

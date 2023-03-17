@@ -293,11 +293,9 @@ declare namespace connect {
 
   type ChatEventContentType =
     | "application/vnd.amazonaws.connect.event.typing"
-    | "application/vnd.amazonaws.connect.event.participant.joined"
-    | "application/vnd.amazonaws.connect.event.participant.left"
-    | "application/vnd.amazonaws.connect.event.transfer.succeeded"
-    | "application/vnd.amazonaws.connect.event.transfer.failed"
-    | "application/vnd.amazonaws.connect.event.chat.ended";
+    | "application/vnd.amazonaws.connect.event.connection.acknowledged"
+    | "application/vnd.amazonaws.connect.event.message.delivered"
+    | "application/vnd.amazonaws.connect.event.message.read";
 
   type ChatMessageContentType =
       | "text/plain"
