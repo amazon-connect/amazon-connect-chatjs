@@ -23,7 +23,6 @@ const configInput = {
     endpoint: "test-endpoint"
 };
 const logMetaData = {contactId: "abc"};
-const defaultMessageReceiptsError = "enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false";
 
 describe("globalConfig", () => {
     beforeAll(() => {
@@ -50,7 +49,7 @@ describe("globalConfig", () => {
             expect(GlobalConfig.getStage()).toEqual(configInput.stage);
             expect(GlobalConfig.getRegion()).toEqual(configInput.region);
             expect(GlobalConfig.getEndpointOverride()).toEqual(configInput.endpoint);
-            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
+            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(true);
         });
         it("should update stage, region and fetch correct config", () => {
             GlobalConfig.updateStageRegion(stageRegion);
@@ -110,22 +109,34 @@ describe("globalConfig", () => {
             setConfig(LogLevel.WARN);
             var logger = LogManager.getLogger({ prefix: "prefix " });
             logger.warn("warn", 3);
+<<<<<<< HEAD
             expect(messages[0]).toEqual([defaultMessageReceiptsError]);
             expect(messages[1]).toEqual(["WARN", "[2022-04-12T23:12:36.677Z] prefix : warn 3", undefined]);
+=======
+            expect(messages[0]).toEqual(["WARN [2022-04-12T23:12:36.677Z] prefix : warn 3 "]);
+>>>>>>> 8dc8a10 (Address github issues #124, 128, 132, 134 - https://quip-amazon.com/LipRAVcB7qEI/ChatJS-issues-identified-by-Marco)
         });
         it("should match log format in error level", () => {
             console.error = mockFn;
             setConfig(LogLevel.ERROR);
             var logger = LogManager.getLogger({ prefix: "prefix " });
             logger.error("error", 3);
+<<<<<<< HEAD
             expect(messages[2]).toEqual(["ERROR", "[2022-04-12T23:12:36.677Z] prefix : error 3", undefined]);
+=======
+            expect(messages[0]).toEqual(["ERROR [2022-04-12T23:12:36.677Z] prefix : error 3 "]);
+>>>>>>> 8dc8a10 (Address github issues #124, 128, 132, 134 - https://quip-amazon.com/LipRAVcB7qEI/ChatJS-issues-identified-by-Marco)
         });
         it("should match log format in advanced_log level", () => {
             console.error = mockFn;
             setConfig(LogLevel.ADVANCED_LOG);
             var logger = LogManager.getLogger({ prefix: "prefix " });
             logger.advancedLog("info", 3);
+<<<<<<< HEAD
             expect(messages[2]).toEqual(["ADVANCED_LOG", "[2022-04-12T23:12:36.677Z] prefix : info 3", undefined]);
+=======
+            expect(messages[0]).toEqual(["ADVANCED_LOG [2022-04-12T23:12:36.677Z] prefix : info 3 "]);
+>>>>>>> 8dc8a10 (Address github issues #124, 128, 132, 134 - https://quip-amazon.com/LipRAVcB7qEI/ChatJS-issues-identified-by-Marco)
         });
         test("set region", () => {
             ChatSessionObject.setGlobalConfig({
@@ -138,21 +149,33 @@ describe("globalConfig", () => {
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ prefix: "prefix ", logMetaData });
             logger.info("info", 3);
+<<<<<<< HEAD
             expect(messages[2]).toEqual(["INFO","[2022-04-12T23:12:36.677Z] prefix : info 3", logMetaData]);
+=======
+            expect(messages[0]).toEqual(["INFO [2022-04-12T23:12:36.677Z] prefix : info 3 {\"contactId\":\"abc\"}"]);
+>>>>>>> 8dc8a10 (Address github issues #124, 128, 132, 134 - https://quip-amazon.com/LipRAVcB7qEI/ChatJS-issues-identified-by-Marco)
         });
         it("should match log format when there is no prefix and logMetaData", () => {
             console.info = mockFn;
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ logMetaData: {contactId: "abc"}});
             logger.info("info", 3);
+<<<<<<< HEAD
             expect(messages[2]).toEqual(["INFO", "[2022-04-12T23:12:36.677Z] info 3", {contactId: "abc"}]);
+=======
+            expect(messages[0]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
+>>>>>>> 8dc8a10 (Address github issues #124, 128, 132, 134 - https://quip-amazon.com/LipRAVcB7qEI/ChatJS-issues-identified-by-Marco)
         });
         it("should match log format when there is no prefix, but logMetaData is included", () => {
             console.info = mockFn;
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ logMetaData });
             logger.info("info", 3);
+<<<<<<< HEAD
             expect(messages[2]).toEqual(["INFO", "[2022-04-12T23:12:36.677Z] info 3", logMetaData]);
+=======
+            expect(messages[0]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
+>>>>>>> 8dc8a10 (Address github issues #124, 128, 132, 134 - https://quip-amazon.com/LipRAVcB7qEI/ChatJS-issues-identified-by-Marco)
         });
     });
   
@@ -283,57 +306,64 @@ describe("globalConfig", () => {
         });
     });
 
-    describe("feature flag test", () => {
-        it("should update feature Flag", () => {
-            GlobalConfig.update({
-                features: [FEATURES.MESSAGE_RECEIPTS_ENABLED]
-            });
+    describe("Feature flag test", () => {
+        it("Should have message receipts feature enabled by default", () => {
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(true);
         });
-        it("should update feature Flag and call the registered listeners only once", () => {
-            GlobalConfig.update({
-                features: []
-            });
-            const handler = jest.fn();
-            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler)).toEqual(false);
-            GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
-            expect(handler).toHaveBeenCalled();
-            GlobalConfig.update({
+
+        it("Should update feature flags according to setGlobalConfig input", () => {
+            ChatSessionObject.setGlobalConfig({
                 features: {
                     messageReceipts: {
-                        shouldSendMessageReceipts: false
+                        shouldSendMessageReceipts: false,
+                        throttleTime: 4000,
                     }
                 }
             });
-            GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
-            GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
+            expect(GlobalConfig.getMessageReceiptsThrottleTime()).toEqual(4000);
+        });
+
+        it("Should be able to remove feature flag", () => {
+            GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
+        });
+
+        it("Should be able to add feature flag", () => {
+            GlobalConfig.addFeatureFlag(FEATURES.PARTICIPANT_CONN_ACK);
+            expect(GlobalConfig.isFeatureEnabled(FEATURES.PARTICIPANT_CONN_ACK)).toEqual(true);
+        });
+
+        it("Should update feature flag and call the registered listeners only once", () => {
+            GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+            const handler = jest.fn();
+            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler)).toEqual(false);
+            GlobalConfig.addFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+            expect(handler).toHaveBeenCalled();
+            GlobalConfig.addFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+            GlobalConfig.addFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
             expect(handler).toHaveBeenCalledTimes(1);
         });
 
-        it("should update feature Flag and call multiple registered listeners only once", () => {
-            GlobalConfig.update({
-                features: {
-                    messageReceipts: {
-                        shouldSendMessageReceipts: true
-                    }
-                }
-            });
+        it("should update feature flag and call multiple registered listeners only once", () => {
             const handler = jest.fn().mockReturnValue(true);
             const handler2 = jest.fn();
-            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler)).toEqual(false);
-            GlobalConfig.update({
-                features: []
-            });
+            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler)).toEqual(true);
+            GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler)).toEqual(false);
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler2)).toEqual(false);
+<<<<<<< HEAD
             GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+=======
+            GlobalConfig.addFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+            GlobalConfig.addFeatureFlag(FEATURES.PARTICIPANT_CONN_ACK);
+>>>>>>> 8dc8a10 (Address github issues #124, 128, 132, 134 - https://quip-amazon.com/LipRAVcB7qEI/ChatJS-issues-identified-by-Marco)
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler)).toEqual(true);
             expect(handler).toHaveBeenCalled();
             expect(handler2).toHaveBeenCalled();
-            GlobalConfig.update({
-                features: []
-            });
-            GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+            GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+            GlobalConfig.removeFeatureFlag(FEATURES.PARTICIPANT_CONN_ACK);
+            GlobalConfig.addFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
             expect(handler).toHaveBeenCalledTimes(3);
             expect(handler2).toHaveBeenCalledTimes(1);
         });

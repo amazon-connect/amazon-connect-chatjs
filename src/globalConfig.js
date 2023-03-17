@@ -1,3 +1,5 @@
+import { FEATURES, DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS } from "./constants";
+
 class GlobalConfigImpl {
     constructor() {
         this.stage = "prod";
@@ -26,6 +28,8 @@ class GlobalConfigImpl {
                 return true;
             }
         });
+        this.addFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED); // message receipts enabled by default
+        this.messageReceiptThrottleTime = DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS;
         this.featureChangeListeners = [];
     }
     update(configInput) {
@@ -34,8 +38,6 @@ class GlobalConfigImpl {
         this.region = config.region || this.region;
         this.endpointOverride = config.endpoint || this.endpointOverride;
         this.reconnect = config.reconnect === false ? false : this.reconnect;
-        this.messageReceiptThrottleTime = config.throttleTime ? config.throttleTime : 5000;
-        this.features["values"] = Array.isArray(config.features) ? [...config.features] : new Array();
     }
 
     updateStageRegion(config) {
@@ -45,8 +47,8 @@ class GlobalConfigImpl {
         }
     }
 
-    updateThrottleTime(throttleTime) {
-        this.messageReceiptThrottleTime = throttleTime ? throttleTime : this.messageReceiptThrottleTime;
+    updateMessageReceiptsThrottleTime(throttleTime) {
+        this.messageReceiptThrottleTime = throttleTime || this.messageReceiptThrottleTime;
     }
 
     getMessageReceiptsThrottleTime() {
@@ -65,8 +67,16 @@ class GlobalConfigImpl {
         return this.endpointOverride;
     }
 
-    setFeatureFlag(feature) {
-        if(this.isFeatureEnabled(feature)) {
+    removeFeatureFlag(feature) {
+        if (!this.isFeatureEnabled(feature)) {
+            return;
+        }
+        const index = this.features["values"].indexOf(feature);
+        this.features["values"].splice(index, 1);
+    }
+
+    addFeatureFlag(feature) {
+        if (this.isFeatureEnabled(feature)) {
             return;
         }
         const featureValues = Array.isArray(this.features["values"]) ? this.features["values"] : [];
@@ -87,7 +97,7 @@ class GlobalConfigImpl {
     }
 
     isFeatureEnabled(feature, callback) {
-        if(Array.isArray(this.features["values"]) &&
+        if (Array.isArray(this.features["values"]) &&
             this.features["values"].indexOf(feature) !== -1) {
             if (typeof callback === "function") {
                 return callback();
