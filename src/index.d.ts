@@ -301,7 +301,8 @@ declare namespace connect {
 
   type ChatMessageContentType =
       | "text/plain"
-      | "text/markdown";
+      | "text/markdown"
+      | "application/json";
 
   type ChatContentType = ChatEventContentType | ChatMessageContentType;
 
