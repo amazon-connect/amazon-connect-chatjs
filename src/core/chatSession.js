@@ -181,6 +181,9 @@ var setGlobalConfig = config => {
    * if config.loggerConfig.useDefaultLogger is true - use default window.console + default level INFO
    * config.loggerConfig.advancedLogWriter to customize where you want to log advancedLog messages. Default is warn.
    * else no logs from websocketManager - DEFAULT
+   *
+   * if config.webSocketManagerConfig.isNetworkOnline is present - use it in websocketManager
+   * else websocketManager uses "navigator.onLine" - DEFAULT
    */
     WebSocketManager.setGlobalConfig(config);
     LogManager.updateLoggerConfig(loggerConfig);
