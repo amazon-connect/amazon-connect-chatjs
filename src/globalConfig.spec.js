@@ -2,6 +2,7 @@ import { ChatSessionObject } from "./core/chatSession";
 import { LogLevel, LogManager } from "./log";
 import { GlobalConfig } from "./globalConfig";
 import { FEATURES } from "./constants";
+import WebSocketManager from "./lib/amazon-connect-websocket-manager";
 
 const realDate = Date.now;
 const fixDate = "2022-04-12T23:12:36.677Z";
@@ -336,6 +337,26 @@ describe("globalConfig", () => {
             GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
             expect(handler).toHaveBeenCalledTimes(3);
             expect(handler2).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe("About using custom webSocketManagerConfig", () => {
+        it('should pass not down invalid config object', () => {
+            expect(() => ChatSessionObject.setGlobalConfig(null)).toThrow(TypeError);
+        });
+ 
+        it('should pass down config to WebSocketManager', () => {
+            const mockConfig = {
+                loggerConfig: {},
+                webSocketManagerConfig: {
+                    isNetworkOnline: () => true
+                }
+            };
+ 
+            jest.spyOn(WebSocketManager, 'setGlobalConfig').mockImplementation(() => {});
+ 
+            ChatSessionObject.setGlobalConfig(mockConfig);
+            expect(WebSocketManager.setGlobalConfig).toHaveBeenCalledWith(mockConfig);
         });
     });
 });

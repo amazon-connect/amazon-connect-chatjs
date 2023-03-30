@@ -71,6 +71,10 @@ $ git clone https://github.com/amazon-connect/amazon-connect-chatjs
 
 Find build artifacts in **dist** directory -  This will generate a file called `amazon-connect-chat.js` - this is the full Connect ChatJS API which you will want to include in your page.
 
+# React Native Support
+
+Additional configuration is required to support ChatJS in React Native applications. Use `amazon-connect-chatjs@^1.5.0` and follow the documenation: [ReactNativeSupport.md](./.github/docs/ReactNativeSupport.md)
+
 # API
 
 ## `connect.ChatSession` API
