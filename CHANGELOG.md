@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.1]
+### Added
+- updaing generating mapping file in dist folder.
+
 ## [1.5.0]
 ### Added
 - support React Native applications with latest WebSocketManager fix
