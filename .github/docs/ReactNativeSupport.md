@@ -1,5 +1,7 @@
 # React Native Support
 
+> Note: a demo application implementing basic ChatJS functionality is available in the ui-examples repository: [connectReactNativeChat](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/connectReactNativeChat)
+
 Additional configuration is required to support ChatJS in React Native applications. Use `amazon-connect-chatjs@^1.5.0` and apply the changes below:
 
 <!-- Along with changes below, a full demo application can be found in the ui-examples repository: https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/connectMobileChatWidgetChatJS (or connectMobileChatWidgetWebView) -->

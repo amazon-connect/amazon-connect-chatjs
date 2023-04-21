@@ -75,6 +75,8 @@ Find build artifacts in **dist** directory -  This will generate a file called `
 
 Additional configuration is required to support ChatJS in React Native applications. Use `amazon-connect-chatjs@^1.5.0` and follow the documenation: [ReactNativeSupport.md](./.github/docs/ReactNativeSupport.md)
 
+A demo application implementing basic ChatJS functionality is also available in the ui-examples repository: [connectReactNativeChat](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/connectReactNativeChat)
+
 # API
 
 ## `connect.ChatSession` API
