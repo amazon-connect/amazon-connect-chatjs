@@ -1,44 +1,73 @@
-# About
-The Amazon Connect Chat javascript library (ChatJS) gives you the power to build your own chat widget to customize the chat experience. This can be used for both the agent user interface, in conjunction with [Amazon Connect Streams](https://github.com/aws/amazon-connect-streams), and for the customer chat interface. 
+# Amazon Connect ChatJS
+
+## Table of contents
+
+- [About](#about)
+- [Getting Started](#getting-started)
+  - [A note about the AWS-SDK and ChatJS](#a-note-about-the-aws-sdk-and-chatjs)
+  - [Usage](#usage)
+  - [Building](#building)
+- [React Native Support](#react-native-support)
+- [API](#api)
+  - [`connect.ChatSession` API](#connectchatsession-api)
+  - [ChatSession API](#chatsession-api)
+    - [Amazon Connect Participant Service API wrappers](#amazon-connect-participant-service-api-wrappers)
+    - [Events](#events)
+    - [Client side metric](#client-side-metric)
+    - [Other](#other)
+
+## About
+
+The Amazon Connect Chat javascript library (ChatJS) gives you the power to build your own chat widget to customize the chat experience. This can be used for both the agent user interface, in conjunction with [Amazon Connect Streams](https://github.com/aws/amazon-connect-streams), and for the customer chat interface.
 
 There is a [Chat UI reference implementation](https://github.com/amazon-connect/amazon-connect-chat-ui-examples) here. This will help you deploy an API Gateway and Lambda function for initiating chat from your webpage. From there you can use the ChatJS library to build a custom widget.
 
-# Learn More
+### Learn More
+
 To learn more about Amazon Connect and its capabilities, please check out
 the [Amazon Connect User Guide](https://docs.aws.amazon.com/connect/latest/userguide/).
 
-# Getting Started
+## Getting Started
 
 ### A note about the AWS-SDK and ChatJS
+
 The AWS-SDK is, by default, included in ChatJS as a "baked-in" dependency. You can view it at `./client/aws-sdk-connectparticipant.js`. In `./client/client.js` we import `ConnectParticipant` from this file. This file and import can be removed while using the AWS SDK imported through a script in the page file of your application, assuming that version of the AWS SDK has the `ConnectParticipant` service included.
-Incidentally, Amazon Connect Streams also contains a "baked-in" AWS SDK. This SDK cannot be removed, as it contains unreleased APIs that will not be available in the SDK you include as a script in the page file. 
+Incidentally, Amazon Connect Streams also contains a "baked-in" AWS SDK. This SDK cannot be removed, as it contains unreleased APIs that will not be available in the SDK you include as a script in the page file.
 Therefore, there are several occasions where implementations can run into AWS SDK issues.
 
-#### Scenario 1: Streams and ChatJS are used. You are not importing the AWS SDK.
+#### **Scenario 1:** Streams and ChatJS are used. You are not importing the AWS SDK
+
 Ensure you import ChatJS after Streams.
 
-#### Scenario 2: Streams and ChatJS are used. You are importing the AWS SDK.
-Import Streams, then ChatJS, then the SDK. 
+#### **Scenario 2:** Streams and ChatJS are used. You are importing the AWS SDK
+
+Import Streams, then ChatJS, then the SDK.
 Ensure that your AWS SDK includes the ConnectParticipant Service (it is relatively new, so make sure you have an up-to-date AWS SDK version [^2.597.0]).
 
-#### Scenario 3: ChatJS only, no AWS SDK import.
+#### **Scenario 3:** ChatJS only, no AWS SDK import
+
 No need to worry here, this will always work.
 
-#### Scenario 4: ChatJS only, with AWS SDK import.
+#### **Scenario 4:** ChatJS only, with AWS SDK import
+
 Import ChatJS before the AWS SDK, and ensure the AWS SDK version you are using contains the ConnectParticipant Service.
 
-#### A note for Scenarios 2 and 4.
+#### A note for Scenarios 2 and 4
+
 When using the SDK and ChatJS, you may remove the SDK from ChatJS to ensure lack of import conflicts. However, this should not be relevant if the order in which you are importing these libraries is the order reflected above.
 
-### Using ChatJS from npm
+### Usage
+
+#### Using ChatJS from npm
 
 `npm install amazon-connect-chatjs`
 
-### Importing using npm and ES6
+#### Importing using npm and ES6
+
 `import "amazon-connect-chatjs"`
 Note: this will apply the global `connect` variable to your current scope.
 
-### Usage with TypeScript
+#### TypeScript Support
 
 `amazon-connect-chatjs` is compatible with TypeScript. You'll need to use version `3.0.1` or higher:
 
@@ -48,11 +77,14 @@ import "amazon-connect-streams";
 connect.ChatSession.create({ /* ... */ });
 ```
 
-### Using ChatJS from Github
+#### Using ChatJS from Github
+
+```sh
+git clone https://github.com/amazon-connect/amazon-connect-chatjs
 ```
-$ git clone https://github.com/amazon-connect/amazon-connect-chatjs
-```
+
 ### Building
+
 1. Install latest LTS version of [NodeJS](https://nodejs.org)
 2. Checkout this package into workspace and navigate to root folder
 3. `npm install`
@@ -71,20 +103,21 @@ $ git clone https://github.com/amazon-connect/amazon-connect-chatjs
 
 Find build artifacts in **dist** directory -  This will generate a file called `amazon-connect-chat.js` - this is the full Connect ChatJS API which you will want to include in your page.
 
-# React Native Support
+## React Native Support
 
 Additional configuration is required to support ChatJS in React Native applications. Use `amazon-connect-chatjs@^1.5.0` and follow the documenation: [ReactNativeSupport.md](./.github/docs/ReactNativeSupport.md)
 
 A demo application implementing basic ChatJS functionality is also available in the ui-examples repository: [connectReactNativeChat](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/connectReactNativeChat)
 
-# API
+## API
 
-## `connect.ChatSession` API
+### `connect.ChatSession` API
 
 This is the main entry point to `amazon-connect-chatjs`.
 All your interactions with the library start here.
 
-### `connect.ChatSession.setGlobalConfig()`
+#### `connect.ChatSession.setGlobalConfig()`
+
 ```js
 connect.ChatSession.setGlobalConfig({
   loggerConfig: { // optional, the logging configuration. If omitted, no logging occurs
@@ -116,6 +149,7 @@ Set the global configuration to use. If this method is not called, the defaults 
 This method should be called before `connect.ChatSession.create()`.
 
 Customizing `loggerConfig` for ChatJS:
+
 - If you don't want to use any logger, you can skip this field.
 - There are five log levels available - DEBUG, INFO, WARN, ERROR, ADVANCED_LOG.
 - If you want to use your own logger, you can add them into `customizedLogger`, and add `customizedLogger` object as the value of `loggerConfig.customizedLogger`, then set the lowest logger level. `globalConfig.loggerConfig.useDefaultLogger` is not required.
@@ -129,7 +163,8 @@ Customizing `loggerConfig` for ChatJS:
   40: "ERROR"
   50: "ADVANCED_LOG"
 
-### `connect.ChatSession.create()`
+#### `connect.ChatSession.create()`
+
 ```js
 const customerChatSession = connect.ChatSession.create({
   chatDetails: { // REQUIRED
@@ -149,6 +184,7 @@ Creates an instance of `AgentChatSession` or `CustomerChatSession`, depending on
 If you're creating a `CustomerChatSession`, the `chatDetails` field should be populated with the response of the [StartChatContact](https://docs.aws.amazon.com/connect/latest/APIReference/API_StartChatContact.html) API.
 
 If you're creating an `AgentChatSession`, you must also include [`amazon-connect-streams`](https://github.com/amazon-connect/amazon-connect-streams). For example:
+
 ```js
 // order is important, alternatively use <script> tags
 import "amazon-connect-streams";
@@ -187,13 +223,15 @@ See the [`amazon-connect-streams` API documentation](https://github.com/amazon-c
 
 **Note:** `AgentChatSession` and `CustomerChatSession` are logical concepts.
 As a result, the `instanceof` operator will not work how you expect:
+
 ```js
 if (connect.ChatSession.create(/* ... */) instanceof connect.ChatSession) {
   // this will never execute
 }
 ```
 
-### `connect.ChatSession.LogLevel`
+#### `connect.ChatSession.LogLevel`
+
 ```js
 connect.ChatSession.LogLevel = {
   DEBUG: /* ... */,
@@ -205,7 +243,8 @@ connect.ChatSession.LogLevel = {
 
 Enumerates the logging levels.
 
-### `connect.ChatSession.SessionTypes`
+#### `connect.ChatSession.SessionTypes`
+
 ```js
 connect.ChatSession.SessionTypes = {
   AGENT: /* ... */,
@@ -215,20 +254,22 @@ connect.ChatSession.SessionTypes = {
 
 Enumerates the session types.
 
-## ChatSession API
+### ChatSession API
 
 The `ChatSession` API divided into three sections: Amazon Connect Participant Service API wrappers, events, and other.
 
-### Amazon Connect Participant Service API wrappers
+#### Amazon Connect Participant Service API wrappers
 
 Functions in this section:
+
 - Wrap the APIs of the [Amazon Connect Participant Service](https://docs.aws.amazon.com/connect-participant/latest/APIReference/Welcome.html).
 - Return a `Promise<Response>` (except for `chatSession.connect()`), where:
   - `Response` is an [`aws-sdk` Response object](https://github.com/aws/aws-sdk-js/blob/master/lib/response.d.ts).
-  - If the `Promise` rejects, the error will still be a `Response` object. However, the `data` field will not be populated while the `error `field will.
+  - If the `Promise` rejects, the error will still be a `Response` object. However, the `data` field will not be populated while the `error` field will.
 - Can optionally specify a `metadata` arg field (except for `customerChatSession.disconnectParticipant()`). The `metadata` arg field is not used directly by `amazon-connect-chatjs`, rather it's merely copied to the response object for usage by developers.
 
 For example:
+
 ```js
 function handleResponse(response) {
   // `response` is an aws-sdk `Response` object
@@ -251,7 +292,8 @@ chatSession
   .then(handleResponse, handleError);
 ```
 
-#### `chatSession.connect()`
+##### `chatSession.connect()`
+
 ```js
 // connectCalled: indicates whether the Amazon Connect Participant Service was called
 // connectSuccess: indicates whether the operation succeeded
@@ -264,7 +306,8 @@ The arguments and response do not overlap with the API request or response.
 
 **Note:** If the operation fails, the `Promise` will reject, but the error will have the same schema as a successful response.
 
-#### `chatSession.getTranscript()`
+##### `chatSession.getTranscript()`
+
 ```js
 const awsSdkResponse = await chatSession.getTranscript({
   maxResults: 100,
@@ -287,7 +330,8 @@ The response `data` is the same as the [API response body](https://docs.aws.amaz
 **Important note:** In order to specify `scanDirection` as `FORWARD`, you need to explicitly include a `startPosition`.
 This is because the default `startPosition` is at the most recent update to the transcript, so requesting a transcript in the `FORWARD` direction from the default `startPosition` is equivalent to asking for a transcript containing only messages more recent than the present (you are asking for messages in the future!).
 
-#### `chatSession.sendEvent()`
+##### `chatSession.sendEvent()`
+
 ```js
 const awsSdkResponse = await chatSession.sendEvent({
   contentType: "application/vnd.amazonaws.connect.event.typing"
@@ -311,7 +355,8 @@ The arguments are based on the [API request body](https://docs.aws.amazon.com/co
 
 The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html#API_SendEvent_ResponseSyntax).
 
-#### `chatSession.sendMessage()`
+##### `chatSession.sendMessage()`
+
 ```js
 const awsSdkResponse = await chatSession.sendMessage({
   contentType: "text/plain",
@@ -323,24 +368,30 @@ const { AbsoluteTime, Id } = awsSdkResponse.data;
 Wraps the [SendMessage](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendMessage.html) API.
 
 The arguments are based on the [API request body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendMessage.html#API_SendMessage_RequestSyntax) with the following differences:
+
 - Fields are in `camelCase`.
 - `ClientToken` cannot be specified.
 
 The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendMessage.html#API_SendMessage_ResponseSyntax).
 
-#### `chatSession.sendAttachment()`
+##### `chatSession.sendAttachment()`
+
 ```js
 // attachment object is the actual file that will be sent to agent from end-customer and vice versa.
 const awsSdkResponse = await chatSession.sendAttachment({
   attachment: attachment
 });
 ```
+
 Wraps the [StartAttachmentUpload](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_StartAttachmentUpload.html) and [CompleteAttachmentUpload](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CompleteAttachmentUpload.html) API.
 The arguments are based on the [StartAttachmentUpload](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_StartAttachmentUpload.html#API_StartAttachmentUpload_RequestSyntax) and [CompleteAttachmentUpload](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CompleteAttachmentUpload.html#API_CompleteAttachmentUpload_RequestSyntax) API request body with the following differences:
+
 - Fields are in `camelCase`.
 The response `data` is the same as the [StartAttachmentUpload](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_StartAttachmentUpload.html#API_StartAttachmentUpload_ResponseSyntax) and [CompleteAttachmentUpload](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CompleteAttachmentUpload.html#API_CompleteAttachmentUpload_ResponseSyntax) API response body.
 `chatSession.sendAttachment()` invokes the StartAttachmentUpload API, uploads the Attachment to the S3 bucket using the pre-signed URL received in the StartAttachmentUpload API response and invokes the CompleteAttachmentUpload API to finish the Attachment upload process.
-#### `chatSession.downloadAttachment()`
+
+##### `chatSession.downloadAttachment()`
+
 ```js
 const awsSdkResponse = await chatSession.downloadAttachment({
   attachmentId: "string"
@@ -357,13 +408,16 @@ attachment => {
 }
 */
 ```
+
 Wraps the [GetAttachment](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html) API.
 The arguments are based on the [API request body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html#API_GetAttachment_RequestSyntax) with the following differences:
+
 - Fields are in `camelCase`.
 The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html#API_GetAttachment_ResponseSyntax).
 `chatSession.downloadAttachment()` invokes the GetAttachment using the AttachmentId as a request parameter and fetches the Attachment from the S3 bucket using the pre-signed URL received in the GetAttachment API response.
 
-#### `customerChatSession.disconnectParticipant()`
+##### `customerChatSession.disconnectParticipant()`
+
 ```js
 const awsSdkResponse = await customerChatSession.disconnectParticipant();
 ```
@@ -376,7 +430,7 @@ Once this method is called, the `CustomerChatSession` cannot be used anymore.
 
 Applies only for `CustomerChatSession`. See `connect.ChatSession.create()` for more info.
 
-### Events
+#### Events
 
 Function in this section:
 
@@ -384,7 +438,8 @@ Function in this section:
 - Can be called multiple times (i.e. register multiple event handlers).
 - Receive an `event` object that contains a `chatDetails` field. See `chatSession.getChatDetails()` for more info.
 
-#### `chatSession.onConnectionBroken()`
+##### `chatSession.onConnectionBroken()`
+
 ```js
 chatSession.onConnectionBroken(event => {
   const { chatDetails } = event;
@@ -394,7 +449,8 @@ chatSession.onConnectionBroken(event => {
 
 Subscribes an event handler that triggers when the session connection is broken.
 
-#### `chatSession.onConnectionEstablished()`
+##### `chatSession.onConnectionEstablished()`
+
 ```js
 chatSession.onConnectionEstablished(event => {
   const { chatDetails } = event;
@@ -404,7 +460,8 @@ chatSession.onConnectionEstablished(event => {
 
 Subscribes an event handler that triggers when the session connection is established.
 
-#### `chatSession.onEnded()`
+##### `chatSession.onEnded()`
+
 ```js
 chatSession.onEnded(event => {
   const { chatDetails, data } = event;
@@ -414,7 +471,8 @@ chatSession.onEnded(event => {
 
 Subscribes an event handler that triggers when the session is ended.
 
-#### `chatSession.onMessage()`
+##### `chatSession.onMessage()`
+
 ```js
 chatSession.onMessage(event => {
   const { chatDetails, data } = event;
@@ -431,6 +489,7 @@ The `data` field has the same schema as the [`Item` data type](https://docs.aws.
 The `messages` received over websocket are not guranteed to be in order!
 
 Here is the code reference on how messages should be handled in the FrontEnd [Amazon-Connect-Chat-Interface](https://github.com/amazon-connect/amazon-connect-chat-interface/blob/master/src/components/Chat/ChatSession.js#L514) (This code handles removing messages with missing messageIds, duplicate messageIds and, sorting messages to handle display order of messages):
+
 ```js
 
 this.ChatJSClient.onMessage((data) => {
@@ -495,8 +554,8 @@ _updateTranscript(transcript) {
 
 ```
 
+##### `chatSession.onTyping()`
 
-#### `chatSession.onTyping()`
 ```js
 chatSession.onTyping(event => {
   const { chatDetails, data } = event;
@@ -509,8 +568,8 @@ chatSession.onTyping(event => {
 Subscribes an event handler that triggers whenever a `application/vnd.amazonaws.connect.event.typing` event is created by any participant.
 The `data` field has the same schema as `chatSession.onMessage()`.
 
+##### `chatSession.onParticipantIdle()`
 
-#### `chatSession.onParticipantIdle()`
 ```js
 /**
  * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.idle" event is created by any participant. 
@@ -531,7 +590,9 @@ chatSession.onParticipantIdle(event => {
   }
 });
 ```
-#### `chatSession.onParticipantReturned()`
+
+##### `chatSession.onParticipantReturned()`
+
 ```js
 /**
  * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.returned" event is created by any participant. 
@@ -552,7 +613,9 @@ chatSession.onParticipantReturned(event => {
   }
 });
 ```
-#### `chatSession.onAutoDisconnection()`
+
+##### `chatSession.onAutoDisconnection()`
+
 ```js
 /**
  * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.autodisconnection" event is created by any participant. 
@@ -573,9 +636,11 @@ chatSession.onAutoDisconnection(event => {
   }
 });
 ```
+
 `onParticipantIdle`, `onParticipantReturned`, and `onAutoDisconnection` are related to [set up chat timeouts for chat participants](https://docs.aws.amazon.com/connect/latest/adminguide/setup-chat-timeouts.html).
 
-#### `chatSession.onConnectionLost()`
+##### `chatSession.onConnectionLost()`
+
 ```js
 chatSession.onConnectionLost(event => {
   const { chatDetails, data } = event;
@@ -585,21 +650,23 @@ chatSession.onConnectionLost(event => {
 
 Subscribes an event handler that triggers when the session is lost.
 
+#### Client side metric
 
-### Client side metric
 In version `1.2.0` the client side metric(CSM) service is added into this library. Client side metric can provide insights into the real performance and usability, it helps us to understand how customers are actually using the website and what UI experiences they prefer. This feature is enabled by default. User can also disable this feature by passing a flag: `disableCSM` when they create a new chat session:
-```
+
+```js
 const customerChatSession = connect.ChatSession.create({
   ...,
   disableCSM: true
 });
 ```
 
-### Other
+#### Other
 
 This section contains all the functions that do not fall under the previous two categories.
 
-#### `chatSession.getChatDetails()`
+##### `chatSession.getChatDetails()`
+
 ```js
 const {
   contactId,
@@ -611,7 +678,8 @@ const {
 
 Gets the chat session details.
 
-#### `agentChatSession.cleanUpOnParticipantDisconnect()`
+##### `agentChatSession.cleanUpOnParticipantDisconnect()`
+
 ```js
 agentChatSession.cleanUpOnParticipantDisconnect();
 ```
