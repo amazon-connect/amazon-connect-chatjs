@@ -1,5 +1,8 @@
 # Amazon Connect ChatJS
 
+<a href="https://www.npmjs.com/package/amazon-chime-sdk-component-library-react"><img src="https://img.shields.io/npm/v/amazon-connect-chatjs?style=flat-square"></a>
+<a href="https://github.com/aws/amazon-chime-sdk-component-library-react"><img src="https://github.com/amazon-connect/amazon-connect-chatjs/workflows/Node.js%20CI/badge.svg"></a>
+
 ## Table of contents
 
 - [About](#about)

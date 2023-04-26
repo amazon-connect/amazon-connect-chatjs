@@ -104,7 +104,29 @@ declare namespace connect {
        * @default connect.ChatSession.LogLevel.INFO
        */
       readonly level?: ChatLogLevel[keyof ChatLogLevel];
+
+      /**
+       * Provide optional custom logger here
+       */
+      readonly customizedLogger?: ChatLogger;
+
+      /**
+       * Choose if you want to use the default logger
+       * @default true
+       */
+      readonly useDefaultLogger?: boolean;
     };
+
+    /**
+     * Control switch for enabling/disabling message-receipts (Read/Delivered) for messages
+     * message receipts use sendEvent API for sending Read/Delivered events https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html
+     */
+    readonly features?: {
+      messageReceipts?: {
+        shouldSendMessageReceipts?: boolean, // DEFAULT: true, set to false to disable Read/Delivered receipts
+        throttleTime?: number; // default 5000  time to wait before sending Read/Delivered receipt.
+      }
+    }
   }
 
   interface ChatLogger {
@@ -255,6 +277,36 @@ declare namespace connect {
     onMessage(handler: (event: ChatMessageEvent) => void): void;
 
     /**
+     * Subscribes an event handler that triggers when a read receipt event is received.
+     * @param handler The event handler.
+     */
+    onReadReceipt(handler: (event: ChatMessageEvent) => void): void;
+
+    /**
+     * Subscribes an event handler that triggers when a delivered receipt event is received.
+     * @param handler The event handler.
+     */
+    onDeliveredReceipt(handler: (event: ChatMessageEvent) => void): void;
+
+    /**
+     * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.idle" event is created by any participant.
+     * @param handler The event handler.
+     */
+    onParticipantIdle(handler: (event: ChatMessageEvent) => void): void;
+
+    /**
+     * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.returned" event is created by any participant.
+     * @param handler The event handler.
+     */
+    onParticipantReturned(handler: (event: ChatMessageEvent) => void): void;
+
+    /**
+     * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.autodisconnection" event is created by any participant.
+     * @param handler The event handler.
+     */
+    onAutoDisconnection(handler: (event: ChatMessageEvent) => void): void;
+
+    /**
      * Subscribes an event handler that triggers when a typing event from the customer or agent occurs.
      * @param handler The event handler.
      */
@@ -297,7 +349,9 @@ declare namespace connect {
     | "application/vnd.amazonaws.connect.event.participant.left"
     | "application/vnd.amazonaws.connect.event.transfer.succeeded"
     | "application/vnd.amazonaws.connect.event.transfer.failed"
-    | "application/vnd.amazonaws.connect.event.chat.ended";
+    | "application/vnd.amazonaws.connect.event.chat.ended"
+    | "application/vnd.amazonaws.connect.event.message.delivered"
+    | "application/vnd.amazonaws.connect.event.message.read";
 
   type ChatMessageContentType =
       | "text/plain"
