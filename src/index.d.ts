@@ -105,6 +105,12 @@ declare namespace connect {
        */
       readonly level?: ChatLogLevel[keyof ChatLogLevel];
     };
+
+    /** The ws manager configuration. */
+    readonly webSocketManagerConfig?: {
+      /** The current network status */
+      isNetworkOnline?(): boolean; 
+    }
   }
 
   interface ChatLogger {
