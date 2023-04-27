@@ -1,0 +1,74 @@
+name: Publish NPM Package
+
+# Workflow to automat publishing to NPM,
+#  - Uses the NPM_TOKEN GitHub secret
+#  - Triggers when a new 'release' is created
+#  - Executes a publish dry-run to list out files
+#  - Publishes after manual approval from admin added to 'release' environment
+#  - Builds/published with Node 16 LTS
+#
+# For more details, refer to https://github.com/amazon-connect/amazon-connect-chatjs/pull/165
+# Or refer to https://github.com/amazon-connect/amazon-connect-chatjs/blob/master/.github/docs/NpmPublishDocumentation.md
+
+on:
+  workflow_dispatch:
+  release:
+    types: [created]
+
+env:
+  RELEASE_NODE_VERSION: "16.x" # https://nodejs.dev/en/about/releases
+
+jobs:
+  publish-dry-run:
+    runs-on: ubuntu-latest
+    environment: release
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.RELEASE_NODE_VERSION }}
+          registry-url: "https://registry.npmjs.org"
+
+      - run: npm ci
+      - run: npm run release
+
+      - name: Set NPM_TOKEN
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
+
+      # Docs: https://docs.npmjs.com/cli/v8/commands/npm-whoami
+      - run: npm whoami
+        id: whoami
+
+      - run: npm publish --dry-run
+
+      - run: git status
+
+  build-and-publish:
+    needs: [publish-dry-run]
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+      url: https://www.npmjs.com/package/amazon-connect-chatjs
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.RELEASE_NODE_VERSION }}
+          registry-url: "https://registry.npmjs.org"
+
+      - run: npm install
+      - run: npm run release
+
+      - name: Create .npmrc
+        run: |
+          touch .npmrc
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
+          echo "registry=https://registry.npmjs.org/" >> .npmrc
+          echo "always-auth=true" >> .npmrc
+
+      - name: Publish NPM Package
+        run: npm publish --access public --userconfig .npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
