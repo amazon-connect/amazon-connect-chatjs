@@ -10,7 +10,6 @@ import { ChatController } from "./chatController";
 import { LogManager, LogLevel, Logger } from "../log";
 import { csmService } from "../service/csmService";
 import WebSocketManager from "../lib/amazon-connect-websocket-manager";
-
 class ChatSessionFactory {
     /*eslint-disable no-unused-vars*/
 
@@ -117,7 +116,7 @@ export class ChatSession {
     }
 
     onConnectionLost(callback) {
-      this.controller.subscribe(CHAT_EVENTS.CONNECTION_LOST, callback);
+        this.controller.subscribe(CHAT_EVENTS.CONNECTION_LOST, callback);
     }
 
     sendMessage(args) {
@@ -205,11 +204,11 @@ var setFeatureFlag = feature => {
 var ChatSessionConstructor = args => {
     var options = args.options || {};
     var type = args.type || SESSION_TYPES.AGENT;
-    GlobalConfig.updateStageRegion(options);
+    GlobalConfig.updateStageRegionCell(options);
     // initialize CSM Service for only customer chat widget
     // Disable CSM service from canary test
     if(!args.disableCSM && type === SESSION_TYPES.CUSTOMER) {
-        csmService.loadCsmScriptAndExecute();
+        csmService.initializeCSM();
     }
     return CHAT_SESSION_FACTORY.createChatSession(
         type,

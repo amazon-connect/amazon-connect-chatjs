@@ -2,14 +2,14 @@ import { ChatSession, ChatSessionObject } from "./chatSession";
 import { csmService } from "../service/csmService";
 import { CHAT_SESSION_FACTORY } from "./chatSession";
 import { ChatController } from "./chatController";
-import { SESSION_TYPES, CHAT_EVENTS, MOCK_USER_AGENT } from "../constants";
+import { SESSION_TYPES, CHAT_EVENTS } from "../constants";
 
 describe("CSM", () => {
 
     beforeEach(() => {
         jest.resetAllMocks();
-        jest.spyOn(csmService, 'initializeCSM').mockImplementation(() => { });
-        jest.spyOn(CHAT_SESSION_FACTORY, 'createChatSession').mockImplementation(() => { });
+        jest.spyOn(csmService, 'initializeCSM').mockImplementation(() => {});
+        jest.spyOn(CHAT_SESSION_FACTORY, 'createChatSession').mockImplementation(() => {});
     });
 
     afterAll(() => {
@@ -40,6 +40,7 @@ describe("CSM", () => {
         expect(CHAT_SESSION_FACTORY.createChatSession).toHaveBeenCalled();
         expect(csmService.initializeCSM).not.toHaveBeenCalled();
     });
+
     test("should not initialize csm when disableCSM flag is true", () => {
         const args = {disableCSM: true};
         ChatSessionObject.create(args);
@@ -49,10 +50,6 @@ describe("CSM", () => {
 });
 
 describe("chatSession", () => {
-    Object.defineProperty(window.navigator, 'userAgent', ((value) => ({
-        get() { return value; },
-    }))(MOCK_USER_AGENT));
-    
     const chatDetails = {};
     let chatClient = {};
     const websocketManager = {};

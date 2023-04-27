@@ -13,7 +13,6 @@ class Logger {
     advancedLog(data) {}
 }
 /*eslint-enable no-unused-vars*/
-
 const LogLevel = {
     DEBUG: 10,
     INFO: 20,
@@ -27,22 +26,24 @@ class LogManagerImpl {
         this.updateLoggerConfig();
     }
 
-    writeToClientLogger(level, logStatement, logMetaData) {
+    writeToClientLogger(level, logStatement = '', logMetaData = '') {
         if (!this.hasClientLogger()) {
             return;
         }
-        var levelStringValue = getLogLevelByValue(level);
+        const log1 = typeof logStatement === "string" ? logStatement : JSON.stringify(logStatement, removeCircularReference());
+        const log2 = typeof logMetaData === "string" ? logMetaData : JSON.stringify(logMetaData, removeCircularReference());
+        const logStringValue = `${getLogLevelByValue(level)} ${log1} ${log2}`;
         switch (level) {
         case LogLevel.DEBUG:
-            return this._clientLogger.debug(levelStringValue, logStatement, logMetaData) || logStatement;
+            return this._clientLogger.debug(logStringValue) || logStringValue;
         case LogLevel.INFO:
-            return this._clientLogger.info(levelStringValue, logStatement, logMetaData) || logStatement;
+            return this._clientLogger.info(logStringValue) || logStringValue;
         case LogLevel.WARN:
-            return this._clientLogger.warn(levelStringValue, logStatement, logMetaData) || logStatement;
+            return this._clientLogger.warn(logStringValue) || logStringValue;
         case LogLevel.ERROR:
-            return this._clientLogger.error(levelStringValue, logStatement, logMetaData) || logStatement;
+            return this._clientLogger.error(logStringValue) || logStringValue;
         case LogLevel.ADVANCED_LOG:
-            return this._advancedLogWriter && this._clientLogger[this._advancedLogWriter] && this._clientLogger[this._advancedLogWriter](levelStringValue, logStatement, logMetaData) || logStatement;
+            return this._advancedLogWriter && this._clientLogger[this._advancedLogWriter](logStringValue) || logStringValue;
         }
     }
 
@@ -64,7 +65,7 @@ class LogManagerImpl {
         this._level = config.level || LogLevel.INFO;
         //enabled advancedLogWriter
         this._advancedLogWriter = "warn";
-        if (isValidAdvancedLogConfig(config.advancedLogWriter, config.customizedLogger)) {
+        if (config.advancedLogWriter) {
             this._advancedLogWriter = config.advancedLogWriter;
         }
         //enable clientLogger
@@ -88,6 +89,7 @@ class LogManagerImpl {
         return null;
     }
 }
+
 const LogManager = new LogManagerImpl();
 
 class LoggerWrapper {
@@ -103,7 +105,7 @@ class LoggerWrapper {
 class LoggerWrapperImpl extends LoggerWrapper {
     constructor(options) {
         super();
-        this.options = options || {};
+        this.options = options || "";
     }
 
     debug(...args) {
@@ -125,13 +127,13 @@ class LoggerWrapperImpl extends LoggerWrapper {
     advancedLog(...args) {
         return this._log(LogLevel.ADVANCED_LOG, args);
     }
- 
+
     _shouldLog(level) {
         return LogManager.hasClientLogger() && LogManager.isLevelEnabled(level);
     }
 
     _writeToClientLogger(level, logStatement) {
-        return LogManager.writeToClientLogger(level, logStatement, this.options.logMetaData);
+        return LogManager.writeToClientLogger(level, logStatement, this.options?.logMetaData);
     }
 
     _log(level, args) {
@@ -186,19 +188,19 @@ function getLogLevelByValue(value) {
     }
 }
 
-function isValidAdvancedLogConfig(advancedLogVal, customizedLogger) {
-    const customizedLoggerKeys = customizedLogger && Object.keys(customizedLogger);
-    if (customizedLoggerKeys && customizedLoggerKeys.indexOf(advancedLogVal) === -1) {
-        console.error(`customizedLogger: incorrect value for loggerConfig:advancedLogWriter; use valid values from list ${customizedLoggerKeys} but used ${advancedLogVal}`);
-        return false;
-    }
-    const defaultLoggerKeys = ["warn", "info", "debug", "log"];
-    if (advancedLogVal && defaultLoggerKeys.indexOf(advancedLogVal) === -1) {
-        console.error(`incorrect value for loggerConfig:advancedLogWriter; use valid values from list ${defaultLoggerKeys} but used ${advancedLogVal}`);
-        return false;
-    }
-    return true;
-}
+function removeCircularReference() {
+    const seen = new WeakSet();
+  
+    return (key, value) => {
+      if (typeof value === "object" && value !== null) {
+        if (seen.has(value)) {
+          return;
+        }
+        seen.add(value);
+      }
+      return value;
+    };
+  }
 
 var createConsoleLogger = () => {
     var logger = new LoggerWrapper();
@@ -208,6 +210,5 @@ var createConsoleLogger = () => {
     logger.error = console.error.bind(window.console);
     return logger;
 };
-
 
 export { LogManager, Logger, LogLevel };

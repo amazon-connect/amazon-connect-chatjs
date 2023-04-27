@@ -5,9 +5,8 @@ import { csmService } from "../../service/csmService";
 import { CSM_CATEGORY, WEBSOCKET_EVENTS, CHAT_EVENTS } from "../../constants";
 
 describe("LpcConnectionHelper", () => {
-
     let connectionDetailsProvider = {
-        fetchConnectionDetails: () => { },
+        fetchConnectionDetails: () => { }
     };
 
     let autoCreatedWebsocketManager;
@@ -26,7 +25,7 @@ describe("LpcConnectionHelper", () => {
         const refreshHandlers = [];
 
         return {
-            subscribeTopics: jest.fn(() => { }),
+            subscribeTopics: jest.fn(),
             onMessage: jest.fn((topic, handler) => {
                 messageHandlers.push(handler);
                 return () => { };
@@ -69,7 +68,7 @@ describe("LpcConnectionHelper", () => {
 
     beforeEach(() => {
         jest.resetAllMocks();
-	     jest.spyOn(csmService, 'addCountMetric').mockImplementation(() => {});
+        jest.spyOn(csmService, 'addCountMetric').mockImplementation(() => {});
         connectionDetailsProvider.fetchConnectionDetails = jest.fn(() => Promise.resolve({
             url: "url",
             expiry: "expiry",
@@ -195,6 +194,7 @@ describe("LpcConnectionHelper", () => {
             autoCreatedWebsocketManager.$simulateRefresh().then(() => {
                 expect(lpcConnectionHelperBaseInstance.initialConnectionDetails).toEqual(null);
             });
+            
             expect(autoCreatedWebsocketManager.subscribeTopics).toHaveBeenCalledTimes(1);
             expect(autoCreatedWebsocketManager.subscribeTopics).toHaveBeenCalledWith(["aws/chat"]);
             expect(autoCreatedWebsocketManager.onMessage).toHaveBeenCalledTimes(1);
@@ -234,7 +234,7 @@ describe("LpcConnectionHelper", () => {
             expect(onEndedHandler2).toHaveBeenCalledTimes(1);
 
             expect(csmService.addCountMetric).toHaveBeenCalledTimes(2);
-	       expect(csmService.addCountMetric).toHaveBeenCalledWith(WEBSOCKET_EVENTS.Ended, CSM_CATEGORY.API);
+            expect(csmService.addCountMetric).toHaveBeenCalledWith(WEBSOCKET_EVENTS.Ended, CSM_CATEGORY.API);
         });
 
         test("onConnectionLost handler is called", () => {

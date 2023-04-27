@@ -2,11 +2,11 @@
 export const CHAT_CONFIGURATIONS = {
     CONCURRENT_CHATS: 10
 };
-
 export const PARTICIPANT_TOKEN_HEADER = "x-amzn-connect-participant-token";
 export const AUTH_HEADER = "X-Amz-Bearer";
 
 export const FEATURES = {
+    PARTICIPANT_CONN_ACK: "PARTICIPANT_CONN_ACK",
     MESSAGE_RECEIPTS_ENABLED: "MESSAGE_RECEIPTS_ENABLED"
 };
 
@@ -68,9 +68,9 @@ export const CONTENT_TYPE = {
     textPlain: "text/plain",
     textMarkdown: "text/markdown",
     textCsv: "text/csv",
+    applicationJson: "application/json",
     applicationDoc: "application/msword",
     applicationDocx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    applicationJson: "application/json",
     applicationPdf: "application/pdf",
     applicationPpt: "application/vnd.ms-powerpoint",
     applicationPptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -83,6 +83,8 @@ export const CONTENT_TYPE = {
     audioVndWave: "audio/vnd.wave", //IE
     connectionAcknowledged: "application/vnd.amazonaws.connect.event.connection.acknowledged",
     typing: "application/vnd.amazonaws.connect.event.typing",
+    readReceipt: "application/vnd.amazonaws.connect.event.message.read",
+    deliveredReceipt: "application/vnd.amazonaws.connect.event.message.delivered",
     participantJoined: "application/vnd.amazonaws.connect.event.participant.joined",
     participantLeft: "application/vnd.amazonaws.connect.event.participant.left",
     participantActive: "application/vnd.amazonaws.connect.event.participant.active",
@@ -92,8 +94,6 @@ export const CONTENT_TYPE = {
     chatEnded: "application/vnd.amazonaws.connect.event.chat.ended",
     interactiveMessage: "application/vnd.amazonaws.connect.message.interactive",
     interactiveMessageResponse: "application/vnd.amazonaws.connect.message.interactive.response",
-    readReceipt: "application/vnd.amazonaws.connect.event.message.read",
-    deliveredReceipt: "application/vnd.amazonaws.connect.event.message.delivered",
     participantIdle: "application/vnd.amazonaws.connect.event.participant.idle",
     participantReturned: "application/vnd.amazonaws.connect.event.participant.returned",
     autoDisconnection: "application/vnd.amazonaws.connect.event.participant.autodisconnection"
@@ -106,12 +106,17 @@ export const CHAT_EVENT_TYPE_MAPPING = {
     [CONTENT_TYPE.participantIdle]: CHAT_EVENTS.PARTICIPANT_IDLE,
     [CONTENT_TYPE.participantReturned]: CHAT_EVENTS.PARTICIPANT_RETURNED,
     [CONTENT_TYPE.autoDisconnection]: CHAT_EVENTS.AUTODISCONNECTION,
-    default: CHAT_EVENTS.INCOMING_MESSAGE,
+    default: CHAT_EVENTS.INCOMING_MESSAGE
 };
 
 export const EVENT = "EVENT";
 export const MESSAGE = "MESSAGE";
 export const CONN_ACK_FAILED = "CONN_ACK_FAILED";
+export const SEND_EVENT_CONACK_THROTTLED = "SEND_EVENT_CONACK_THROTTLED";
+export const CREATE_PARTICIPANT_CONACK_FAILURE = "CREATE_PARTICIPANT_CONACK_FAILURE";
+export const CREATE_PARTICIPANT_CONACK_API_CALL_COUNT = "CREATE_PARTICIPANT_CONACK_CALL_COUNT";
+export const SEND_EVENT_CONACK_FAILURE = "SEND_EVENT_CONACK_FAILURE";
+
 
 export const TRANSCRIPT_DEFAULT_PARAMS = {
     MAX_RESULTS: 15,
@@ -152,14 +157,5 @@ export const CONNECTION_TOKEN_POLLING_INTERVAL_IN_MS = 1000 * 60 * 60 * 12; // 1
 export const CONNECTION_TOKEN_EXPIRY_BUFFER_IN_MS = 60 * 1000; //1 min
 
 export const TRANSPORT_LIFETIME_IN_SECONDS = 3540; // 59 mins
-
-export const START_CHAT_SESSION = "StartChatSession";
-
-export const MOCK_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36';
-
-export const SEND_EVENT_CONACK_THROTTLED = "SEND_EVENT_CONACK_THROTTLED";
-export const CREATE_PARTICIPANT_CONACK_FAILURE = "CREATE_PARTICIPANT_CONACK_FAILURE";
-export const SEND_EVENT_CONACK_FAILURE = "SEND_EVENT_CONACK_FAILURE";
-export const CREATE_PARTICIPANT_CONACK_API_CALL_COUNT = "CREATE_PARTICIPANT_CONACK_CALL_COUNT";
 
 export const TYPING_VALIDITY_TIME = 10000;

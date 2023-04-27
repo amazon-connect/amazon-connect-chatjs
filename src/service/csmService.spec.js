@@ -36,7 +36,7 @@ describe("Common csmService tests", () => {
 
     beforeEach(() => {
         jest.resetAllMocks();
-        GlobalConfig.updateStageRegion({
+        GlobalConfig.updateStageRegionCell({
             stage: "test",
             region: "us-west-2",
         });

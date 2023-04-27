@@ -14,13 +14,19 @@ const originInfo = console.info;
 const originWarn = console.warn;
 const originError = console.error;
 
-const stageRegion = {
+const stageRegionCell = {
     stage: "test-stage",
     region: "test-region",
+    cell: "test-cell",
+};
+const stageRegionCell2 = {
+    stage: "test-stage2",
+    region: "test-region2",
+    cell: "test-cell2",
 };
 
 const configInput = {
-    ...stageRegion,
+    ...stageRegionCell,
     endpoint: "test-endpoint"
 };
 const logMetaData = {contactId: "abc"};
@@ -42,6 +48,7 @@ describe("globalConfig", () => {
   
     describe("Common globalConfig tests", () => {
         it("should already have its class variables initialized to defaults without any other method having been invoked", () => {
+            expect(GlobalConfig.cell).toEqual("1");
             expect(GlobalConfig.region).toEqual("us-west-2");
             expect(GlobalConfig.stage).toEqual("prod");
             expect(GlobalConfig.reconnect).toBe(true);
@@ -50,13 +57,22 @@ describe("globalConfig", () => {
             GlobalConfig.update(configInput);
             expect(GlobalConfig.getStage()).toEqual(configInput.stage);
             expect(GlobalConfig.getRegion()).toEqual(configInput.region);
+            expect(GlobalConfig.getCell()).toEqual(configInput.cell);
             expect(GlobalConfig.getEndpointOverride()).toEqual(configInput.endpoint);
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
         });
-        it("should update stage, region and fetch correct config", () => {
-            GlobalConfig.updateStageRegion(stageRegion);
-            expect(GlobalConfig.getStage()).toEqual(stageRegion.stage);
-            expect(GlobalConfig.getRegion()).toEqual(stageRegion.region);
+        it("should update stage, region and cell and fetch correct config", () => {
+            GlobalConfig.updateStageRegionCell(stageRegionCell);
+            expect(GlobalConfig.getStage()).toEqual(stageRegionCell.stage);
+            expect(GlobalConfig.getRegion()).toEqual(stageRegionCell.region);
+            expect(GlobalConfig.getCell()).toEqual(stageRegionCell.cell);
+        });
+        it("updateStageRegionCell should not update any class variables if the input object does not contain any of those fields", () => {
+            GlobalConfig.updateStageRegionCell(stageRegionCell2);
+            GlobalConfig.updateStageRegionCell({beep: "boop"});
+            expect(GlobalConfig.cell).toEqual(stageRegionCell2.cell);
+            expect(GlobalConfig.region).toEqual(stageRegionCell2.region);
+            expect(GlobalConfig.stage).toEqual(stageRegionCell2.stage);
         });
     });
   
@@ -95,16 +111,16 @@ describe("globalConfig", () => {
             setConfig(LogLevel.DEBUG);
             var logger = LogManager.getLogger({ prefix: "prefix " });
             logger.debug("debug", undefined);
-            expect(messages[0]).toEqual(["DEBUG", "[2022-04-12T23:12:36.677Z] prefix : debug ", undefined]);
+            expect(messages[0]).toEqual(["DEBUG [2022-04-12T23:12:36.677Z] prefix : debug  "]);
             logger.debug("debug", 3);
-            expect(messages[1]).toEqual(["DEBUG", "[2022-04-12T23:12:36.677Z] prefix : debug 3", undefined]);
+            expect(messages[1]).toEqual(["DEBUG [2022-04-12T23:12:36.677Z] prefix : debug 3 "]);
         });
         it("should match log format in info level", () => {
             console.info = mockFn;
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ prefix: "prefix " });
             logger.info("info", 3);
-            expect(messages[0]).toEqual(["INFO", "[2022-04-12T23:12:36.677Z] prefix : info 3", undefined]);
+            expect(messages[0]).toEqual(["INFO [2022-04-12T23:12:36.677Z] prefix : info 3 "]);
         });
         it("should match log format in warn level", () => {
             console.warn = mockFn;
@@ -112,21 +128,21 @@ describe("globalConfig", () => {
             var logger = LogManager.getLogger({ prefix: "prefix " });
             logger.warn("warn", 3);
             expect(messages[0]).toEqual([defaultMessageReceiptsError]);
-            expect(messages[1]).toEqual(["WARN", "[2022-04-12T23:12:36.677Z] prefix : warn 3", undefined]);
+            expect(messages[1]).toEqual(["WARN [2022-04-12T23:12:36.677Z] prefix : warn 3 "]);
         });
         it("should match log format in error level", () => {
             console.error = mockFn;
             setConfig(LogLevel.ERROR);
             var logger = LogManager.getLogger({ prefix: "prefix " });
             logger.error("error", 3);
-            expect(messages[2]).toEqual(["ERROR", "[2022-04-12T23:12:36.677Z] prefix : error 3", undefined]);
+            expect(messages[2]).toEqual(["ERROR [2022-04-12T23:12:36.677Z] prefix : error 3 "]);
         });
         it("should match log format in advanced_log level", () => {
             console.error = mockFn;
             setConfig(LogLevel.ADVANCED_LOG);
             var logger = LogManager.getLogger({ prefix: "prefix " });
             logger.advancedLog("info", 3);
-            expect(messages[2]).toEqual(["ADVANCED_LOG", "[2022-04-12T23:12:36.677Z] prefix : info 3", undefined]);
+            expect(messages[2]).toEqual(["ADVANCED_LOG [2022-04-12T23:12:36.677Z] prefix : info 3 "]);
         });
         test("set region", () => {
             ChatSessionObject.setGlobalConfig({
@@ -139,21 +155,21 @@ describe("globalConfig", () => {
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ prefix: "prefix ", logMetaData });
             logger.info("info", 3);
-            expect(messages[2]).toEqual(["INFO","[2022-04-12T23:12:36.677Z] prefix : info 3", logMetaData]);
+            expect(messages[2]).toEqual(["INFO [2022-04-12T23:12:36.677Z] prefix : info 3 {\"contactId\":\"abc\"}"]);
         });
         it("should match log format when there is no prefix and logMetaData", () => {
             console.info = mockFn;
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ logMetaData: {contactId: "abc"}});
             logger.info("info", 3);
-            expect(messages[2]).toEqual(["INFO", "[2022-04-12T23:12:36.677Z] info 3", {contactId: "abc"}]);
+            expect(messages[2]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
         });
         it("should match log format when there is no prefix, but logMetaData is included", () => {
             console.info = mockFn;
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ logMetaData });
             logger.info("info", 3);
-            expect(messages[2]).toEqual(["INFO", "[2022-04-12T23:12:36.677Z] info 3", logMetaData]);
+            expect(messages[2]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
         });
     });
   
@@ -178,12 +194,9 @@ describe("globalConfig", () => {
             logger.error("error", 4);
             logger.error("error", 5);
     
-            expect(testLogger.warn.mock.calls[0][0]).toEqual("WARN");
-            expect(testLogger.warn.mock.calls[0][1]).toEqual(["warn", 3]);
-            expect(testLogger.error.mock.calls[0][0]).toEqual("ERROR");
-            expect(testLogger.error.mock.calls[0][1]).toEqual(["error", 4]);
-            expect(testLogger.error.mock.calls[1][0]).toEqual("ERROR");
-            expect(testLogger.error.mock.calls[1][1]).toEqual(["error", 5]);
+            expect(testLogger.warn.mock.calls[0][0]).toEqual("WARN [\"warn\",3] ");
+            expect(testLogger.error.mock.calls[0][0]).toEqual("ERROR [\"error\",4] ");
+            expect(testLogger.error.mock.calls[1][0]).toEqual("ERROR [\"error\",5] ");
         });
         it("should match log format when use custom logger", () => {
             ChatSessionObject.setGlobalConfig({
@@ -198,12 +211,9 @@ describe("globalConfig", () => {
             logger.error("error", 4);
             logger.error("error", 5);
     
-            expect(testLogger.warn.mock.calls[0][0]).toEqual("WARN");
-            expect(testLogger.warn.mock.calls[0][1]).toEqual(["warn", 3]);
-            expect(testLogger.error.mock.calls[0][0]).toEqual("ERROR");
-            expect(testLogger.error.mock.calls[0][1]).toEqual(["error", 4]);
-            expect(testLogger.error.mock.calls[1][0]).toEqual("ERROR");
-            expect(testLogger.error.mock.calls[1][1]).toEqual(["error", 5]);
+            expect(testLogger.warn.mock.calls[0][0]).toEqual("WARN [\"warn\",3] ");
+            expect(testLogger.error.mock.calls[0][0]).toEqual("ERROR [\"error\",4] ");
+            expect(testLogger.error.mock.calls[1][0]).toEqual("ERROR [\"error\",5] ");
         });
   
         test("default log level should be INFO", () => {
@@ -258,9 +268,7 @@ describe("globalConfig", () => {
             var logger = LogManager.getLogger({ prefix: "prefix" });
             const arg3 = {"arg": "arg3"};
             logger.advancedLog("arg1", "arg2", arg3);
-            expect(testLogger.info.mock.calls[0][0]).toEqual("ADVANCED_LOG");
-            expect(testLogger.info.mock.calls[0][1]).toEqual(["arg1", "arg2", arg3]);
-            expect(testLogger.info.mock.calls[0][2]).toEqual(undefined);
+            expect(testLogger.info.mock.calls[0][0]).toEqual("ADVANCED_LOG [\"arg1\",\"arg2\",{\"arg\":\"arg3\"}] ");
         });
         it("multiple import of loggers should get their own instance for logMetaData object", () => {
             ChatSessionObject.setGlobalConfig({
@@ -275,12 +283,8 @@ describe("globalConfig", () => {
             const arg3 = {"arg": "arg3"};
             logger1.advancedLog("arg1", "arg2", arg3);
             logger2.advancedLog("arg1", "arg2", arg3);
-            expect(testLogger.info.mock.calls[0][0]).toEqual("ADVANCED_LOG");
-            expect(testLogger.info.mock.calls[0][1]).toEqual(["arg1", "arg2", arg3]);
-            expect(testLogger.info.mock.calls[0][2]).toEqual("metadata1");
-            expect(testLogger.info.mock.calls[1][0]).toEqual("ADVANCED_LOG");
-            expect(testLogger.info.mock.calls[1][1]).toEqual(["arg1", "arg2", arg3]);
-            expect(testLogger.info.mock.calls[1][2]).toEqual("metadata2");
+            expect(testLogger.info.mock.calls[0][0]).toEqual("ADVANCED_LOG [\"arg1\",\"arg2\",{\"arg\":\"arg3\"}] metadata1");
+            expect(testLogger.info.mock.calls[1][0]).toEqual("ADVANCED_LOG [\"arg1\",\"arg2\",{\"arg\":\"arg3\"}] metadata2");
         });
     });
 
@@ -344,7 +348,7 @@ describe("globalConfig", () => {
         it('should pass not down invalid config object', () => {
             expect(() => ChatSessionObject.setGlobalConfig(null)).toThrow(TypeError);
         });
- 
+
         it('should pass down config to WebSocketManager', () => {
             const mockConfig = {
                 loggerConfig: {},
@@ -352,9 +356,9 @@ describe("globalConfig", () => {
                     isNetworkOnline: () => true
                 }
             };
- 
+
             jest.spyOn(WebSocketManager, 'setGlobalConfig').mockImplementation(() => {});
- 
+
             ChatSessionObject.setGlobalConfig(mockConfig);
             expect(WebSocketManager.setGlobalConfig).toHaveBeenCalledWith(mockConfig);
         });
