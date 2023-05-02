@@ -105,6 +105,20 @@ declare namespace connect {
        */
       readonly level?: ChatLogLevel[keyof ChatLogLevel];
     };
+
+    /**
+     * Optional global configuration for the webSocketManager.
+     */
+    readonly webSocketManagerConfig?: {
+      /**
+       * Custom util function (synchronous) to check `networkIsConnected` status
+       *  - Used in websocket connection heartbeat
+       *  - Store update boolean value in outer scope, and pass into ChatJS (e.g. native mobile network check in React Native application)
+       * 
+       * @default: () => navigator.onLine; // https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine
+       */
+      isNetworkOnline?(): boolean; 
+    }
   }
 
   interface ChatLogger {
