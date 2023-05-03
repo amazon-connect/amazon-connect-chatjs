@@ -123,10 +123,10 @@ connect.ChatSession.setGlobalConfig({
   loggerConfig: { // optional, the logging configuration. If omitted, no logging occurs
     // You can provide your own logger here, otherwise this property is optional
     customizedLogger: {
-      debug: (msg) => console.debug(msg), // REQUIRED, can be any function
-      info: (msg) => console.info(msg), // REQUIRED, can be any function
-      warn: (msg) => console.warn(msg), // REQUIRED, can be any function
-      error: (msg) => console.error(msg) // REQUIRED, can be any function
+      debug: (...msg) => console.debug(...msg), // REQUIRED, can be any function
+      info: (...msg) => console.info(...msg), // REQUIRED, can be any function
+      warn: (...msg) => console.warn(...msg), // REQUIRED, can be any function
+      error: (...msg) => console.error(...msg) // REQUIRED, can be any function
     },
     // There are five levels available - DEBUG, INFO, WARN, ERROR, ADVANCED_LOG. Default is INFO
     level: connect.LogLevel.INFO,
