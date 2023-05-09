@@ -62,6 +62,24 @@ When using the SDK and ChatJS, you may remove the SDK from ChatJS to ensure lack
 
 `npm install amazon-connect-chatjs`
 
+#### Using ChatJS from CDN Link
+
+`amazon-connect-chat.js` bundle file is also available over a CDN.
+
+```html
+<script src="https://unpkg.com/amazon-connect-chatjs@1.5.1"></script>
+<!-- OR -->
+<script src="https://cdn.jsdelivr.net/npm/amazon-connect-chatjs@1.5.1/dist/amazon-connect-chat.js"></script>
+
+<!-- Specify exact version -->
+<script src="https://unpkg.com/amazon-connect-chatjs@1.5.1"></script>
+<script src="https://unpkg.com/amazon-connect-chatjs@1"></script>
+<script src="https://unpkg.com/amazon-connect-chatjs"></script>
+
+<!-- Use crossorigin if needed -->
+<script crossorigin src="https://unpkg.com/amazon-connect-chatjs"></script>
+```
+
 #### Importing using npm and ES6
 
 `import "amazon-connect-chatjs"`
@@ -123,10 +141,10 @@ connect.ChatSession.setGlobalConfig({
   loggerConfig: { // optional, the logging configuration. If omitted, no logging occurs
     // You can provide your own logger here, otherwise this property is optional
     customizedLogger: {
-      debug: (msg) => console.debug(msg), // REQUIRED, can be any function
-      info: (msg) => console.info(msg), // REQUIRED, can be any function
-      warn: (msg) => console.warn(msg), // REQUIRED, can be any function
-      error: (msg) => console.error(msg) // REQUIRED, can be any function
+      debug: (...msg) => console.debug(...msg), // REQUIRED, can be any function
+      info: (...msg) => console.info(...msg), // REQUIRED, can be any function
+      warn: (...msg) => console.warn(...msg), // REQUIRED, can be any function
+      error: (...msg) => console.error(...msg) // REQUIRED, can be any function
     },
     // There are five levels available - DEBUG, INFO, WARN, ERROR, ADVANCED_LOG. Default is INFO
     level: connect.LogLevel.INFO,
