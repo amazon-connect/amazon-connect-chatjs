@@ -194,7 +194,7 @@ var setGlobalConfig = config => {
     if (!(config.features?.messageReceipts?.shouldSendMessageReceipts === false)) {
         console.warn("enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false");
         setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
-        GlobalConfig.updateThrottleTime(config.features?.messageReceipts?.thorttleTime);
+        GlobalConfig.updateThrottleTime(config.features?.messageReceipts?.throttleTime);
     }
 };
 
