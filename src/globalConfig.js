@@ -2,6 +2,7 @@ class GlobalConfigImpl {
     constructor() {
         this.stage = "prod";
         this.region = "us-west-2";
+        this.cell = "1";
         this.reconnect = true;
         let self = this;
         this.features = new Proxy([], {
@@ -32,17 +33,23 @@ class GlobalConfigImpl {
         var config = configInput || {};
         this.stage = config.stage || this.stage;
         this.region = config.region || this.region;
+        this.cell = config.cell || this.cell;
         this.endpointOverride = config.endpoint || this.endpointOverride;
         this.reconnect = config.reconnect === false ? false : this.reconnect;
         this.messageReceiptThrottleTime = config.throttleTime ? config.throttleTime : 5000;
         this.features["values"] = Array.isArray(config.features) ? [...config.features] : new Array();
     }
 
-    updateStageRegion(config) {
+    updateStageRegionCell(config) {
         if (config) {
             this.stage = config.stage || this.stage;
             this.region = config.region || this.region;
+            this.cell = config.cell || this.cell;
         }
+    }
+
+    getCell() {
+        return this.cell;
     }
 
     updateThrottleTime(throttleTime) {

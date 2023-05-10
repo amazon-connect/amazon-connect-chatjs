@@ -147,7 +147,7 @@ describe("ChatController", () => {
 
     test("Should publish CSM when CreateParticipantConnection ConnAck is failed", async () => {
         const mockCallCreateParticipantConnection = jest.fn().mockImplementation(() =>{
-                return Promise.reject("connAck");
+            return Promise.reject("connAck");
         });
         connectionDetailsProvider.mockImplementation(() => {
             return {

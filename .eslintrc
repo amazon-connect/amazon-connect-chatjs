@@ -2,21 +2,27 @@
     "rules": {
         "no-console": "off",
         "eqeqeq": ["error", "always"],
-        "semi": ["error", "always"]
+        "semi": ["error", "always"],
+        "indent": "warn"
     },
     "env": {
         "es6": true,
         "browser": true,
-        "node": true
+        "node": true,
+        "jest": true
     },
     "extends": [
-        "eslint:recommended"
+        "eslint:recommended",
+        "prettier"
     ],
+    "parser": "@babel/eslint-parser",
+    "plugins": ["jest"],
     "globals": {
         "module": true,
         "require": true,
         "process": true,
-        "connect": true
+        "connect": true,
+        "csm": true
     },
     "parserOptions": {
         "ecmaVersion": 2017,
