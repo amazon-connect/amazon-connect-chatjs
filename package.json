@@ -1,8 +1,8 @@
 {
   "name": "amazon-connect-chatjs",
-  "version": "1.5.1",
+  "version": "2.0.0",
   "main": "dist/amazon-connect-chat.js",
-  "types": "src/index.d.ts",
+  "types": "dist/index.d.ts",
   "engines": {
     "node": ">=14.0.0"
   },
@@ -11,7 +11,9 @@
   },
   "files": [
     "dist/",
-    "src/index.d.ts"
+    "src/**/*.ts",
+    "src/**/*.js",
+    "src/**/*.jsx"
   ],
   "description": "Provides chat support to AmazonConnect customers",
   "scripts": {

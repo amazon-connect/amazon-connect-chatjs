@@ -83,6 +83,7 @@ SubscriptionMap.prototype.getSubscriptions = function(eventName) {
 /**
  * An object which maintains a map of subscriptions and serves as the
  * mechanism for triggering events to be handled by subscribers.
+ * @type Class
  */
 var EventBus = function(paramsIn) {
     var params = paramsIn || {};
