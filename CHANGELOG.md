@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial TypeScript migration: auto-generate  `*.d.ts` files in dist folder.
 - Delete and gitignore `dist` folder
 - Add CDN link to README
+- Fix typo for setting messageReceipts?.throttleTime in updateThrottleTime
 
 ## [1.5.1]
 ### Added
