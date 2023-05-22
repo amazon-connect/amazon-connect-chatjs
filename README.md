@@ -87,7 +87,7 @@ Note: this will apply the global `connect` variable to your current scope.
 
 #### TypeScript Support
 
-`amazon-connect-chatjs` is compatible with TypeScript. You'll need to use version `3.0.1` or higher:
+`amazon-connect-chatjs` is compatible with TypeScript. You'll need to use version `typescript@^3.0.1` or higher:
 
 ```ts
 import "amazon-connect-streams";
