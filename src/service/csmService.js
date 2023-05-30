@@ -3,7 +3,7 @@ import {
     getLdasEndpointUrl,
     CHAT_WIDGET_METRIC_NAME_SPACE,
     DEFAULT_WIDGET_TYPE
-} from "../configs/csmConfig";
+} from "../config/csmConfig";
 import { LogManager } from "../log";
 import { csmJsString } from '../lib/connect-csm';
 import { csmWorkerString } from '../lib/connect-csm-worker';
@@ -40,6 +40,7 @@ class CsmService {
                 return;
             }
             const region = GlobalConfig.getRegion();
+            const cell = GlobalConfig.getCell();
             const csmWorkerText = csmWorkerString.replace(/\\/g, '');
             const sharedWorkerBlobUrl = URL.createObjectURL(new Blob([csmWorkerText], { type: 'text/javascript' }));
             const ldasEndpoint = getLdasEndpointUrl(region);
@@ -50,7 +51,7 @@ class CsmService {
             };
     
             csm.initCSM(params);
-            this.logger.info(`CSMService is initialized in ${region}`);
+            this.logger.info(`CSMService is initialized in ${region} cell-${cell}`);
             this.csmInitialized = true;
             if (this.metricsToBePublished) {
                 this.metricsToBePublished.forEach((metric) => {
@@ -65,7 +66,7 @@ class CsmService {
 
     updateCsmConfig(csmConfig) {
         this.widgetType = typeof csmConfig === "object" && csmConfig !== null && !Array.isArray(csmConfig) ?
-                            csmConfig.widgetType : this.widgetType;
+            csmConfig.widgetType : this.widgetType;
     }
 
     getDefaultDimensions() {

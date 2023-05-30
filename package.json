@@ -19,13 +19,16 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watchAll",
-    "release": "tsc && jest && webpack --mode=production",
+    "release": "tsc && npm run lint && jest && webpack --mode=production",
     "devo": "jest && webpack --mode=development",
     "watch": "webpack --watch",
     "dev": "webpack --mode=development && webpack --watch",
     "server": "webpack-dev-server --hot",
     "clean": "rm -rf build/ node_modules build",
-    "release-watch": "npm run release && npm run watch"
+    "release-watch": "npm run release && npm run watch",
+    "posttest": "generate-coverage-data",
+    "lint": "eslint --ext .js ./src",
+    "lint:fix": "eslint --fix 'src/**/*.js'"
   },
   "repository": {
     "type": "git",

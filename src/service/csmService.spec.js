@@ -2,8 +2,8 @@ import { csmService, DIMENSION_CATEGORY } from "./csmService";
 import {
     CHAT_WIDGET_METRIC_NAME_SPACE,
     DEFAULT_WIDGET_TYPE,
-} from "../configs/csmConfig";
-import * as CsmConfig from "../configs/csmConfig";
+} from "../config/csmConfig";
+import * as CsmConfig from "../config/csmConfig";
 import { GlobalConfig } from "../globalConfig";
 
 jest.useFakeTimers();
@@ -36,7 +36,7 @@ describe("Common csmService tests", () => {
 
     beforeEach(() => {
         jest.resetAllMocks();
-        GlobalConfig.updateStageRegion({
+        GlobalConfig.updateStageRegionCell({
             stage: "test",
             region: "us-west-2",
         });

@@ -1,8 +1,7 @@
 import ConnectionDetailsProvider from "./connectionDetailsProvider";
 import {  ConnectionInfoType } from "./baseConnectionHelper";
-import {ACPS_METHODS, CSM_CATEGORY, SESSION_TYPES, FEATURES} from "../../constants";
+import {ACPS_METHODS, CSM_CATEGORY, SESSION_TYPES } from "../../constants";
 import { csmService } from "../../service/csmService";
-import { GlobalConfig } from '../../globalConfig';
 
 jest.useFakeTimers();
 describe("ConnectionDetailsProvider", () => {
