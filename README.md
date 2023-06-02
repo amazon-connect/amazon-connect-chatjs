@@ -193,7 +193,7 @@ const customerChatSession = connect.ChatSession.create({
   options: { // optional
     region: "us-east-1", // optional, defaults to `region` set in `connect.ChatSession.setGlobalConfig()`
   },
-  type: connect.ChatSession.SessionTypes.CUSTOMER, // REQUIRED
+  type: "CUSTOMER", // REQUIRED
 });
 ```
 
@@ -705,3 +705,200 @@ agentChatSession.cleanUpOnParticipantDisconnect();
 Cleans up all event handlers.
 
 Applies only for `AgentChatSession`. See `connect.ChatSession.create()` for more info.
+
+## Handle Browser Refresh
+
+Reconnect to an active chat after refreshing the browser. Call the `CreateParticipantConnection` API on refresh with the same `ParticipantToken` generated from the initial `ShatChatContact` request.
+
+### Reference
+
+- `StartChatContact` API: initiate the chat contact [[Documentation](https://docs.aws.amazon.com/connect/latest/APIReference/API_StartChatContact.html)]
+- `CreateParticipantConnection` API: create the participant's connection [[Documentation](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CreateParticipantConnection.html)]
+- "Enable real-time chat message streaming": further streaming capabilities [[Documentation](https://docs.aws.amazon.com/connect/latest/adminguide/chat-message-streaming.html)]
+
+### Walkthrough
+
+1. Initial StartChatContact request is made, `ParticipantToken` gets stored
+
+```js
+// Option #1 - Invoking the startChatContactAPI lambda CloudFormation template
+
+// https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/cloudformationTemplates/startChatContactAPI
+var contactFlowId = "12345678-1234-1234-1234-123456789012";
+var instanceId = "12345678-1234-1234-1234-123456789012";
+var apiGatewayEndpoint = "https://<api-id>.execute-api.<region>.amazonaws.com/Prod/";
+var region = "<region>";
+
+// Details passed to the lambda
+const initiateChatRequest = {
+  ParticipantDetails: {
+    DisplayName: name
+  },
+  ContactFlowId: contactFlowId,
+  InstanceId: instanceId,
+  Attributes: JSON.stringify({
+    "customerName": name // pass this to the Contact flow
+  }),
+  SupportedMessagingContentTypes: ["text/plain", "text/markdown"]
+};
+
+window.fetch(apiGatewayEndpoint, {
+  method: 'post',
+  body: JSON.stringify(initiateChatRequest),
+})
+    .then((res) => res.json())
+    .then((res) => {
+      return res.data.startChatResult;
+    })
+    .catch((err) => {
+      console.error('StartChatContact Failure', err)
+    });
+
+// StartChatContact response gets stored
+const initialStartChatResponse = {
+    ContactId,
+    ParticipantId,
+    ParticipantToken
+};
+```
+
+```js
+// Option #2 - Invoking the AWK SDK `connect.startChatContact`
+
+var AWS = require('aws-sdk');
+AWS.config.update({region: process.env.REGION});
+var connect = new AWS.Connect();
+
+// https://docs.aws.amazon.com/connect/latest/APIReference/API_StartChatContact.html
+const startChatRequest = {
+  ParticipantDetails: {
+    DisplayName: "Customer1"
+  },
+  ContactFlowId: contactFlowId,
+  InstanceId: instanceId,
+  Attributes: JSON.stringify({
+    customerName: "Customer1" // pass this to the Contact flow
+  }),
+  SupportedMessagingContentTypes: ["text/plain", "text/markdown"]
+};
+
+// Initial StartChatContact call
+connect.startChatContact(startChatRequest, function(err, data) {
+    if (err) {
+        console.log("Error starting the chat.", err);
+        reject(err);
+    } else {
+        console.log("Start chat succeeded with the response: " + JSON.stringify(data));
+        resolve(data);
+    }
+});
+```
+
+2. Initial `CreateParticipantConnection` request is made, customer initializes chat session
+
+```js
+// global "connect" imported from `amazon-connect-chatjs`
+
+var chatSession;
+
+// Initial CreateParticipantConnection call
+chatSession = await connect.ChatSession.create({
+  options: { // optional
+    region: "us-west-2", // optional, defaults to `region` set in `connect.ChatSession.setGlobalConfig()`
+  },
+  chatDetails: {
+    ContactId
+    ParticipantId
+    ParticipantToken     //  <---- from initialStartChatResponse
+  },
+  type: "CUSTOMER",
+});
+```
+
+3. Events and messages are sent in the current chat session from customer
+
+```js
+await chatSession.connect();
+
+await chatSession.sendMessage({
+  contentType: "text/plain",
+  message: "Hello World!"
+});
+```
+
+4. Customer refreshes the browser tab and loses websocket connection
+
+```js
+// Browser is refreshed
+location.reload();
+```
+
+5. Another `CreateParticipantConnection` request is made with the initial `ParticipantToken`
+
+```js
+// Second CreateParticipantConnection request
+chatSession = await connect.ChatSession.create({
+  chatDetails: {
+    ContactId
+    ParticipantId
+    ParticipantToken     //  <---- from initialStartChatResponse
+  },
+  type: "CUSTOMER",
+});
+```
+
+6. Events and messages are sent in the same current chat session
+
+```js
+await chatSession.connect();
+
+await chatSession.sendMessage({
+  contentType: "text/plain",
+  message: "Hello World!"
+});
+```
+
+## Enabling Persistent Chat
+
+> For latest documentation, please follow instructions in ["Admin guide: Enable persistent chat"](https://docs.aws.amazon.com/connect/latest/adminguide/chat-persistence.html)
+
+Persistent chats enable customers to resume previous conversations with the context, metadata, and transcripts carried over, eliminating the need for customers to repeat themselves and allowing agents to provide personalized service with access to the entire conversation history. To set up persistent chat experiences, simply provide a previous contact id when calling the StartChatContact API to create a new chat contact.
+
+Learn more about persistent chat: https://docs.aws.amazon.com/connect/latest/adminguide/chat-persistence.html
+
+### Reference
+
+ - Initial release date: 1/20/2023
+ - [Admin Guide Documentation](https://docs.aws.amazon.com/connect/latest/adminguide/chat-persistence.html)
+ - [Launch Annoucement](https://aws.amazon.com/about-aws/whats-new/2023/01/amazon-connect-persistent-chat-experiences/)
+
+### Configuration
+
+> ⚠️ Only chat sessions that have ended are allowed to rehydrate onto a new chat session.
+
+Chat transcripts are pulled from previous chat contacts, and displayed to the customer and agent.
+
+To enable persistent chat, provide the previous `contactId` in the `SourceContactId` parameter of [`StartChatContact`](https://docs.aws.amazon.com/connect/latest/APIReference/API_StartChatContact.html) API.
+
+```http
+PUT /contact/chat HTTP/1.1
+Content-type: application/json
+{
+   "Attributes": {
+      "string" : "string"
+   },
+   "ContactFlowId": "string",
+   "InitialMessage": {
+      "Content": "string",
+      "ContentType": "string"
+   },
+   "InstanceId": "string",
+   ... // other chat fields
+
+   // NEW Attribute for persistent chat
+   "PersistentChat" : {
+       "SourceContactId": "2222222-aaaa-bbbb-2222-222222222222222"
+       "RehydrationType": "FROM_SEGMENT" // ENTIRE_PAST_SESSION | FROM_SEGMENT
+   }
+}
+```
