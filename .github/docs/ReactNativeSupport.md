@@ -1,10 +1,43 @@
 # React Native Support
 
-> Note: a demo application implementing basic ChatJS functionality is available in the ui-examples repository: [connectReactNativeChat](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/connectReactNativeChat)
+> ‼️ Additional configuration is required to support ChatJS in React Native applications - see ["Configuration"](#configuration)
 
-Additional configuration is required to support ChatJS in React Native applications. Use `amazon-connect-chatjs@^1.5.0` and apply the changes below:
 
-<!-- Along with changes below, a full demo application can be found in the ui-examples repository: https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/connectMobileChatWidgetChatJS (or connectMobileChatWidgetWebView) -->
+## Demo
+
+A demo application implementing basic ChatJS functionality is available in the ui-examples repository: [connectReactNativeChat](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/connectReactNativeChat)
+
+
+## Client Side Metrics (CSM) Support
+
+> ⚠️ NOT CURRENTLY SUPPORTED - For more details please refer to the [tracking issue](https://github.com/amazon-connect/amazon-connect-chatjs/issues/171)
+
+The out-of-box ChatJS client side metrics are not currently supported in React Native. ChatJS is officially supported for browser environments, and may run into issues accessing the `document` DOM API.
+
+You can safely disable CSM without affecting other behavior:
+
+```diff
+this.session = connect.ChatSession.create({
+  chatDetails: startChatDetails,
++ disableCSM: true,
+  type: 'CUSTOMER',
+  options: { region },
+});
+```
+
+## Configuration
+
+Use `amazon-connect-chatjs@^1.5.0` and customize the global configuration:
+
+```
+connect.ChatSession.setGlobalConfig({
+  webSocketManagerConfig: {
+    isNetworkOnline: () => true, // default: () => navigator.onLine
+  }
+});
+```
+
+To further customize the `isNetworkOnline` input, see the options below:
 
 #### Override Browser Network Health Check
 
