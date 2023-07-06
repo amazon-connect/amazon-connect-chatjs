@@ -30,7 +30,7 @@ const configInput = {
     endpoint: "test-endpoint"
 };
 const logMetaData = {contactId: "abc"};
-const defaultMessageReceiptsError = "enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false";
+const defaultMessageReceiptsError = "WARN [2022-04-12T23:12:36.677Z] ChatJS-GlobalConfig: enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false ";
 
 describe("globalConfig", () => {
     beforeAll(() => {
@@ -83,6 +83,7 @@ describe("globalConfig", () => {
             messages = [];
             mockFn = (...msg) => messages.push([...msg]);
             ChatSessionObject.setGlobalConfig({
+                features: { messageReceipts: { shouldSendMessageReceipts: false }},
                 loggerConfig: {
                     useDefaultLogger: true
                 }
@@ -135,14 +136,14 @@ describe("globalConfig", () => {
             setConfig(LogLevel.ERROR);
             var logger = LogManager.getLogger({ prefix: "prefix " });
             logger.error("error", 3);
-            expect(messages[2]).toEqual(["ERROR [2022-04-12T23:12:36.677Z] prefix : error 3 "]);
+            expect(messages[0]).toEqual(["ERROR [2022-04-12T23:12:36.677Z] prefix : error 3 "]);
         });
         it("should match log format in advanced_log level", () => {
             console.error = mockFn;
             setConfig(LogLevel.ADVANCED_LOG);
             var logger = LogManager.getLogger({ prefix: "prefix " });
             logger.advancedLog("info", 3);
-            expect(messages[2]).toEqual(["ADVANCED_LOG [2022-04-12T23:12:36.677Z] prefix : info 3 "]);
+            expect(messages[0]).toEqual(["ADVANCED_LOG [2022-04-12T23:12:36.677Z] prefix : info 3 "]);
         });
         test("set region", () => {
             ChatSessionObject.setGlobalConfig({
@@ -155,21 +156,21 @@ describe("globalConfig", () => {
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ prefix: "prefix ", logMetaData });
             logger.info("info", 3);
-            expect(messages[2]).toEqual(["INFO [2022-04-12T23:12:36.677Z] prefix : info 3 {\"contactId\":\"abc\"}"]);
+            expect(messages[1]).toEqual(["INFO [2022-04-12T23:12:36.677Z] prefix : info 3 {\"contactId\":\"abc\"}"]);
         });
         it("should match log format when there is no prefix and logMetaData", () => {
             console.info = mockFn;
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ logMetaData: {contactId: "abc"}});
             logger.info("info", 3);
-            expect(messages[2]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
+            expect(messages[1]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
         });
         it("should match log format when there is no prefix, but logMetaData is included", () => {
             console.info = mockFn;
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ logMetaData });
             logger.info("info", 3);
-            expect(messages[2]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
+            expect(messages[1]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
         });
     });
   
@@ -183,6 +184,7 @@ describe("globalConfig", () => {
         });
         it("should match log format when use customized logger", () => {
             ChatSessionObject.setGlobalConfig({
+                features: { messageReceipts: { shouldSendMessageReceipts: false }},
                 loggerConfig: {
                     customizedLogger: testLogger,
                     level: LogLevel.WARN
@@ -200,6 +202,7 @@ describe("globalConfig", () => {
         });
         it("should match log format when use custom logger", () => {
             ChatSessionObject.setGlobalConfig({
+                features: { messageReceipts: { shouldSendMessageReceipts: false }},
                 loggerConfig: {
                     logger: testLogger,
                     level: LogLevel.WARN
@@ -232,7 +235,7 @@ describe("globalConfig", () => {
     
             expect(testLogger.debug.mock.calls.length).toEqual(0);
             expect(testLogger.info.mock.calls.length).toEqual(1);
-            expect(testLogger.warn.mock.calls.length).toEqual(1);
+            expect(testLogger.warn.mock.calls.length).toEqual(2);
             expect(testLogger.error.mock.calls.length).toEqual(2);
         });
     

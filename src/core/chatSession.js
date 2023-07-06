@@ -11,6 +11,8 @@ import { LogManager, LogLevel, Logger } from "../log";
 import { csmService } from "../service/csmService";
 import WebSocketManager from "../lib/amazon-connect-websocket-manager";
 
+const logger = LogManager.getLogger({ prefix: "ChatJS-GlobalConfig" });
+
 class ChatSessionFactory {
     /*eslint-disable no-unused-vars*/
 
@@ -192,7 +194,7 @@ var setGlobalConfig = config => {
     }
     //Message Receipts enabled by default
     if (!(config.features?.messageReceipts?.shouldSendMessageReceipts === false)) {
-        console.warn("enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false");
+        logger.warn("enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false");
         setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
         GlobalConfig.updateThrottleTime(config.features?.messageReceipts?.throttleTime);
     }

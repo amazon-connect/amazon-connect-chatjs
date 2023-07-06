@@ -289,7 +289,8 @@ class ChatController {
 
     _onConnectSuccess(response, connectionDetailsProvider) {
         this._sendInternalLogToServer(this.logger.info("Connect successful!"));
-        console.warn("onConnectionSuccess response", response);
+        this.logger.warn("onConnectionSuccess response", response);
+
         const responseObject = {
             _debug: response,
             connectSuccess: true,
@@ -313,7 +314,7 @@ class ChatController {
                 csmService.addAgentCountMetric(CREATE_PARTICIPANT_CONACK_FAILURE, 1);
             });
         }
-        console.warn("onConnectionSuccess responseObject", responseObject);
+        this.logger.warn("onConnectionSuccess responseObject", responseObject);
         return responseObject;
     }
 
