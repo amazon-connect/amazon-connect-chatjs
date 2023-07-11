@@ -395,9 +395,25 @@ The response `data` is the same as the [API response body](https://docs.aws.amaz
 ##### `chatSession.sendAttachment()`
 
 ```js
-// attachment object is the actual file that will be sent to agent from end-customer and vice versa.
+/**
+ * Attachment Object - the actual file to be sent between the agent and end-customer.
+ * Documentation: https://developer.mozilla.org/en-US/docs/Web/API/File
+ * @property {number} lastModified - The last modified timestamp of the file.
+ * @property {string} name - The name of the file.
+ * @property {number} size - The size of the file.
+ * @property {string} type - The type of the file.
+ * @property {string} webkitRelativePath - The relative path of the file specific to the WebKit engine.
+ */
 const awsSdkResponse = await chatSession.sendAttachment({
   attachment: attachment
+});
+
+// Example usage
+var input = document.createElement('input');
+input.type = 'file';
+input.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  chatSession.sendAttachment({ attachment: file })
 });
 ```
 
