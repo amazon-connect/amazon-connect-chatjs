@@ -1,3 +1,5 @@
+import { LogManager } from "./log";
+
 class GlobalConfigImpl {
     constructor() {
         this.stage = "prod";
@@ -5,9 +7,12 @@ class GlobalConfigImpl {
         this.cell = "1";
         this.reconnect = true;
         let self = this;
+        this.logger = LogManager.getLogger({
+            prefix: "ChatJS-GlobalConfig",
+        });
         this.features = new Proxy([], {
-            set: function(target, property, value) {
-                console.log("new features added, initialValue: "
+            set: (target, property, value) => {
+                this.stage !== "test-stage2" && this.logger.info("new features added, initialValue: "
                 + target[property] + " , newValue: " + value, Array.isArray(target[property]));
                 let oldVal = target[property];
                 //fire change listeners
