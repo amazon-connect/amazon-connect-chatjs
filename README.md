@@ -364,12 +364,10 @@ The arguments are based on the [API request body](https://docs.aws.amazon.com/co
 - Fields are in `camelCase`.
 - `ClientToken` cannot be specified.
 - `ContentType` allows the following values:
-  - `"application/vnd.amazonaws.connect.event.chat.ended"`
-  - `"application/vnd.amazonaws.connect.event.participant.joined"`
-  - `"application/vnd.amazonaws.connect.event.participant.left"`
-  - `"application/vnd.amazonaws.connect.event.transfer.succeeded"`
-  - `"application/vnd.amazonaws.connect.event.transfer.failed"`
   - `"application/vnd.amazonaws.connect.event.typing"`
+  - `"application/vnd.amazonaws.connect.event.connection.acknowledged"`
+  - `"application/vnd.amazonaws.connect.event.message.delivered"`
+  - `"application/vnd.amazonaws.connect.event.message.read"`
 
 The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html#API_SendEvent_ResponseSyntax).
 
