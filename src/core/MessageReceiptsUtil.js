@@ -185,9 +185,13 @@ export default class MessageReceiptsUtil {
                         }
                     }
                     self.logger.debug('send Delivered event:', args, 'read event:', this.lastReadArgs);
-                    Promise.all(PromiseArr).then(res => {
-                        self.resolveReadPromises(contentVal.messageId, res[0]);
-                        self.resolveDeliveredPromises(messageId, res[0]);
+                    Promise.allSettled(PromiseArr).then(res => {
+                        self.resolveDeliveredPromises(messageId, res[0].value || res[0].reason, res[0].status === "rejected");
+                        // PromiseArr will have at most two promises (Delivered receipt promise and latest read receipt promise)
+                        // If result length is longer than 1, there must be a read receipt promise.
+                        if (res.length > 1) {
+                            self.resolveReadPromises(contentVal.messageId, res[1].value || res[1].reason, res[1].status === "rejected");
+                        }
                     });
                 }
             } catch(err) {
