@@ -175,22 +175,21 @@ export default class MessageReceiptsUtil {
                     //fire delivered for latest messageId
                     //fire read for latest messageId
                     var PromiseArr = [callback.call(ChatClientContext, ...args)];
-                    if(this.lastReadArgs) {
-                        var contentVal = typeof this.lastReadArgs[2] === "string" ? JSON.parse(this.lastReadArgs[2]) : this.lastReadArgs[2];
-                        var readEventMessageId = contentVal.messageId;
-                        // if readPromise has been resolved for readEventMessageId; readPromiseMap should not contain readEventMessageId
-                        // if readPromiseMap contains readEventMessageId; read event has not been called!
-                        if (self.readPromiseMap.has(readEventMessageId)) {
-                            PromiseArr.push(callback.call(ChatClientContext, ...this.lastReadArgs));
-                        }
+                    var contentVal = this.lastReadArgs ? (typeof this.lastReadArgs[2] === "string" ? JSON.parse(this.lastReadArgs[2]) : this.lastReadArgs[2]) : null;
+                    var readEventMessageId = contentVal && contentVal.messageId;
+                    // if readPromise has been resolved for readEventMessageId; readPromiseMap should not contain readEventMessageId
+                    // if readPromiseMap contains readEventMessageId; read event has not been called!
+                    if (self.readPromiseMap.has(readEventMessageId)) {
+                        PromiseArr.push(callback.call(ChatClientContext, ...this.lastReadArgs));
                     }
+                   
                     self.logger.debug('send Delivered event:', args, 'read event:', this.lastReadArgs);
                     Promise.allSettled(PromiseArr).then(res => {
                         self.resolveDeliveredPromises(messageId, res[0].value || res[0].reason, res[0].status === "rejected");
                         // PromiseArr will have at most two promises (Delivered receipt promise and latest read receipt promise)
                         // If result length is longer than 1, there must be a read receipt promise.
-                        if (res.length > 1) {
-                            self.resolveReadPromises(contentVal.messageId, res[1].value || res[1].reason, res[1].status === "rejected");
+                        if (readEventMessageId && res.length > 1) {
+                            self.resolveReadPromises(readEventMessageId, res[1].value || res[1].reason, res[1].status === "rejected");
                         }
                     });
                 }
