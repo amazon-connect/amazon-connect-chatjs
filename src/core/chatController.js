@@ -381,7 +381,7 @@ class ChatController {
             return;
         }
         if (this._participantDisconnected) {
-            this.logger.error("Cannot disconnectParticipant when participant is already disconnected");
+            this.logger.error("Cannot call disconnectParticipant when participant is already disconnected");
             return;
         }
         const startTime = new Date().getTime();

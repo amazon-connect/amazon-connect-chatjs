@@ -57,7 +57,7 @@ describe("ChatController", () => {
 
     beforeEach(() => {
         jest.resetAllMocks();
-
+        console.error = jest.fn();
         const messageHandlers = [];
         const onEndedHandlers = [];
         startResponse = Promise.resolve();
@@ -641,4 +641,96 @@ describe("ChatController", () => {
         });
     });
 
+    test("sendMessage should log an error if called before connect()", async () => {
+        const args = {
+            metadata: "metadata",
+            message: "message",
+            contentType: CONTENT_TYPE.textPlain,
+        };
+        const chatController = getChatController(false);
+        await chatController.sendMessage(args);
+        expect(console.error).toBeCalledWith('Cannot call sendMessage before calling connect()');
+    });
+
+    test("sendMessage should log an error if participant is disconnected", async () => {
+        const args = {
+            metadata: "metadata",
+            message: "message",
+            contentType: CONTENT_TYPE.textPlain,
+        };
+        const chatController = getChatController(false);
+        await chatController.connect();
+        await Utils.delay(1);
+        await chatController.disconnectParticipant();
+        await chatController.sendMessage(args);
+        expect(console.error).toBeCalledWith('Cannot sendMessage when participant is disconnected');
+    });
+
+    test("sendAttachment should log an error if called before connect()", async () => {
+        const args = {
+            metadata: "metadata",
+            attachment: {
+                type: "attachment-type",
+            },
+        };
+        const chatController = getChatController(false);
+        await chatController.sendAttachment(args);
+        expect(console.error).toBeCalledWith('Cannot call sendAttachment before calling connect()');
+    });
+
+    test("sendAttachment should log an error if participant is disconnected", async () => {
+        const args = {
+            metadata: "metadata",
+            attachment: {
+                type: "attachment-type",
+            },
+        };
+        const chatController = getChatController(false);
+        await chatController.connect();
+        await Utils.delay(1);
+        await chatController.disconnectParticipant();
+        await chatController.sendAttachment(args);
+        expect(console.error).toBeCalledWith('Cannot sendAttachment when participant is disconnected');
+    });
+
+    test("downloadAttachment should log an error if called before connect()", async () => {
+        const args = {
+            metadata: "metadata",
+            attachmentId: "attachmentId",
+        };
+        const chatController = getChatController(false);
+        await chatController.downloadAttachment(args);
+        expect(console.error).toBeCalledWith('Cannot call downloadAttachment before calling connect()');
+    });
+
+    test("sendEvent should log an error if called before connect()", async () => {
+        const args = {
+            metadata: "metadata",
+            contentType: CONTENT_TYPE.participantJoined
+        };
+        const chatController = getChatController(false);
+        await chatController.sendEvent(args);
+        expect(console.error).toBeCalledWith('Cannot call sendEvent before calling connect()');
+    });
+
+    test("getTranscript should log an error if called before connect()", async () => {
+        const chatController = getChatController(false);
+        await chatController.getTranscript({});
+        expect(console.error).toBeCalledWith('Cannot call getTranscript before calling connect()');
+    });
+
+    test("disconnectParticipant should log an error if called before connect()", async () => {
+        const chatController = getChatController(false);
+        await chatController.disconnectParticipant();
+        expect(console.error).toBeCalledWith('Cannot call disconnectParticipant before calling connect()');
+    });
+
+    test("disconnectParticipant should log an error if participant is disconnected", async () => {
+        const chatController = getChatController(false);
+        await chatController.connect();
+        await Utils.delay(1);
+        await chatController.disconnectParticipant();
+        await chatController.disconnectParticipant();
+        expect(console.error).toBeCalledWith('Cannot call disconnectParticipant when participant is already disconnected');
+    });
 });
