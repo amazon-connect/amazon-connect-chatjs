@@ -92,12 +92,7 @@ class ChatController {
     }
 
     sendMessage(args) {
-        if (!this.connectionHelper) {
-            this.logger.error("Cannot call sendMessage before calling connect()");
-            return;
-        }
-        if (this._participantDisconnected) {
-            this.logger.error("Cannot sendMessage when participant is disconnected");
+        if (!this._validateConnectionStatus('sendMessage')) {
             return;
         }
         const startTime = new Date().getTime();
@@ -111,12 +106,7 @@ class ChatController {
     }
 
     sendAttachment(args){
-        if (!this.connectionHelper) {
-            this.logger.error("Cannot call sendAttachment before calling connect()");
-            return;
-        }
-        if (this._participantDisconnected) {
-            this.logger.error("Cannot sendAttachment when participant is disconnected");
+        if (!this._validateConnectionStatus('sendAttachment')) {
             return;
         }
         const startTime = new Date().getTime();
@@ -130,8 +120,7 @@ class ChatController {
     }
 
     downloadAttachment(args){
-        if (!this.connectionHelper) {
-            this.logger.error("Cannot call downloadAttachment before calling connect()");
+        if (!this._validateConnectionStatus('downloadAttachment')) {
             return;
         }
         const startTime = new Date().getTime();
@@ -144,8 +133,7 @@ class ChatController {
     }
 
     sendEvent(args) {
-        if (!this.connectionHelper) {
-            this.logger.error("Cannot call sendEvent before calling connect()");
+        if (!this._validateConnectionStatus('sendEvent')) {
             return;
         }
         const startTime = new Date().getTime();
@@ -185,8 +173,7 @@ class ChatController {
     }
 
     getTranscript(inputArgs) {
-        if (!this.connectionHelper) {
-            this.logger.error("Cannot call getTranscript before calling connect()");
+        if (!this._validateConnectionStatus('getTranscript')) {
             return;
         }
         const startTime = new Date().getTime();
@@ -376,12 +363,7 @@ class ChatController {
     }
 
     disconnectParticipant() {
-        if (!this.connectionHelper) {
-            this.logger.error("Cannot call disconnectParticipant before calling connect()");
-            return;
-        }
-        if (this._participantDisconnected) {
-            this.logger.error("Cannot call disconnectParticipant when participant is already disconnected");
+        if (!this._validateConnectionStatus('disconnectParticipant')) {
             return;
         }
         const startTime = new Date().getTime();
@@ -445,6 +427,18 @@ class ChatController {
             logEntry.sendInternalLogToServer();
 
         return logEntry;
+    }
+
+    _validateConnectionStatus(functionName) {
+        if (!this.connectionHelper) {
+            this.logger.error(`Cannot call ${functionName} before calling connect()`);
+            return false;
+        }
+        if (this._participantDisconnected) {
+            this.logger.error(`Cannot call ${functionName} when participant is disconnected`);
+            return false;
+        }
+        return true;
     }
 }
 
