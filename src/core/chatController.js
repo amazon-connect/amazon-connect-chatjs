@@ -92,6 +92,9 @@ class ChatController {
     }
 
     sendMessage(args) {
+        if (!this._validateConnectionStatus('sendMessage')) {
+            return;
+        }
         const startTime = new Date().getTime();
         const metadata = args.metadata || null;
         this.argsValidator.validateSendMessage(args);
@@ -103,6 +106,9 @@ class ChatController {
     }
 
     sendAttachment(args){
+        if (!this._validateConnectionStatus('sendAttachment')) {
+            return;
+        }
         const startTime = new Date().getTime();
         const metadata = args.metadata || null;
         //TODO: validation
@@ -114,6 +120,9 @@ class ChatController {
     }
 
     downloadAttachment(args){
+        if (!this._validateConnectionStatus('downloadAttachment')) {
+            return;
+        }
         const startTime = new Date().getTime();
         const metadata = args.metadata || null;
         const connectionToken = this.connectionHelper.getConnectionToken();
@@ -124,6 +133,9 @@ class ChatController {
     }
 
     sendEvent(args) {
+        if (!this._validateConnectionStatus('sendEvent')) {
+            return;
+        }
         const startTime = new Date().getTime();
         const metadata = args.metadata || null;
         this.argsValidator.validateSendEvent(args);
@@ -161,6 +173,9 @@ class ChatController {
     }
 
     getTranscript(inputArgs) {
+        if (!this._validateConnectionStatus('getTranscript')) {
+            return;
+        }
         const startTime = new Date().getTime();
         const metadata = inputArgs.metadata || null;
         const args = {
@@ -348,6 +363,9 @@ class ChatController {
     }
 
     disconnectParticipant() {
+        if (!this._validateConnectionStatus('disconnectParticipant')) {
+            return;
+        }
         const startTime = new Date().getTime();
         const connectionToken = this.connectionHelper.getConnectionToken();
         return this.chatClient
@@ -409,6 +427,18 @@ class ChatController {
             logEntry.sendInternalLogToServer();
 
         return logEntry;
+    }
+
+    _validateConnectionStatus(functionName) {
+        if (!this.connectionHelper) {
+            this.logger.error(`Cannot call ${functionName} before calling connect()`);
+            return false;
+        }
+        if (this._participantDisconnected) {
+            this.logger.error(`Cannot call ${functionName} when participant is disconnected`);
+            return false;
+        }
+        return true;
     }
 }
 
