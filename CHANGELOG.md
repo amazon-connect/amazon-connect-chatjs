@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.2]
+### Added
+- Error message if API call is made before invoking session.connect(); #129
+
+### Fixed
+- sendEvent contentType README documentation
+- delivered receipt logic causing deadlock promise; #131
 
 ## [2.0.1]
 ### Added
