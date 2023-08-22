@@ -27,6 +27,8 @@ There is a [Chat UI reference implementation](https://github.com/amazon-connect/
 To learn more about Amazon Connect and its capabilities, please check out
 the [Amazon Connect User Guide](https://docs.aws.amazon.com/connect/latest/userguide/).
 
+**New to Amazon Connect and looking to onboard with Chat/Messaging capabilities?** Refer to the [“Amazon Connect Chat Open Source Walkthrough”](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/blob/master/.github/docs/AmazonConnectChatOpenSourceWalkthrough.md) documentation, and [“Hosted Widget vs Custom Builder Solution”](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/blob/master/.github/docs/HostedWidgetVSCustomBuilderSolution.md) if building a customer-facing chat interface.
+
 ## Getting Started
 
 ### A note about the AWS-SDK and ChatJS
