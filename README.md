@@ -1,4 +1,4 @@
-# Amazon Connect ChatJS
+# Amazon Connect ChatJS [![npm](https://img.shields.io/npm/v/amazon-connect-chatjs.svg?color=orange)](https://www.npmjs.com/package/amazon-connect-chatjs) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![Node.js CI](https://github.com/amazon-connect/amazon-connect-chatjs/actions/workflows/node.js.yml/badge.svg?branch=master)](https://github.com/amazon-connect/amazon-connect-chatjs/actions/workflows/node.js.yml)
 
 ## Table of contents
 
