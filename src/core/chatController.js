@@ -397,6 +397,16 @@ class ChatController {
         };
     }
 
+    describeView(args) {
+        const startTime = new Date().getTime();
+        const metadata = args.metadata || null;
+        const connectionToken = this.connectionHelper.getConnectionToken();
+        return this.chatClient
+            .describeView(args.viewToken, connectionToken)
+            .then(this.handleRequestSuccess(metadata, ACPS_METHODS.DESCRIBE_VIEW, startTime))
+            .catch(this.handleRequestFailure(metadata, ACPS_METHODS.DESCRIBE_VIEW, startTime));
+    }
+
     _convertConnectionHelperStatus(connectionHelperStatus) {
         switch (connectionHelperStatus) {
         case ConnectionHelperStatus.NeverStarted:
@@ -415,7 +425,7 @@ class ChatController {
             connectionHelperStatus
         ));
     }
-
+ 
     getConnectionStatus() {
         return this._convertConnectionHelperStatus(
             this.connectionHelper.getStatus()

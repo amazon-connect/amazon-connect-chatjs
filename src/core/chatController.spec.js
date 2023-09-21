@@ -129,6 +129,7 @@ describe("ChatController", () => {
             disconnectParticipant: jest.fn(() => Promise.resolve({ testField: "test" })),
             sendAttachment: jest.fn(() => Promise.resolve({ testField: "test" })),
             downloadAttachment: jest.fn(() => Promise.resolve({ testField: "test" })),
+            describeView: jest.fn(() => Promise.resolve({ testField: "test" })),
         };
         jest.spyOn(csmService, 'addLatencyMetricWithStartTime').mockImplementation(() => {});
         jest.spyOn(csmService, 'addCountAndErrorMetric').mockImplementation(() => {});
@@ -355,6 +356,39 @@ describe("ChatController", () => {
             expect(e.metadata).toEqual("metadata");
             expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.DOWNLOAD_ATTACHMENT, CSM_CATEGORY.API, true, []);
             expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.DOWNLOAD_ATTACHMENT, expect.anything(), CSM_CATEGORY.API, []);
+        }
+    });
+
+    test("describeView works as expected", async () => {
+        const args = {
+            metadata: "metadata",
+            viewToken: "viewToken",
+        };
+        const chatController = getChatController();
+        await chatController.connect();
+        const response = await chatController.describeView(args);
+        expect(chatClient.describeView).toHaveBeenCalledWith("viewToken", "token");
+        expect(response.metadata).toBe("metadata");
+        expect(response.testField).toBe("test");
+        expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.DESCRIBE_VIEW, CSM_CATEGORY.API, false, []);
+        expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.DESCRIBE_VIEW, expect.anything(), CSM_CATEGORY.API, []);
+    });
+ 
+    test("describeView throws an error", async () => {
+        const args = {
+            metadata: "metadata",
+            viewToken: "viewToken",
+        };
+        const chatController = getChatController();
+        await chatController.connect();
+        chatClient.describeView = jest.fn(() => Promise.reject({}));
+        try {
+            await chatController.describeView(args);
+            expect(false).toEqual(true);
+        } catch (e) {
+            expect(e.metadata).toEqual("metadata");
+            expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.DESCRIBE_VIEW, CSM_CATEGORY.API, true, []);
+            expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.DESCRIBE_VIEW, expect.anything(), CSM_CATEGORY.API, []);
         }
     });
 

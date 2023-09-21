@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0]
+### Added
+- The [DescribeView API](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_DescribeView.html)
+
 ## [2.0.2]
 ### Added
 - Error message if API call is made before invoking session.connect(); #129
