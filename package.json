@@ -1,6 +1,6 @@
 {
   "name": "amazon-connect-chatjs",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "main": "dist/amazon-connect-chat.js",
   "types": "dist/index.d.ts",
   "engines": {

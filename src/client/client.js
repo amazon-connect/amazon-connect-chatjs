@@ -69,6 +69,10 @@ class ChatClient {
   createParticipantConnection(participantToken, type) {
     throw new UnImplementedMethodException("createParticipantConnection in ChatClient");
   }
+
+  describeView() {
+    throw new UnImplementedMethodException("describeView in ChatClient");
+  }
 }
 /*eslint-enable*/
 
@@ -84,6 +88,24 @@ class AWSChatClient extends ChatClient {
     this.chatClient = new AWS.ConnectParticipant(config);
     this.invokeUrl = args.endpoint;
     this.logger = LogManager.getLogger({ prefix: DEFAULT_PREFIX, logMetaData: args.logMetaData });
+  }
+
+  describeView(viewToken, connectionToken) {
+    let self = this;
+    let params = {
+      ViewToken: viewToken,
+      ConnectionToken: connectionToken
+    }
+    let describeViewRequest = self.chatClient.describeView(
+        params
+    );
+    return self._sendRequest(describeViewRequest).then((res) => {
+      self.logger.info("Successful describe view request")?.sendInternalLogToServer?.();
+      return res;
+    }).catch((err) => {
+      self.logger.error("describeView gave an error response", err)?.sendInternalLogToServer?.();
+      return Promise.reject(err);
+    });
   }
 
   createParticipantConnection(participantToken, type, acknowledgeConnection) {

@@ -38,6 +38,7 @@ export const ACPS_METHODS = {
     GET_TRANSCRIPT: "GetTranscript",
     DISCONNECT_PARTICIPANT: "DisconnectParticipant",
     CREATE_PARTICIPANT_CONNECTION: "CreateParticipantConnection",
+    DESCRIBE_VIEW: "DescribeView",
 };
 
 export const WEBSOCKET_EVENTS = {

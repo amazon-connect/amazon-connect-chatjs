@@ -149,6 +149,10 @@ export class ChatSession {
     getChatDetails() {
         return this.controller.getChatDetails();
     }
+
+    describeView(args) {
+        return this.controller.describeView(args);
+    }
 }
 
 class AgentChatSession extends ChatSession {

@@ -712,6 +712,24 @@ const {
 
 Gets the chat session details.
 
+##### `chatSession.describeView()`
+```js
+const {
+  View
+} = chatSession.describeView({
+  viewToken: "QVFJREFIaGIyaHZJWUZzNlVmMGVIY2NXdUVMMzdBTnprOGZkc3huRzhkSXR6eExOeXdGYTFwYitiOGRybklmMEZHbjBGZU1sQUFBQWJqQnNCZ2txaGtpRzl3MEJCd2FnWHpCZEFnRUFNRmdHQ1NxR1NJYjNEUUVIQVRBZUJnbGdoa2dCWlFNRUFTNHdFUVFNKys3ei9KTU41dG1BMWF4UkFnRVFnQ3NLckhKTEdXMUsyR1kvVHBUWWp0SmZxSG83VlcvOTg5WGZvckpMWDhOcGVJVHcrWUtnWjVwN3NxNGk6OlJ6STltam5rZjBiNENhOVdzM0wwaWxjR1dWUUxnb1Y1dmxNaEE5aGRkemZuV09hY0JEZFlpWFhpWnRPQlowNW9HT28xb0VnZ3JWV21aeWN0anhZZi9lOUdrYklSZVR5N2tpQmRRelFXSGpXZHpFSUExRCtvcWl5VGMzMzJoaWRldU5IaWwreEkvNmNmWUtpMXd5Qnh1aG0yY1AyWmk2byt2bTRDalFhWGxaM0Zrb1dqLy91aDVvRmtZcDY4UERuU0ZVQ1AyUU0zcjhNazI1ckZ2M0p6Z210bnMrSzVYY2VPN0xqWE1JMHZ0RE5uVEVYR1ZDcnc3SE82R0JITjV4NWporWGM9\\\", //REQUIRED
+  metadata: "foo" //OPTIONAL
+}).data;
+```
+ Wraps the [DescribeView](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_DescribeView.html) API.
+ 
+The arguments are based on the [API model](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_DescribeView.html) with the following differences:
+ 
+- All fields are in camelCase. 
+ 
+ChatJS automatically supplies the connectionToken via the session's internal data. 
+This api will only function after `chatSession.connect()` succeeds.
+
 ##### `agentChatSession.cleanUpOnParticipantDisconnect()`
 
 ```js
