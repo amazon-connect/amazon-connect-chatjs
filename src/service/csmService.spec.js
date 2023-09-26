@@ -5,6 +5,7 @@ import {
 } from "../config/csmConfig";
 import * as CsmConfig from "../config/csmConfig";
 import { GlobalConfig } from "../globalConfig";
+import { ChatSessionObject } from "../core/chatSession";
 
 jest.useFakeTimers();
 jest.spyOn(global, 'setTimeout');
@@ -189,5 +190,101 @@ describe("Common csmService tests", () => {
             expect(csm.API.addCount).toHaveBeenCalled();
             expect(csm.API.addCount).toHaveBeenCalledWith("test", 1);
         });
+    });
+});
+
+describe("Disabling CSM", () => {
+    let backupGlobalCSM = global.csm;
+
+    const chatSessionCreateInput = {
+        loggerConfig: { useDefaultLogger: true },
+        // disableCSM: false, // default false
+        chatDetails: {
+            ContactId: 'abc',
+            ParticipantId: 'abc',
+            ParticipantToken: 'abc',
+        },
+        type: "CUSTOMER" // <-- IMPORTANT
+    };
+
+    beforeEach(() => {
+        jest.resetAllMocks();
+        jest.spyOn(csmService, 'addLatencyMetricWithStartTime');
+        jest.spyOn(csmService, 'addMetric');
+        jest.spyOn(csmService.logger, 'error');
+        jest.spyOn(csmService.logger, 'info');
+
+        // Mock these for `lib/connect-csm-worker.js`
+        global.URL.createObjectURL = jest.fn(() => 'mock_sharedWorkerBlobUrl');
+        global.SharedWorker = jest.fn(() => ({
+            port: {
+                start: jest.fn(),
+                postMessage: jest.fn(),
+            },
+        }));
+
+        // Remove existing "csm" value from other test files
+        delete global.csm;
+    });
+
+    afterEach(() => {
+        global.csm = backupGlobalCSM;
+    });
+
+    it("should not execute addMetric when CSM has been disabled", () => {
+        let backup_loadCsmScriptAndExecute = csmService.loadCsmScriptAndExecute;
+        let backup_initializeCSM = csmService.initializeCSM;
+
+        csmService.loadCsmScriptAndExecute = jest.fn();
+        csmService.initializeCSM = jest.fn();
+
+        // Initialize chat session with CSM disabled
+        ChatSessionObject.create({
+            ...chatSessionCreateInput,
+            disableCSM: true, // <-- IMPORTANT
+        });
+        expect(csmService.loadCsmScriptAndExecute).not.toHaveBeenCalled();
+        expect(csmService.initializeCSM).not.toHaveBeenCalled();
+        expect(csmService.csmInitialized).toBe(false);
+
+        // Attempt to publish a metric
+        csmService.addLatencyMetricWithStartTime("test-method", 0, "test-category");
+        csmService.addCountAndErrorMetric("test-method", "test-category", "test-error");
+        csmService.addCountMetric("test-method", "test-category");
+        csmService.addAgentCountMetric("test-name", 0);
+
+        // Assert expected behavior
+        expect(csmService.addMetric).not.toHaveBeenCalled();
+        expect(csmService.logger.error).not.toHaveBeenCalled(); // Should be silent and not output any ERROR logs
+        expect(csmService.logger.info).not.toHaveBeenCalled(); // Should be silent and not output any INFO logs
+
+        // Cleanup
+        csmService.loadCsmScriptAndExecute = backup_loadCsmScriptAndExecute;
+        csmService.initializeCSM = backup_initializeCSM;
+    });
+
+    it("should properly execute addMetric when CSM is enabled", () => {
+        jest.spyOn(CsmConfig, 'getLdasEndpointUrl').mockReturnValue(mockLdasEndpoint);
+
+        // Initialize chat session with CSM disabled
+        expect(csmService.csmInitialized).toBe(false);
+        ChatSessionObject.create({
+            ...chatSessionCreateInput,
+            disableCSM: false, // <-- default "true"
+        });
+        expect(csmService.logger.error).not.toHaveBeenCalled(); // Should not trigger "catch" block
+        expect(csmService.csmInitialized).toBe(true);
+
+        // Attempt to publish a metric
+        csmService.addLatencyMetricWithStartTime("test-method", 0, "test-category");
+        csmService.addCountAndErrorMetric("test-method", "test-category", "test-error");
+        csmService.addCountMetric("test-method", "test-category");
+        csmService.addAgentCountMetric("test-name", 0);
+
+        // Assert expected behavior
+        expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalled();
+        expect(csmService.logger.error).not.toHaveBeenCalled(); // Should not trigger "catch" block
+        expect(csmService.addMetric).toHaveBeenCalled();
+        expect(csmService.logger.error).not.toHaveBeenCalled(); // Should not trigger "catch" block
     });
 });

@@ -69,6 +69,10 @@ class CsmService {
             csmConfig.widgetType : this.widgetType;
     }
 
+    _hasCSMFailedToImport() {
+        return typeof csm === 'undefined';
+    }
+
     getDefaultDimensions() {
         return [
             {
@@ -79,6 +83,8 @@ class CsmService {
     }
 
     addMetric(metric) {
+        if (this._hasCSMFailedToImport()) return;
+
         // if csmService is never initialized, store the metrics in an array
         if (!this.csmInitialized) {
             if (this.metricsToBePublished) {
@@ -101,6 +107,8 @@ class CsmService {
     }
 
     addLatencyMetric(method, timeDifference, category, otherDimensions = []) {
+        if (this._hasCSMFailedToImport()) return;
+
         try {
             const latencyMetric = new csm.Metric(
                 method,
@@ -135,6 +143,8 @@ class CsmService {
     }
 
     addCountAndErrorMetric(method, category, error, otherDimensions = []) {
+        if (this._hasCSMFailedToImport()) return;
+
         try {
             const dimensions = [
                 ...this.getDefaultDimensions(),
@@ -170,6 +180,8 @@ class CsmService {
     }
 
     addCountMetric(method, category, otherDimensions = []) {
+        if (this._hasCSMFailedToImport()) return;
+
         try {
             const dimensions = [
                 ...this.getDefaultDimensions(),
@@ -193,6 +205,8 @@ class CsmService {
     }
 
     addAgentCountMetric(metricName, count) {
+        if (this._hasCSMFailedToImport()) return;
+
         try {
             const _self = this;
             if (csm && csm.API.addCount && metricName) {
