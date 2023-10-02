@@ -145,6 +145,18 @@ describe("ChatController", () => {
         expect(chatClient.sendEvent).not.toHaveBeenCalled();
     });
 
+    test("Connection gets established and is idempotent", async () => {
+        console.warn = jest.fn();
+        const chatController = getChatController();
+        const connectionEstablishedHandler = jest.fn();
+        chatController.subscribe(CHAT_EVENTS.CONNECTION_ESTABLISHED, connectionEstablishedHandler);
+        await chatController.connect();
+        await chatController.connect();
+        await Utils.delay(1);
+        expect(connectionEstablishedHandler).toHaveBeenCalledTimes(1);
+        expect(console.warn.mock.calls[2][0]).toBe("Ignoring duplicate call to connect. Method can only be invoked once");
+    });
+
     test("Should publish CSM when CreateParticipantConnection ConnAck is failed", async () => {
         const mockCallCreateParticipantConnection = jest.fn().mockImplementation(() =>{
             return Promise.reject("connAck");

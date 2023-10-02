@@ -43,6 +43,7 @@ class ChatController {
         this.websocketManager = args.websocketManager;
         this._participantDisconnected = false;
         this.sessionMetadata = {};
+        this.connectionDetailsProvider = null;
         this.logger = LogManager.getLogger({
             prefix: "ChatJS-ChatController",
             logMetaData: args.logMetaData
@@ -205,16 +206,20 @@ class ChatController {
     connect(args={}) {
         this.sessionMetadata = args.metadata || null;
         this.argsValidator.validateConnectChat(args);
-        const connectionDetailsProvider = this._getConnectionDetailsProvider();
-        return connectionDetailsProvider.fetchConnectionDetails()
-            .then(
-                (connectionDetails) => 
-                    this._initConnectionHelper(connectionDetailsProvider, connectionDetails)
-            )
-            .then(response => this._onConnectSuccess(response, connectionDetailsProvider))
-            .catch(err => {
-                return this._onConnectFailure(err);
-            });
+        if (!this.connectionDetailsProvider) {
+            this.connectionDetailsProvider = this._getConnectionDetailsProvider();
+            return this.connectionDetailsProvider.fetchConnectionDetails()
+                .then(
+                    (connectionDetails) =>
+                        this._initConnectionHelper(this.connectionDetailsProvider, connectionDetails)
+                )
+                .then((response) => this._onConnectSuccess(response, this.connectionDetailsProvider))
+                .catch(err => {
+                    return this._onConnectFailure(err);
+                });
+        } else {
+            this.logger.warn("Ignoring duplicate call to connect. Method can only be invoked once", args);
+        }
     }
 
     _initConnectionHelper(connectionDetailsProvider, connectionDetails) {
