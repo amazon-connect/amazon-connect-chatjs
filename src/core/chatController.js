@@ -172,7 +172,7 @@ class ChatController {
             .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType));
     }
 
-    getTranscript(inputArgs) {
+    getTranscript(inputArgs = {}) {
         if (!this._validateConnectionStatus('getTranscript')) {
             return;
         }
