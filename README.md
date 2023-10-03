@@ -58,6 +58,18 @@ Import ChatJS before the AWS SDK, and ensure the AWS SDK version you are using c
 
 When using the SDK and ChatJS, you may remove the SDK from ChatJS to ensure lack of import conflicts. However, this should not be relevant if the order in which you are importing these libraries is the order reflected above.
 
+#### Using AWS SDK ConnectParticipant Client
+
+If you have replaced `./client/aws-sdk-connectparticipant.js` and use `@aws-sdk/client-connectparticipant`, make sure to import the aws-sdk after ChatJS
+
+```
+import 'amazon-connect-streams'; // <-- (optional) MUST be before ChatJS
+import 'amazon-connect-chatjs';
+import '@aws-sdk/client-connect'; // or 'aws-sdk'
+import '@aws-sdk/clients/connectparticipant'; // <-- IMPORTANT - should be last
+```
+
+
 ### Usage
 
 #### Using ChatJS from npm
