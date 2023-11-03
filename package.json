@@ -1,6 +1,6 @@
 {
   "name": "amazon-connect-chatjs",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "main": "dist/amazon-connect-chat.js",
   "types": "dist/index.d.ts",
   "engines": {
@@ -85,6 +85,7 @@
     "eslint-plugin-jest": "^26.6.0"
   },
   "dependencies": {
+    "aws-sdk": "^2.1459.0",
     "sprintf-js": "^1.1.2",
     "detect-browser": "5.3.0"
   }

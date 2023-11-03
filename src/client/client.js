@@ -1,11 +1,11 @@
+import "aws-sdk/browser";
+import ConnectParticipant from "aws-sdk/clients/connectparticipant";
 import { UnImplementedMethodException } from "../core/exceptions";
 import { GlobalConfig } from "../globalConfig";
 import {
   REGIONS
 } from "../constants";
 import { LogManager } from "../log";
-//Note: this imports AWS instead from aws-sdk npm package - details in ReadMe
-import { ConnectParticipant } from "./aws-sdk-connectparticipant";
 import throttle from "lodash/throttle";
 import { CONTENT_TYPE, TYPING_VALIDITY_TIME } from '../constants';
 
@@ -79,13 +79,11 @@ class ChatClient {
 class AWSChatClient extends ChatClient {
   constructor(args) {
     super();
-    var creds = new AWS.Credentials('','');
-    var config = new AWS.Config({
-      region: args.region,
+    this.chatClient = new ConnectParticipant({
+      credentials: new AWS.Credentials('',''),
       endpoint: args.endpoint,
-      credentials: creds
+      region: args.region
     });
-    this.chatClient = new AWS.ConnectParticipant(config);
     this.invokeUrl = args.endpoint;
     this.logger = LogManager.getLogger({ prefix: DEFAULT_PREFIX, logMetaData: args.logMetaData });
   }
