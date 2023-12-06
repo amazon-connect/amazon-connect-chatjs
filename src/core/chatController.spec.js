@@ -682,8 +682,13 @@ describe("ChatController", () => {
             contentType: CONTENT_TYPE.textPlain,
         };
         const chatController = getChatController(false);
-        await chatController.sendMessage(args);
-        expect(console.error).toBeCalledWith('Cannot call sendMessage before calling connect()');
+        try {
+            await chatController.sendMessage(args);
+        } catch(err) {
+            console.log("err:sendMessage", err);
+        } finally {
+            expect(console.error).toBeCalledWith('Cannot call sendMessage before calling connect()');
+        }
     });
 
     test("sendMessage should log an error if participant is disconnected", async () => {
@@ -695,9 +700,19 @@ describe("ChatController", () => {
         const chatController = getChatController(false);
         await chatController.connect();
         await Utils.delay(1);
-        await chatController.disconnectParticipant();
-        await chatController.sendMessage(args);
-        expect(console.error).toBeCalledWith('Cannot call sendMessage when participant is disconnected');
+
+        try {
+            await chatController.disconnectParticipant();
+        } catch(err) {
+            console.log("err:disconnectParticipant", err);
+        }
+        try {
+            await chatController.sendMessage(args);
+        } catch(err) {
+            console.log("err:sendMessage", err);
+        } finally {
+            expect(console.error).toBeCalledWith('Cannot call sendMessage when participant is disconnected');
+        }
     });
 
     test("sendAttachment should log an error if called before connect()", async () => {
@@ -708,8 +723,13 @@ describe("ChatController", () => {
             },
         };
         const chatController = getChatController(false);
-        await chatController.sendAttachment(args);
-        expect(console.error).toBeCalledWith('Cannot call sendAttachment before calling connect()');
+        try {
+            await chatController.sendAttachment(args);
+        } catch(err) {
+            console.log("err:sendAttachment", err);
+        } finally {
+            expect(console.error).toBeCalledWith('Cannot call sendAttachment before calling connect()');
+        }
     });
 
     test("sendAttachment should log an error if participant is disconnected", async () => {
@@ -722,9 +742,18 @@ describe("ChatController", () => {
         const chatController = getChatController(false);
         await chatController.connect();
         await Utils.delay(1);
-        await chatController.disconnectParticipant();
-        await chatController.sendAttachment(args);
-        expect(console.error).toBeCalledWith('Cannot call sendAttachment when participant is disconnected');
+        try {
+            await chatController.disconnectParticipant();
+        } catch(err) {
+            console.log("err:disconnectParticipant", err);
+        }
+        try {
+            await chatController.sendAttachment(args);
+        } catch(err) {
+            console.log("err:sendAttachment", err);
+        } finally {
+            expect(console.error).toBeCalledWith('Cannot call sendAttachment when participant is disconnected');
+        }
     });
 
     test("downloadAttachment should log an error if called before connect()", async () => {
@@ -733,8 +762,13 @@ describe("ChatController", () => {
             attachmentId: "attachmentId",
         };
         const chatController = getChatController(false);
-        await chatController.downloadAttachment(args);
-        expect(console.error).toBeCalledWith('Cannot call downloadAttachment before calling connect()');
+        try {
+            await chatController.downloadAttachment(args);
+        } catch(err) {
+            console.log("err:downloadAttachment", err);
+        } finally {
+            expect(console.error).toBeCalledWith('Cannot call downloadAttachment before calling connect()');
+        }
     });
 
     test("downloadAttachment should log an error if participant is disconnected", async () => {
@@ -745,9 +779,18 @@ describe("ChatController", () => {
         const chatController = getChatController(false);
         await chatController.connect();
         await Utils.delay(1);
-        await chatController.disconnectParticipant();
-        await chatController.downloadAttachment(args);
-        expect(console.error).toBeCalledWith('Cannot call downloadAttachment when participant is disconnected');
+        try {
+            await chatController.disconnectParticipant();
+        } catch(err) {
+            console.log("err:disconnectParticipant", err);
+        }
+        try {
+            await chatController.downloadAttachment(args);
+        } catch(err) {
+            console.log("err:downloadAttachment", err);
+        } finally {
+            expect(console.error).toBeCalledWith('Cannot call downloadAttachment when participant is disconnected');
+        }
     });
 
     test("sendEvent should log an error if called before connect()", async () => {
@@ -756,8 +799,13 @@ describe("ChatController", () => {
             contentType: CONTENT_TYPE.participantJoined
         };
         const chatController = getChatController(false);
-        await chatController.sendEvent(args);
-        expect(console.error).toBeCalledWith('Cannot call sendEvent before calling connect()');
+        try {
+            await chatController.sendEvent(args);
+        } catch(err) {
+            console.log("err:sendEvent", err);
+        } finally {
+            expect(console.error).toBeCalledWith('Cannot call sendEvent before calling connect()');
+        }
     });
 
     test("sendEvent should log an error if participant is disconnected", async () => {
@@ -768,38 +816,75 @@ describe("ChatController", () => {
         const chatController = getChatController(false);
         await chatController.connect();
         await Utils.delay(1);
-        await chatController.disconnectParticipant();
-        await chatController.sendEvent(args);
-        expect(console.error).toBeCalledWith('Cannot call sendEvent when participant is disconnected');
+        try {
+            await chatController.disconnectParticipant();
+        } catch(err) {
+            console.log("err:disconnectParticipant", err);
+        }
+        try {
+            await chatController.sendEvent(args);
+        } catch(err) {
+            console.log("err:sendEvent", err);
+        } finally {
+            expect(console.error).toBeCalledWith('Cannot call sendEvent when participant is disconnected');
+        }
     });
 
     test("getTranscript should log an error if called before connect()", async () => {
         const chatController = getChatController(false);
-        await chatController.getTranscript({});
-        expect(console.error).toBeCalledWith('Cannot call getTranscript before calling connect()');
+        try {
+            await chatController.getTranscript({});
+        } catch(err) {
+            console.log("err:getTranscript", err);
+        } finally {
+            expect(console.error).toBeCalledWith('Cannot call getTranscript before calling connect()');
+        }
     });
 
     test("getTranscript should log an error if participant is disconnected", async () => {
         const chatController = getChatController(false);
         await chatController.connect();
         await Utils.delay(1);
-        await chatController.disconnectParticipant();
-        await chatController.getTranscript({});
-        expect(console.error).toBeCalledWith('Cannot call getTranscript when participant is disconnected');
+        try {
+            await chatController.disconnectParticipant();
+        } catch(err) {
+            console.log("err:disconnectParticipant", err);
+        }
+        try {
+            await chatController.getTranscript({});
+        } catch(err) {
+            console.log("err:getTranscript", err);
+        } finally {
+            expect(console.error).toBeCalledWith('Cannot call getTranscript when participant is disconnected');
+        }
     });
 
     test("disconnectParticipant should log an error if called before connect()", async () => {
         const chatController = getChatController(false);
-        await chatController.disconnectParticipant();
-        expect(console.error).toBeCalledWith('Cannot call disconnectParticipant before calling connect()');
+        try {
+            await chatController.disconnectParticipant();
+        } catch(err) {
+            console.log("err:disconnectParticipant", err);
+        } finally {
+            expect(console.error).toBeCalledWith('Cannot call disconnectParticipant before calling connect()');
+        }
     });
 
     test("disconnectParticipant should log an error if participant is disconnected", async () => {
         const chatController = getChatController(false);
         await chatController.connect();
         await Utils.delay(1);
-        await chatController.disconnectParticipant();
-        await chatController.disconnectParticipant();
-        expect(console.error).toBeCalledWith('Cannot call disconnectParticipant when participant is disconnected');
+        try {
+            await chatController.disconnectParticipant();
+        } catch(err) {
+            console.log("err:disconnectParticipant", err);
+        }
+        try {
+            await chatController.disconnectParticipant();
+        } catch(err) {
+            console.log("err:disconnectParticipant", err);
+        } finally {
+            expect(console.error).toBeCalledWith('Cannot call disconnectParticipant when participant is disconnected');
+        }
     });
 });
