@@ -1,5 +1,9 @@
 # Amazon Connect ChatJS [![npm](https://img.shields.io/npm/v/amazon-connect-chatjs.svg?color=orange)](https://www.npmjs.com/package/amazon-connect-chatjs) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![Node.js CI](https://github.com/amazon-connect/amazon-connect-chatjs/actions/workflows/node.js.yml/badge.svg?branch=master)](https://github.com/amazon-connect/amazon-connect-chatjs/actions/workflows/node.js.yml)
 
+> **_Important note:_**  Amazon Connect has migrated the `Connection Acknowledgement(ConnAck)` from the [SendEvent](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html) API
+to the [CreateParticipant](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CreateParticipantConnection.html) API.
+Please upgrade your ChatJS to [1.4.0](https://github.com/amazon-connect/amazon-connect-chatjs/releases/tag/1.4.0) or a newer version to complete the migration by 12/31/2024.
+
 ## Table of contents
 
 - [About](#about)
