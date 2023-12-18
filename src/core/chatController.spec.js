@@ -549,6 +549,40 @@ describe("ChatController", () => {
         });
     });
 
+    test("should not sendEvent for MessageReceipts if chat has ended", done => {
+        jest.useRealTimers();
+        const args = {
+            metadata: "metadata",
+            contentType: CONTENT_TYPE.readReceipt,
+            content:  JSON.stringify({
+                messageId: "messageId"
+            })
+        };
+        const chatController = getChatController();
+        chatController.hasChatEnded = false;
+        chatController.connect().then(() => {
+            chatClient.sendEvent.mockClear();
+
+            Promise.all([chatController.sendEvent(args),
+                chatController.sendEvent(args),
+                chatController.sendEvent(args),
+                chatController.sendEvent(args),
+                chatController.sendEvent(args)]).then(async () => {
+                expect(chatClient.sendEvent).toHaveBeenCalledTimes(1);
+                expect(chatClient.sendEvent).toHaveBeenCalledWith("token", CONTENT_TYPE.readReceipt, "{\"messageId\":\"messageId\"}", "INCOMING_READ_RECEIPT", 1000);
+
+                chatController.connectionHelper.$simulateEnding();
+                chatClient.sendEvent.mockClear();
+                await Utils.delay(1);
+                await chatController.sendEvent(args);
+                await chatController.sendEvent(args);
+                expect(chatClient.sendEvent).toHaveBeenCalledTimes(0);
+
+                done();
+            });
+        });
+    });
+
     test("should throttle Read and Delivered events for MessageReceipts to only send Read Event", async () => {
         jest.useRealTimers();
         const readArgs = {
@@ -566,6 +600,7 @@ describe("ChatController", () => {
             })
         };
         const chatController = getChatController();
+        chatController.hasChatEnded = false;
         await chatController.connect();
         chatClient.sendEvent.mockClear();
         chatController.sendEvent(readArgs);
@@ -608,6 +643,7 @@ describe("ChatController", () => {
             })
         };
         const chatController = getChatController();
+        chatController.hasChatEnded = false;
 
         chatController.connect().then(()=>{
             chatClient.sendEvent.mockClear();
@@ -651,6 +687,7 @@ describe("ChatController", () => {
             })
         };
         const chatController = getChatController(false);
+        chatController.hasChatEnded = false;
         try {
             await chatController.connect();
             chatClient.sendEvent.mockClear();
