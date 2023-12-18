@@ -49,6 +49,7 @@ class ChatController {
         });
         this.logMetaData = args.logMetaData;
         this.messageReceiptUtil = new MessageReceiptsUtil(args.logMetaData);
+        this.hasChatEnded = false;
         this.logger.info("Browser info:", window.navigator.userAgent);
     }
 
@@ -132,6 +133,14 @@ class ChatController {
             .catch(this.handleRequestFailure(metadata, ACPS_METHODS.DOWNLOAD_ATTACHMENT, startTime));
     }
 
+    sendEventIfChatHasNotEnded(...args) {
+        if (this.hasChatEnded) {
+            this.logger.warn("Ignoring sendEvent API bec chat has ended", ...args);
+            return Promise.resolve();
+        }
+        return this.chatClient.sendEvent(...args);
+    }
+
     sendEvent(args) {
         if (!this._validateConnectionStatus('sendEvent')) {
             return;
@@ -153,7 +162,7 @@ class ChatController {
                 });
             }
             // Prioritize and send selective message receipts
-            return this.messageReceiptUtil.prioritizeAndSendMessageReceipt(this.chatClient, this.chatClient.sendEvent,
+            return this.messageReceiptUtil.prioritizeAndSendMessageReceipt(this.chatClient, this.sendEventIfChatHasNotEnded.bind(this),
                 connectionToken,
                 args.contentType,
                 content, 
@@ -259,6 +268,8 @@ class ChatController {
     }
 
     _handleGainedConnection(eventData) {
+        this.hasChatEnded = false;
+
         this._forwardChatEvent(CHAT_EVENTS.CONNECTION_ESTABLISHED, {
             data: eventData,
             chatDetails: this.getChatDetails()
@@ -283,6 +294,7 @@ class ChatController {
                 chatDetails: this.getChatDetails()
             });
             if (incomingData.ContentType === CONTENT_TYPE.chatEnded) {
+                this.hasChatEnded = true;
                 this._forwardChatEvent(CHAT_EVENTS.CHAT_ENDED, {
                     data: null,
                     chatDetails: this.getChatDetails()
