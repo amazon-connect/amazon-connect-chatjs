@@ -94,7 +94,7 @@ class ChatController {
 
     sendMessage(args) {
         if (!this._validateConnectionStatus('sendMessage')) {
-            return;
+            return Promise.reject(`Failed to call sendMessage, No active connection`);
         }
         const startTime = new Date().getTime();
         const metadata = args.metadata || null;
@@ -108,7 +108,7 @@ class ChatController {
 
     sendAttachment(args){
         if (!this._validateConnectionStatus('sendAttachment')) {
-            return;
+            return Promise.reject(`Failed to call sendAttachment, No active connection`);
         }
         const startTime = new Date().getTime();
         const metadata = args.metadata || null;
@@ -122,7 +122,7 @@ class ChatController {
 
     downloadAttachment(args){
         if (!this._validateConnectionStatus('downloadAttachment')) {
-            return;
+            return Promise.reject(`Failed to call downloadAttachment, No active connection`);
         }
         const startTime = new Date().getTime();
         const metadata = args.metadata || null;
@@ -143,7 +143,7 @@ class ChatController {
 
     sendEvent(args) {
         if (!this._validateConnectionStatus('sendEvent')) {
-            return;
+            return Promise.reject(`Failed to call sendEvent, No active connection`);
         }
         const startTime = new Date().getTime();
         const metadata = args.metadata || null;
@@ -183,7 +183,7 @@ class ChatController {
 
     getTranscript(inputArgs) {
         if (!this._validateConnectionStatus('getTranscript')) {
-            return;
+            return Promise.reject(`Failed to call getTranscript, No active connection`);
         }
         const startTime = new Date().getTime();
         const metadata = inputArgs.metadata || null;
@@ -376,7 +376,7 @@ class ChatController {
 
     disconnectParticipant() {
         if (!this._validateConnectionStatus('disconnectParticipant')) {
-            return;
+            return Promise.reject(`Failed to call disconnectParticipant, No active connection`);
         }
         const startTime = new Date().getTime();
         const connectionToken = this.connectionHelper.getConnectionToken();
@@ -390,6 +390,7 @@ class ChatController {
                 this.breakConnection();
                 csmService.addLatencyMetricWithStartTime(ACPS_METHODS.DISCONNECT_PARTICIPANT, startTime, CSM_CATEGORY.API);
                 csmService.addCountAndErrorMetric(ACPS_METHODS.DISCONNECT_PARTICIPANT, CSM_CATEGORY.API, false);
+                response = {...(response || {})};
                 return response;
             }, error => {
                 this._sendInternalLogToServer(this.logger.error("Disconnect participant failed. Error:", error));
