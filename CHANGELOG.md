@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.2]
+### Fixed
+- reject send callbacks instead of returning null
+
+## [2.2.1]
+
+### Added
+- Updated README to include important note about ConnAck migration
+
+### Fixed
+- Fix sendMessageReceipts to only send receipts if chat has not ended
+
 ## [2.2.0]
 ### Added
 - Updated amazon-connect-websocket-manager.js library to enable Deep Heartbeat change for Chat widget users. 
