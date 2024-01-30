@@ -43,6 +43,7 @@ export const ACPS_METHODS = {
 
 export const WEBSOCKET_EVENTS = {
     ConnectionLost: "WebsocketConnectionLost",
+    ConnectionClose: "WebsocketConnectionClose",
     ConnectionGained: "WebsocketConnectionGained",
     Ended: "WebsocketEnded",
     IncomingMessage: "WebsocketIncomingMessage",
@@ -56,6 +57,7 @@ export const CHAT_EVENTS = {
     INCOMING_DELIVERED_RECEIPT: "INCOMING_DELIVERED_RECEIPT",
     CONNECTION_ESTABLISHED: "CONNECTION_ESTABLISHED",
     CONNECTION_LOST: "CONNECTION_LOST",
+    CONNECTION_CLOSE: "CONNECTION_CLOSE",
     CONNECTION_BROKEN: "CONNECTION_BROKEN",
     CONNECTION_ACK: "CONNECTION_ACK",
     CHAT_ENDED: "CHAT_ENDED",

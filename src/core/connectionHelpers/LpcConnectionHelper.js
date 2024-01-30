@@ -47,7 +47,11 @@ class LpcConnectionHelper extends BaseConnectionHelper {
         this.subscriptions = [
             this.baseInstance.onEnded(this.handleEnded.bind(this)),
             this.baseInstance.onConnectionGain(this.handleConnectionGain.bind(this)),
+            // connection-lost if fired when both primary and secondary websocket connection have been closed!
             this.baseInstance.onConnectionLost(this.handleConnectionLost.bind(this)),
+            // connection-close is fired when any websocket connection is closed, 
+            // connection-lost is fired after connection-close event,
+            this.baseInstance.onConnectionClose(this.handleConnectionClose.bind(this)),
             this.baseInstance.onMessage(this.handleMessage.bind(this))
         ];
     }
@@ -96,8 +100,16 @@ class LpcConnectionHelper extends BaseConnectionHelper {
         return this.eventBus.subscribe(ConnectionHelperEvents.ConnectionLost, handler);
     }
 
+    onConnectionClose(handler) {
+        return this.eventBus.subscribe(ConnectionHelperEvents.ConnectionClose, handler);
+    }
+
     handleConnectionLost() {
         this.eventBus.trigger(ConnectionHelperEvents.ConnectionLost, {});
+    }
+
+    handleConnectionClose() {
+        this.eventBus.trigger(ConnectionHelperEvents.ConnectionClose, {});
     }
 
     onMessage(handler) {
@@ -133,6 +145,7 @@ class LpcConnectionHelperBase {
             this.websocketManager.onMessage("aws/chat", this.handleMessage.bind(this)),
             this.websocketManager.onConnectionGain(this.handleConnectionGain.bind(this)),
             this.websocketManager.onConnectionLost(this.handleConnectionLost.bind(this)),
+            this.websocketManager.onConnectionClose(this.handleConnectionClose.bind(this)),
             this.websocketManager.onInitFailure(this.handleEnded.bind(this))
         ];
         this.logger.info("Initializing websocket manager.");
@@ -230,11 +243,22 @@ class LpcConnectionHelperBase {
         return this.eventBus.subscribe(ConnectionHelperEvents.ConnectionLost, handler);
     }
 
+    onConnectionClose(handler) {
+        return this.eventBus.subscribe(ConnectionHelperEvents.ConnectionClose, handler);
+    }
+
     handleConnectionLost() {
         this.status = ConnectionHelperStatus.ConnectionLost;
         this.eventBus.trigger(ConnectionHelperEvents.ConnectionLost, {});
         csmService.addCountMetric(WEBSOCKET_EVENTS.ConnectionLost, CSM_CATEGORY.API);
         this.logger.info("Websocket connection lost.");
+    }
+
+    handleConnectionClose() {
+        this.status = ConnectionHelperStatus.ConnectionClose;
+        this.eventBus.trigger(ConnectionHelperEvents.ConnectionClose, {});
+        csmService.addCountMetric(WEBSOCKET_EVENTS.ConnectionClose, CSM_CATEGORY.API);
+        this.logger.info("Websocket connection close.");
     }
 
     onMessage(handler) {

@@ -21,6 +21,7 @@ describe("LpcConnectionHelper", () => {
     function createWebsocketManager() {
         const messageHandlers = [];
         const connectionLostHandlers = [];
+        const connectionCloseHandlers = [];
         const connectionGainHandlers = [];
         const endedHandlers = [];
         const refreshHandlers = [];
@@ -39,6 +40,10 @@ describe("LpcConnectionHelper", () => {
                 connectionLostHandlers.push(handler);
                 return () => { };
             }),
+            onConnectionClose: jest.fn((handler) => {
+                connectionCloseHandlers.push(handler);
+                return () => { };
+            }),
             onInitFailure: jest.fn((handler) => {
                 endedHandlers.push(handler);
                 return () => { };
@@ -51,6 +56,9 @@ describe("LpcConnectionHelper", () => {
             },
             $simulateConnectionLost() {
                 connectionLostHandlers.forEach(f => f());
+            },
+            $simulateConnectionClose() {
+                connectionCloseHandlers.forEach(f => f());
             },
             $simulateConnectionGain() {
                 connectionGainHandlers.forEach(f => f());
@@ -120,6 +128,17 @@ describe("LpcConnectionHelper", () => {
             websocketManager.$simulateConnectionLost();
             expect(onConnectionLostHandler1).toHaveBeenCalledTimes(1);
             expect(onConnectionLostHandler2).toHaveBeenCalledTimes(1);
+        });
+   
+        test("onConnectionClose handler is called", () => {
+            const websocketManager = createWebsocketManager();
+            const onConnectionCloseHandler1 = jest.fn();
+            const onConnectionCloseHandler2 = jest.fn();
+            getLpcConnectionHelper("id1", websocketManager).onConnectionClose(onConnectionCloseHandler1);
+            getLpcConnectionHelper("id2", websocketManager).onConnectionClose(onConnectionCloseHandler2);
+            websocketManager.$simulateConnectionClose();
+            expect(onConnectionCloseHandler1).toHaveBeenCalledTimes(1);
+            expect(onConnectionCloseHandler2).toHaveBeenCalledTimes(1);
         });
 
         test("onConnectionGain handler is called", () => {

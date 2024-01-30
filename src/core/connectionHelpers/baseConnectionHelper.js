@@ -5,11 +5,13 @@ const ConnectionHelperStatus = {
     Starting: "Starting",
     Connected: "Connected",
     ConnectionLost: "ConnectionLost",
+    ConnectionClose: "ConnectionClose",
     Ended: "Ended"
 };
 
 const ConnectionHelperEvents = {
     ConnectionLost: "ConnectionLost", // event data is: {reason: ...}
+    ConnectionClose: "ConnectionClose", // event data is: {reason: ...}
     ConnectionGained: "ConnectionGained", // event data is: {reason: ...}
     Ended: "Ended", // event data is: {reason: ...}
     IncomingMessage: "IncomingMessage" // event data is: {payloadString: ...}

@@ -81,6 +81,7 @@ describe("ChatController", () => {
                     onEndedHandlers.push(handlers);
                 },
                 onConnectionLost: () => {},
+                onConnectionClose: () => {},
                 onConnectionGain: () => {},
                 onMessage: (handler) => {
                     messageHandlers.push(handler);

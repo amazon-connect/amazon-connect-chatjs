@@ -238,6 +238,7 @@ class ChatController {
         this.connectionDetails = connectionDetails;
         this.connectionHelper.onEnded(this._handleEndedConnection.bind(this));
         this.connectionHelper.onConnectionLost(this._handleLostConnection.bind(this));
+        this.connectionHelper.onConnectionClose(this._handleCloseConnection.bind(this));
         this.connectionHelper.onConnectionGain(this._handleGainedConnection.bind(this));
         this.connectionHelper.onMessage(this._handleIncomingMessage.bind(this));
         return this.connectionHelper.start();
@@ -262,6 +263,13 @@ class ChatController {
 
     _handleLostConnection(eventData) {
         this._forwardChatEvent(CHAT_EVENTS.CONNECTION_LOST, {
+            data: eventData,
+            chatDetails: this.getChatDetails()
+        });
+    }
+
+    _handleCloseConnection(eventData) {
+        this._forwardChatEvent(CHAT_EVENTS.CONNECTION_CLOSE, {
             data: eventData,
             chatDetails: this.getChatDetails()
         });
@@ -429,6 +437,8 @@ class ChatController {
         case ConnectionHelperStatus.Ended:
             return NetworkLinkStatus.Broken;
         case ConnectionHelperStatus.ConnectionLost:
+            return NetworkLinkStatus.Broken;
+        case ConnectionHelperStatus.ConnectionClose:
             return NetworkLinkStatus.Broken;
         case ConnectionHelperStatus.Connected:
             return NetworkLinkStatus.Established;
