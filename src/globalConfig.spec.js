@@ -59,7 +59,7 @@ describe("globalConfig", () => {
             expect(GlobalConfig.getRegion()).toEqual(configInput.region);
             expect(GlobalConfig.getCell()).toEqual(configInput.cell);
             expect(GlobalConfig.getEndpointOverride()).toEqual(configInput.endpoint);
-            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
+            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(true);
         });
         it("should update stage, region and cell and fetch correct config", () => {
             GlobalConfig.updateStageRegionCell(stageRegionCell);
@@ -136,14 +136,14 @@ describe("globalConfig", () => {
             setConfig(LogLevel.ERROR);
             var logger = LogManager.getLogger({ prefix: "prefix " });
             logger.error("error", 3);
-            expect(messages[0]).toEqual(["ERROR [2022-04-12T23:12:36.677Z] prefix : error 3 "]);
+            expect(messages[1]).toEqual(["ERROR [2022-04-12T23:12:36.677Z] prefix : error 3 "]);
         });
         it("should match log format in advanced_log level", () => {
             console.error = mockFn;
             setConfig(LogLevel.ADVANCED_LOG);
             var logger = LogManager.getLogger({ prefix: "prefix " });
             logger.advancedLog("info", 3);
-            expect(messages[0]).toEqual(["ADVANCED_LOG [2022-04-12T23:12:36.677Z] prefix : info 3 "]);
+            expect(messages[1]).toEqual(["ADVANCED_LOG [2022-04-12T23:12:36.677Z] prefix : info 3 "]);
         });
         test("set region", () => {
             ChatSessionObject.setGlobalConfig({
@@ -156,21 +156,21 @@ describe("globalConfig", () => {
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ prefix: "prefix ", logMetaData });
             logger.info("info", 3);
-            expect(messages[1]).toEqual(["INFO [2022-04-12T23:12:36.677Z] prefix : info 3 {\"contactId\":\"abc\"}"]);
+            expect(messages[2]).toEqual(["INFO [2022-04-12T23:12:36.677Z] prefix : info 3 {\"contactId\":\"abc\"}"]);
         });
         it("should match log format when there is no prefix and logMetaData", () => {
             console.info = mockFn;
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ logMetaData: {contactId: "abc"}});
             logger.info("info", 3);
-            expect(messages[1]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
+            expect(messages[2]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
         });
         it("should match log format when there is no prefix, but logMetaData is included", () => {
             console.info = mockFn;
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ logMetaData });
             logger.info("info", 3);
-            expect(messages[1]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
+            expect(messages[2]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
         });
     });
   
@@ -196,7 +196,7 @@ describe("globalConfig", () => {
             logger.error("error", 4);
             logger.error("error", 5);
     
-            expect(testLogger.warn.mock.calls[0][0]).toEqual("WARN [\"warn\",3] ");
+            expect(testLogger.warn.mock.calls[1][0]).toEqual("WARN [\"warn\",3] ");
             expect(testLogger.error.mock.calls[0][0]).toEqual("ERROR [\"error\",4] ");
             expect(testLogger.error.mock.calls[1][0]).toEqual("ERROR [\"error\",5] ");
         });
@@ -214,7 +214,7 @@ describe("globalConfig", () => {
             logger.error("error", 4);
             logger.error("error", 5);
     
-            expect(testLogger.warn.mock.calls[0][0]).toEqual("WARN [\"warn\",3] ");
+            expect(testLogger.warn.mock.calls[1][0]).toEqual("WARN [\"warn\",3] ");
             expect(testLogger.error.mock.calls[0][0]).toEqual("ERROR [\"error\",4] ");
             expect(testLogger.error.mock.calls[1][0]).toEqual("ERROR [\"error\",5] ");
         });
@@ -292,55 +292,61 @@ describe("globalConfig", () => {
     });
 
     describe("feature flag test", () => {
-        it("should update feature Flag", () => {
+        it("Should have message receipts feature enabled by default", () => {
             GlobalConfig.update({
                 features: [FEATURES.MESSAGE_RECEIPTS_ENABLED]
             });
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(true);
         });
-        it("should update feature Flag and call the registered listeners only once", () => {
-            GlobalConfig.update({
-                features: []
+
+        it("Should update feature flags according to setGlobalConfig input", () => {
+            ChatSessionObject.setGlobalConfig({
+                features: {
+                    messageReceipts: {
+                        shouldSendMessageReceipts: false,
+                        throttleTime: 4000,
+                    }
+                }
             });
+            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
+            expect(GlobalConfig.getMessageReceiptsThrottleTime()).toEqual(4000);
+        });
+
+        it("Should be able to remove feature flag", () => {
+            GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
+        });
+
+        it("Should be able to add feature flag", () => {
+            GlobalConfig.setFeatureFlag(FEATURES.PARTICIPANT_CONN_ACK);
+            expect(GlobalConfig.isFeatureEnabled(FEATURES.PARTICIPANT_CONN_ACK)).toEqual(true);
+        });
+
+        it("Should update feature flag and call the registered listeners only once", () => {
+            GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
             const handler = jest.fn();
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler)).toEqual(false);
             GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
             expect(handler).toHaveBeenCalled();
-            GlobalConfig.update({
-                features: {
-                    messageReceipts: {
-                        shouldSendMessageReceipts: false
-                    }
-                }
-            });
             GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
             GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
             expect(handler).toHaveBeenCalledTimes(1);
         });
 
-        it("should update feature Flag and call multiple registered listeners only once", () => {
-            GlobalConfig.update({
-                features: {
-                    messageReceipts: {
-                        shouldSendMessageReceipts: true
-                    }
-                }
-            });
+        it("should update feature flag and call multiple registered listeners only once", () => {
             const handler = jest.fn().mockReturnValue(true);
             const handler2 = jest.fn();
-            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler)).toEqual(false);
-            GlobalConfig.update({
-                features: []
-            });
+            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler)).toEqual(true);
+            GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler)).toEqual(false);
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler2)).toEqual(false);
             GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+            GlobalConfig.setFeatureFlag(FEATURES.PARTICIPANT_CONN_ACK);
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED, handler)).toEqual(true);
             expect(handler).toHaveBeenCalled();
             expect(handler2).toHaveBeenCalled();
-            GlobalConfig.update({
-                features: []
-            });
+            GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+            GlobalConfig.removeFeatureFlag(FEATURES.PARTICIPANT_CONN_ACK);
             GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
             expect(handler).toHaveBeenCalledTimes(3);
             expect(handler2).toHaveBeenCalledTimes(1);

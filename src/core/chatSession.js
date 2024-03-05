@@ -196,11 +196,15 @@ var setGlobalConfig = config => {
     if (csmConfig) {
         csmService.updateCsmConfig(csmConfig);
     }
-    //Message Receipts enabled by default
-    if (!(config.features?.messageReceipts?.shouldSendMessageReceipts === false)) {
-        logger.warn("enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false");
-        setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
-        GlobalConfig.updateThrottleTime(config.features?.messageReceipts?.throttleTime);
+    /**
+     * Handle setting message receipts feature in Global Config. If no values are given will default to:
+     *   - Message receipts enabled
+     *   - Throttle = 5000 ms
+     */
+    logger.warn("enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false");
+    GlobalConfig.updateThrottleTime(config.features?.messageReceipts?.throttleTime);
+    if (config.features?.messageReceipts?.shouldSendMessageReceipts === false) {
+        GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
     }
 };
 

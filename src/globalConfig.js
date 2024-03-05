@@ -1,3 +1,4 @@
+import { FEATURES, DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS } from "./constants";
 import { LogManager } from "./log";
 
 class GlobalConfigImpl {
@@ -32,6 +33,8 @@ class GlobalConfigImpl {
                 return true;
             }
         });
+        this.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED); // message receipts enabled by default
+        this.messageReceiptThrottleTime = DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS;
         this.featureChangeListeners = [];
     }
     update(configInput) {
@@ -42,7 +45,8 @@ class GlobalConfigImpl {
         this.endpointOverride = config.endpoint || this.endpointOverride;
         this.reconnect = config.reconnect === false ? false : this.reconnect;
         this.messageReceiptThrottleTime = config.throttleTime ? config.throttleTime : 5000;
-        this.features["values"] = Array.isArray(config.features) ? [...config.features] : new Array();
+        const features = config.features || this.features.values;
+        this.features["values"] = Array.isArray(features) ? [...features] : new Array();
     }
 
     updateStageRegionCell(config) {
@@ -58,7 +62,7 @@ class GlobalConfigImpl {
     }
 
     updateThrottleTime(throttleTime) {
-        this.messageReceiptThrottleTime = throttleTime ? throttleTime : this.messageReceiptThrottleTime;
+        this.messageReceiptThrottleTime = throttleTime || this.messageReceiptThrottleTime;
     }
 
     getMessageReceiptsThrottleTime() {
@@ -75,6 +79,14 @@ class GlobalConfigImpl {
 
     getEndpointOverride() {
         return this.endpointOverride;
+    }
+
+    removeFeatureFlag(feature) {
+        if (!this.isFeatureEnabled(feature)) {
+            return;
+        }
+        const index = this.features["values"].indexOf(feature);
+        this.features["values"].splice(index, 1);
     }
 
     setFeatureFlag(feature) {

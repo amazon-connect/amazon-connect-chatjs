@@ -42,10 +42,10 @@ describe("ChatController", () => {
     let endResponse;
 
     function getChatController(shouldSendMessageReceipts = true) {
-        GlobalConfig.update({
-            features: shouldSendMessageReceipts ? [FEATURES.MESSAGE_RECEIPTS_ENABLED] : [],
-            throttleTime: 1000
-        });
+        if (!shouldSendMessageReceipts) {
+            GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+        }
+        GlobalConfig.updateThrottleTime(1000);
 
         return new ChatController({
             sessionType: SESSION_TYPES.AGENT,
