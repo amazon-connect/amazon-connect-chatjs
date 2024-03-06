@@ -700,6 +700,17 @@ chatSession.onConnectionLost(event => {
 
 Subscribes an event handler that triggers when the session is lost.
 
+##### `chatSession.onDeepHeartbeatFailure()`
+
+```js
+chatSession.onDeepHeartbeatFailure(event => {
+  const { chatDetails, data } = event;
+  // ...
+});
+```
+
+Subscribes an event handler that triggers when deep heartbeat fails.
+
 #### Client side metric
 
 In version `1.2.0` the client side metric(CSM) service is added into this library. Client side metric can provide insights into the real performance and usability, it helps us to understand how customers are actually using the website and what UI experiences they prefer. This feature is enabled by default. User can also disable this feature by passing a flag: `disableCSM` when they create a new chat session:
