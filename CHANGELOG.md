@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - .onConnectionEstablished() is fired twice after invoking .connect(); closes #124
 - enable message receipts by default; closes #132
+- expose deep heartbeat success/failure callback to clients
 
 ## [2.2.2]
 ### Fixed
