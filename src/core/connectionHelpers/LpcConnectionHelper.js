@@ -48,7 +48,9 @@ class LpcConnectionHelper extends BaseConnectionHelper {
             this.baseInstance.onEnded(this.handleEnded.bind(this)),
             this.baseInstance.onConnectionGain(this.handleConnectionGain.bind(this)),
             this.baseInstance.onConnectionLost(this.handleConnectionLost.bind(this)),
-            this.baseInstance.onMessage(this.handleMessage.bind(this))
+            this.baseInstance.onMessage(this.handleMessage.bind(this)),
+            this.baseInstance.onDeepHeartbeatSuccess(this.handleDeepHeartbeatSuccess.bind(this)),
+            this.baseInstance.onDeepHeartbeatFailure(this.handleDeepHeartbeatFailure.bind(this))
         ];
     }
 
@@ -100,6 +102,22 @@ class LpcConnectionHelper extends BaseConnectionHelper {
         this.eventBus.trigger(ConnectionHelperEvents.ConnectionLost, {});
     }
 
+    onDeepHeartbeatSuccess(handler) {
+        return this.eventBus.subscribe(ConnectionHelperEvents.DeepHeartbeatSuccess, handler);
+    }
+
+    handleDeepHeartbeatSuccess() {
+        this.eventBus.trigger(ConnectionHelperEvents.DeepHeartbeatSuccess, {});
+    }
+
+    onDeepHeartbeatFailure(handler) {
+        return this.eventBus.subscribe(ConnectionHelperEvents.DeepHeartbeatFailure, handler);
+    }
+
+    handleDeepHeartbeatFailure() {
+        this.eventBus.trigger(ConnectionHelperEvents.DeepHeartbeatFailure, {});
+    }
+
     onMessage(handler) {
         return this.eventBus.subscribe(ConnectionHelperEvents.IncomingMessage, handler);
     }
@@ -133,7 +151,9 @@ class LpcConnectionHelperBase {
             this.websocketManager.onMessage("aws/chat", this.handleMessage.bind(this)),
             this.websocketManager.onConnectionGain(this.handleConnectionGain.bind(this)),
             this.websocketManager.onConnectionLost(this.handleConnectionLost.bind(this)),
-            this.websocketManager.onInitFailure(this.handleEnded.bind(this))
+            this.websocketManager.onInitFailure(this.handleEnded.bind(this)),
+            this.websocketManager.onDeepHeartbeatSuccess(this.handleDeepHeartbeatSuccess.bind(this)),
+            this.websocketManager.onDeepHeartbeatFailure(this.handleDeepHeartbeatFailure.bind(this))
         ];
         this.logger.info("Initializing websocket manager.");
         if (!websocketManager) {
@@ -270,6 +290,28 @@ class LpcConnectionHelperBase {
             logEntry.sendInternalLogToServer();
 
         return logEntry;
+    }
+
+    onDeepHeartbeatSuccess(handler) {
+        return this.eventBus.subscribe(ConnectionHelperEvents.DeepHeartbeatSuccess, handler);
+    }
+
+    handleDeepHeartbeatSuccess() {
+        this.status = ConnectionHelperStatus.DeepHeartbeatSuccess;
+        this.eventBus.trigger(ConnectionHelperEvents.DeepHeartbeatSuccess, {});
+        csmService.addCountMetric(WEBSOCKET_EVENTS.DeepHeartbeatSuccess, CSM_CATEGORY.API);
+        this.logger.info("Websocket deep heartbeat success.");
+    }
+
+    onDeepHeartbeatFailure(handler) {
+        return this.eventBus.subscribe(ConnectionHelperEvents.DeepHeartbeatFailure, handler);
+    }
+
+    handleDeepHeartbeatFailure() {
+        this.status = ConnectionHelperStatus.DeepHeartbeatFailure;
+        this.eventBus.trigger(ConnectionHelperEvents.DeepHeartbeatFailure, {});
+        csmService.addCountMetric(WEBSOCKET_EVENTS.DeepHeartbeatFailure, CSM_CATEGORY.API);
+        this.logger.info("Websocket deep heartbeat failure.");
     }
 }
 

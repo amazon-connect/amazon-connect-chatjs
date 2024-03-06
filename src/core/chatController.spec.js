@@ -85,6 +85,8 @@ describe("ChatController", () => {
                 onMessage: (handler) => {
                     messageHandlers.push(handler);
                 },
+                onDeepHeartbeatSuccess: () => {},
+                onDeepHeartbeatFailure: () => {},
                 start: () => startResponse,
                 end: () => endResponse,
                 getStatus: () => ConnectionHelperStatus.Connected,
@@ -935,5 +937,33 @@ describe("ChatController", () => {
         } finally {
             expect(console.error).toBeCalledWith('Cannot call disconnectParticipant when participant is disconnected');
         }
+    });
+
+    test('_handleDeepHeartbeatSuccess is triggered correctly', () => {
+        const chatController = getChatController();
+        chatController._forwardChatEvent = jest.fn(); // Mock _forwardChatEvent to spy on it
+
+        // Directly invoke the method
+        chatController._handleDeepHeartbeatSuccess({ message: 'Heartbeat succeeded' });
+
+        // Check if _forwardChatEvent was called correctly
+        expect(chatController._forwardChatEvent).toHaveBeenCalledWith(
+            CHAT_EVENTS.DEEP_HEARTBEAT_SUCCESS,
+            { data: { message: 'Heartbeat succeeded' }, chatDetails: expect.anything() }
+        );
+    });
+
+    test('_handleDeepHeartbeatFailure is triggered correctly', () => {
+        const chatController = getChatController();
+        chatController._forwardChatEvent = jest.fn(); // Mock _forwardChatEvent to spy on it
+
+        // Directly invoke the method
+        chatController._handleDeepHeartbeatFailure({ error: 'Heartbeat failed' });
+
+        // Check if _forwardChatEvent was called correctly
+        expect(chatController._forwardChatEvent).toHaveBeenCalledWith(
+            CHAT_EVENTS.DEEP_HEARTBEAT_FAILURE,
+            { data: { error: 'Heartbeat failed' }, chatDetails: expect.anything() }
+        );
     });
 });

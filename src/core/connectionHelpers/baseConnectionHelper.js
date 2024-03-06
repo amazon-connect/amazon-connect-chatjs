@@ -5,14 +5,18 @@ const ConnectionHelperStatus = {
     Starting: "Starting",
     Connected: "Connected",
     ConnectionLost: "ConnectionLost",
-    Ended: "Ended"
+    Ended: "Ended",
+    DeepHeartbeatSuccess: "DeepHeartbeatSuccess",
+    DeepHeartbeatFailure: "DeepHeartbeatFailure"
 };
 
 const ConnectionHelperEvents = {
     ConnectionLost: "ConnectionLost", // event data is: {reason: ...}
     ConnectionGained: "ConnectionGained", // event data is: {reason: ...}
     Ended: "Ended", // event data is: {reason: ...}
-    IncomingMessage: "IncomingMessage" // event data is: {payloadString: ...}
+    IncomingMessage: "IncomingMessage", // event data is: {payloadString: ...}
+    DeepHeartbeatSuccess: "DeepHeartbeatSuccess",
+    DeepHeartbeatFailure: "DeepHeartbeatFailure"
 };
 
 const ConnectionInfoType = {
