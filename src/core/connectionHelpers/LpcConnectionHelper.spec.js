@@ -24,6 +24,8 @@ describe("LpcConnectionHelper", () => {
         const connectionGainHandlers = [];
         const endedHandlers = [];
         const refreshHandlers = [];
+        const deepHeartbeatSuccessHandlers = [];
+        const deepHeartbeatFailureHandlers = [];
 
         return {
             subscribeTopics: jest.fn(() => { }),
@@ -37,6 +39,14 @@ describe("LpcConnectionHelper", () => {
             }),
             onConnectionLost: jest.fn((handler) => {
                 connectionLostHandlers.push(handler);
+                return () => { };
+            }),
+            onDeepHeartbeatSuccess: jest.fn((handler) => {
+                deepHeartbeatSuccessHandlers.push(handler);
+                return () => { };
+            }),
+            onDeepHeartbeatFailure: jest.fn((handler) => {
+                deepHeartbeatFailureHandlers.push(handler);
                 return () => { };
             }),
             onInitFailure: jest.fn((handler) => {
@@ -54,6 +64,12 @@ describe("LpcConnectionHelper", () => {
             },
             $simulateConnectionGain() {
                 connectionGainHandlers.forEach(f => f());
+            },
+            $simulateDeepHeartbeatSuccess() {
+                deepHeartbeatSuccessHandlers.forEach(f => f());
+            },
+            $simulateDeepHeartbeatFailure() {
+                deepHeartbeatFailureHandlers.forEach(f => f());
             },
             $simulateEnded() {
                 endedHandlers.forEach(f => f());
@@ -99,6 +115,8 @@ describe("LpcConnectionHelper", () => {
             expect(websocketManager.onMessage).toHaveBeenCalledWith("aws/chat", expect.any(Function));
             expect(websocketManager.onConnectionGain).toHaveBeenCalledTimes(1);
             expect(websocketManager.onConnectionLost).toHaveBeenCalledTimes(1);
+            expect(websocketManager.onDeepHeartbeatSuccess).toHaveBeenCalledTimes(1);
+            expect(websocketManager.onDeepHeartbeatFailure).toHaveBeenCalledTimes(1);
         });
 
         test("WebsocketManager will only be initialized once", () => {
@@ -109,6 +127,8 @@ describe("LpcConnectionHelper", () => {
             expect(websocketManager.onMessage).toHaveBeenCalledTimes(1);
             expect(websocketManager.onConnectionGain).toHaveBeenCalledTimes(1);
             expect(websocketManager.onConnectionLost).toHaveBeenCalledTimes(1);
+            expect(websocketManager.onDeepHeartbeatSuccess).toHaveBeenCalledTimes(1);
+            expect(websocketManager.onDeepHeartbeatFailure).toHaveBeenCalledTimes(1);
         });
 
         test("onConnectionLost handler is called", () => {
@@ -131,6 +151,28 @@ describe("LpcConnectionHelper", () => {
             websocketManager.$simulateConnectionGain();
             expect(onConnectionGainHandler1).toHaveBeenCalledTimes(1);
             expect(onConnectionGainHandler2).toHaveBeenCalledTimes(1);
+        });
+
+        test("onDeepHeartbeatSuccess handler is called", () => {
+            const websocketManager = createWebsocketManager();
+            const onDeepHeartbeatSuccessHandler1 = jest.fn();
+            const onDeepHeartbeatSuccessHandler2 = jest.fn();
+            getLpcConnectionHelper("id1", websocketManager).onDeepHeartbeatSuccess(onDeepHeartbeatSuccessHandler1);
+            getLpcConnectionHelper("id2", websocketManager).onDeepHeartbeatSuccess(onDeepHeartbeatSuccessHandler2);
+            websocketManager.$simulateDeepHeartbeatSuccess();
+            expect(onDeepHeartbeatSuccessHandler1).toHaveBeenCalledTimes(1);
+            expect(onDeepHeartbeatSuccessHandler2).toHaveBeenCalledTimes(1);
+        });
+
+        test("onDeepHeartbeatFailure handler is called", () => {
+            const websocketManager = createWebsocketManager();
+            const onDeepHeartbeatFailureHandler1 = jest.fn();
+            const onDeepHeartbeatFailureHandler2 = jest.fn();
+            getLpcConnectionHelper("id1", websocketManager).onDeepHeartbeatFailure(onDeepHeartbeatFailureHandler1);
+            getLpcConnectionHelper("id2", websocketManager).onDeepHeartbeatFailure(onDeepHeartbeatFailureHandler2);
+            websocketManager.$simulateDeepHeartbeatFailure();
+            expect(onDeepHeartbeatFailureHandler1).toHaveBeenCalledTimes(1);
+            expect(onDeepHeartbeatFailureHandler2).toHaveBeenCalledTimes(1);
         });
 
         test("onMessage handler is called", () => {
@@ -201,6 +243,8 @@ describe("LpcConnectionHelper", () => {
             expect(autoCreatedWebsocketManager.onMessage).toHaveBeenCalledWith("aws/chat", expect.any(Function));
             expect(autoCreatedWebsocketManager.onConnectionGain).toHaveBeenCalledTimes(1);
             expect(autoCreatedWebsocketManager.onConnectionLost).toHaveBeenCalledTimes(1);
+            expect(autoCreatedWebsocketManager.onDeepHeartbeatSuccess).toHaveBeenCalledTimes(1);
+            expect(autoCreatedWebsocketManager.onDeepHeartbeatFailure).toHaveBeenCalledTimes(1);
             expect(autoCreatedWebsocketManager.init).toHaveBeenCalledTimes(1);
         });
 
@@ -212,6 +256,8 @@ describe("LpcConnectionHelper", () => {
             expect(createdWebsocketManager.onMessage).toHaveBeenCalledTimes(1);
             expect(createdWebsocketManager.onConnectionGain).toHaveBeenCalledTimes(1);
             expect(createdWebsocketManager.onConnectionLost).toHaveBeenCalledTimes(1);
+            expect(autoCreatedWebsocketManager.onDeepHeartbeatSuccess).toHaveBeenCalledTimes(1);
+            expect(autoCreatedWebsocketManager.onDeepHeartbeatFailure).toHaveBeenCalledTimes(1);
             expect(createdWebsocketManager.init).toHaveBeenCalledTimes(1);
         });
 
@@ -255,6 +301,26 @@ describe("LpcConnectionHelper", () => {
             expect(onConnectionGainHandler).toHaveBeenCalledTimes(1);
             expect(csmService.addCountMetric).toHaveBeenCalledTimes(1);
             expect(csmService.addCountMetric).toHaveBeenCalledWith(WEBSOCKET_EVENTS.ConnectionGained, CSM_CATEGORY.API);
+        });
+
+        test("onDeepHeartbeatSuccess handler is called", () => {
+            const onDeepHeartbeatSuccessHandler = jest.fn();
+            getLpcConnectionHelper("id1").onDeepHeartbeatSuccess(onDeepHeartbeatSuccessHandler);
+            const createdWebsocketManager = autoCreatedWebsocketManager;
+            createdWebsocketManager.$simulateDeepHeartbeatSuccess();
+            expect(onDeepHeartbeatSuccessHandler).toHaveBeenCalledTimes(1);
+            expect(csmService.addCountMetric).toHaveBeenCalledTimes(1);
+            expect(csmService.addCountMetric).toHaveBeenCalledWith(WEBSOCKET_EVENTS.DeepHeartbeatSuccess, CSM_CATEGORY.API);
+        });
+
+        test("onDeepHeartbeatFailure handler is called", () => {
+            const onDeepHeartbeatFailureHandler = jest.fn();
+            getLpcConnectionHelper("id1").onDeepHeartbeatFailure(onDeepHeartbeatFailureHandler);
+            const createdWebsocketManager = autoCreatedWebsocketManager;
+            createdWebsocketManager.$simulateDeepHeartbeatFailure();
+            expect(onDeepHeartbeatFailureHandler).toHaveBeenCalledTimes(1);
+            expect(csmService.addCountMetric).toHaveBeenCalledTimes(1);
+            expect(csmService.addCountMetric).toHaveBeenCalledWith(WEBSOCKET_EVENTS.DeepHeartbeatFailure, CSM_CATEGORY.API);
         });
 
         test("onMessage handler is called", () => {

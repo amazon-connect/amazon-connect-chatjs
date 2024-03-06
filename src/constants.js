@@ -48,7 +48,9 @@ export const WEBSOCKET_EVENTS = {
     ConnectionGained: "WebsocketConnectionGained",
     Ended: "WebsocketEnded",
     IncomingMessage: "WebsocketIncomingMessage",
-    InitWebsocket: "InitWebsocket"
+    InitWebsocket: "InitWebsocket",
+    DeepHeartbeatSuccess: "WebsocketDeepHeartbeatSuccess",
+    DeepHeartbeatFailure: "WebsocketDeepHeartbeatFailure"
 };
 
 export const CHAT_EVENTS = {
@@ -64,7 +66,9 @@ export const CHAT_EVENTS = {
     MESSAGE_METADATA: "MESSAGEMETADATA",
     PARTICIPANT_IDLE: "PARTICIPANT_IDLE",
     PARTICIPANT_RETURNED: "PARTICIPANT_RETURNED",
-    AUTODISCONNECTION: "AUTODISCONNECTION"
+    AUTODISCONNECTION: "AUTODISCONNECTION",
+    DEEP_HEARTBEAT_SUCCESS: "DEEP_HEARTBEAT_SUCCESS",
+    DEEP_HEARTBEAT_FAILURE: "DEEP_HEARTBEAT_FAILURE"
 };
 
 export const CONTENT_TYPE = {

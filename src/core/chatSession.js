@@ -122,6 +122,14 @@ export class ChatSession {
         this.controller.subscribe(CHAT_EVENTS.CONNECTION_LOST, callback);
     }
 
+    onDeepHeartbeatSuccess(callback){
+        this.controller.subscribe(CHAT_EVENTS.DEEP_HEARTBEAT_SUCCESS, callback);
+    }
+
+    onDeepHeartbeatFailure(callback){
+        this.controller.subscribe(CHAT_EVENTS.DEEP_HEARTBEAT_FAILURE, callback);
+    }
+
     sendMessage(args) {
         return this.controller.sendMessage(args);
     }

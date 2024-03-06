@@ -245,6 +245,8 @@ class ChatController {
         this.connectionHelper.onConnectionLost(this._handleLostConnection.bind(this));
         this.connectionHelper.onConnectionGain(this._handleGainedConnection.bind(this));
         this.connectionHelper.onMessage(this._handleIncomingMessage.bind(this));
+        this.connectionHelper.onDeepHeartbeatSuccess(this._handleDeepHeartbeatSuccess.bind(this));
+        this.connectionHelper.onDeepHeartbeatFailure(this._handleDeepHeartbeatFailure.bind(this));
         return this.connectionHelper.start();
     }
 
@@ -276,6 +278,20 @@ class ChatController {
         this.hasChatEnded = false;
 
         this._forwardChatEvent(CHAT_EVENTS.CONNECTION_ESTABLISHED, {
+            data: eventData,
+            chatDetails: this.getChatDetails()
+        });
+    }
+
+    _handleDeepHeartbeatSuccess(eventData) {
+        this._forwardChatEvent(CHAT_EVENTS.DEEP_HEARTBEAT_SUCCESS, {
+            data: eventData,
+            chatDetails: this.getChatDetails()
+        });
+    }
+
+    _handleDeepHeartbeatFailure(eventData) {
+        this._forwardChatEvent(CHAT_EVENTS.DEEP_HEARTBEAT_FAILURE, {
             data: eventData,
             chatDetails: this.getChatDetails()
         });
@@ -437,6 +453,10 @@ class ChatController {
             return NetworkLinkStatus.Broken;
         case ConnectionHelperStatus.Connected:
             return NetworkLinkStatus.Established;
+        case ConnectionHelperStatus.DeepHeartbeatSuccess:
+            return NetworkLinkStatus.Established;
+        case ConnectionHelperStatus.DeepHeartbeatFailure:
+            return NetworkLinkStatus.Broken;
         }
         this._sendInternalLogToServer(this.logger.error(
             "Reached invalid state. Unknown connectionHelperStatus: ",
