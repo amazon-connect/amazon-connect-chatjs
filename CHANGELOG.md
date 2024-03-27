@@ -4,9 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.4]
+### Fixed
+- onDeepHeartBeatFailure is undefined, updated websocketManager library file to fix the bug.
 
 ## [2.2.3]
-
 ### Fixed
 - .onConnectionEstablished() is fired twice after invoking .connect(); closes #124
 - enable message receipts by default; closes #132
