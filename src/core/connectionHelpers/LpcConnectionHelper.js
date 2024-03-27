@@ -152,8 +152,8 @@ class LpcConnectionHelperBase {
             this.websocketManager.onConnectionGain(this.handleConnectionGain.bind(this)),
             this.websocketManager.onConnectionLost(this.handleConnectionLost.bind(this)),
             this.websocketManager.onInitFailure(this.handleEnded.bind(this)),
-            this.websocketManager.onDeepHeartbeatSuccess(this.handleDeepHeartbeatSuccess.bind(this)),
-            this.websocketManager.onDeepHeartbeatFailure(this.handleDeepHeartbeatFailure.bind(this))
+            this.websocketManager.onDeepHeartbeatSuccess?.(this.handleDeepHeartbeatSuccess.bind(this)),
+            this.websocketManager.onDeepHeartbeatFailure?.(this.handleDeepHeartbeatFailure.bind(this))
         ];
         this.logger.info("Initializing websocket manager.");
         if (!websocketManager) {
