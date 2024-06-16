@@ -68,7 +68,8 @@ export const CHAT_EVENTS = {
     PARTICIPANT_RETURNED: "PARTICIPANT_RETURNED",
     AUTODISCONNECTION: "AUTODISCONNECTION",
     DEEP_HEARTBEAT_SUCCESS: "DEEP_HEARTBEAT_SUCCESS",
-    DEEP_HEARTBEAT_FAILURE: "DEEP_HEARTBEAT_FAILURE"
+    DEEP_HEARTBEAT_FAILURE: "DEEP_HEARTBEAT_FAILURE",
+    CHAT_REHYDRATED: "CHAT_REHYDRATED"
 };
 
 export const CONTENT_TYPE = {
@@ -103,7 +104,8 @@ export const CONTENT_TYPE = {
     deliveredReceipt: "application/vnd.amazonaws.connect.event.message.delivered",
     participantIdle: "application/vnd.amazonaws.connect.event.participant.idle",
     participantReturned: "application/vnd.amazonaws.connect.event.participant.returned",
-    autoDisconnection: "application/vnd.amazonaws.connect.event.participant.autodisconnection"
+    autoDisconnection: "application/vnd.amazonaws.connect.event.participant.autodisconnection",
+    chatRehydrated: "application/vnd.amazonaws.connect.event.chat.rehydrated"
 };
 
 export const CHAT_EVENT_TYPE_MAPPING = {
@@ -113,6 +115,7 @@ export const CHAT_EVENT_TYPE_MAPPING = {
     [CONTENT_TYPE.participantIdle]: CHAT_EVENTS.PARTICIPANT_IDLE,
     [CONTENT_TYPE.participantReturned]: CHAT_EVENTS.PARTICIPANT_RETURNED,
     [CONTENT_TYPE.autoDisconnection]: CHAT_EVENTS.AUTODISCONNECTION,
+    [CONTENT_TYPE.chatRehydrated]: CHAT_EVENTS.CHAT_REHYDRATED,
     default: CHAT_EVENTS.INCOMING_MESSAGE,
 };
 

@@ -82,6 +82,7 @@ describe("chatSession", () => {
         const cb11 = jest.fn();
         const cb12 = jest.fn();
         const cb13 = jest.fn();
+        const cb14 = jest.fn();
 
         session.onParticipantIdle(cb1);
         session.onParticipantReturned(cb2);
@@ -96,6 +97,7 @@ describe("chatSession", () => {
         session.onConnectionLost(cb11);
         session.onDeepHeartbeatSuccess(cb12);
         session.onDeepHeartbeatFailure(cb13);
+        session.onChatRehydrated(cb14);
 
         controller._forwardChatEvent(CHAT_EVENTS.PARTICIPANT_IDLE, eventData);
         controller._forwardChatEvent(CHAT_EVENTS.PARTICIPANT_RETURNED, eventData);
@@ -110,6 +112,7 @@ describe("chatSession", () => {
         controller._forwardChatEvent(CHAT_EVENTS.CONNECTION_LOST, eventData);
         controller._forwardChatEvent(CHAT_EVENTS.DEEP_HEARTBEAT_SUCCESS, eventData);
         controller._forwardChatEvent(CHAT_EVENTS.DEEP_HEARTBEAT_FAILURE, eventData);
+        controller._forwardChatEvent(CHAT_EVENTS.CHAT_REHYDRATED, eventData);
 
         await new Promise((r) => setTimeout(r, 0));
 
@@ -126,6 +129,7 @@ describe("chatSession", () => {
         expect(cb11).toHaveBeenCalled();
         expect(cb12).toHaveBeenCalled();
         expect(cb13).toHaveBeenCalled();
+        expect(cb14).toHaveBeenCalled();
     });
 
     test('events', () => {
