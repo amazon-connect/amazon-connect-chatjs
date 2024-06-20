@@ -241,6 +241,10 @@ var ChatSessionConstructor = args => {
     );
 };
 
+var setRegionOverride = regionOverride => {
+    GlobalConfig.updateRegionOverride(regionOverride);
+};
+
 const ChatSessionObject = {
     create: ChatSessionConstructor,
     setGlobalConfig: setGlobalConfig,
@@ -249,6 +253,7 @@ const ChatSessionObject = {
     SessionTypes: SESSION_TYPES,
     csmService: csmService,
     setFeatureFlag: setFeatureFlag,
+    setRegionOverride: setRegionOverride
 };
 
 export { ChatSessionObject };

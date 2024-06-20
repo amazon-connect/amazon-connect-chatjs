@@ -5,6 +5,7 @@ class GlobalConfigImpl {
     constructor() {
         this.stage = "prod";
         this.region = "us-west-2";
+        this.regionOverride = ""; //used for region failover
         this.cell = "1";
         this.reconnect = true;
         let self = this;
@@ -65,6 +66,10 @@ class GlobalConfigImpl {
         this.messageReceiptThrottleTime = throttleTime || this.messageReceiptThrottleTime;
     }
 
+    updateRegionOverride(regionOverride) {
+        this.regionOverride = regionOverride;
+    }
+
     getMessageReceiptsThrottleTime() {
         return this.messageReceiptThrottleTime;
     }
@@ -75,6 +80,10 @@ class GlobalConfigImpl {
 
     getRegion() {
         return this.region;
+    }
+
+    getRegionOverride() {
+        return this.regionOverride;
     }
 
     getEndpointOverride() {

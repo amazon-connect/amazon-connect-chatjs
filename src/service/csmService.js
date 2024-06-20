@@ -39,7 +39,7 @@ class CsmService {
             if (this.csmInitialized) {
                 return;
             }
-            const region = GlobalConfig.getRegion();
+            const region = GlobalConfig.getRegionOverride() || GlobalConfig.getRegion();
             const cell = GlobalConfig.getCell();
             const csmWorkerText = csmWorkerString.replace(/\\/g, '');
             const sharedWorkerBlobUrl = URL.createObjectURL(new Blob([csmWorkerText], { type: 'text/javascript' }));
