@@ -711,6 +711,27 @@ chatSession.onDeepHeartbeatFailure(event => {
 
 Subscribes an event handler that triggers when deep heartbeat fails.
 
+##### `chatSession.onChatRehydrated()`
+**Note**: Only when persistent chat is enabled.
+```js
+/**
+ * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.chat.rehydrated" event is fired. 
+ * @param {
+    AbsoluteTime?: string,
+    ContentType?: string,
+    Type?: string,
+    ParticipantId?: string,
+    DisplayName?: string,
+    ParticipantRole?: string,
+    InitialContactId?: string
+ } event.data
+ */
+chatSession.onChatRehydrated(event => {
+  const { chatDetails, data } = event;
+  // Load previous transcript...
+});
+```
+
 #### Client side metric
 
 In version `1.2.0` the client side metric(CSM) service is added into this library. Client side metric can provide insights into the real performance and usability, it helps us to understand how customers are actually using the website and what UI experiences they prefer. This feature is enabled by default. User can also disable this feature by passing a flag: `disableCSM` when they create a new chat session:

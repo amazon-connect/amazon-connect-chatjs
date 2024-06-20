@@ -130,6 +130,10 @@ export class ChatSession {
         this.controller.subscribe(CHAT_EVENTS.DEEP_HEARTBEAT_FAILURE, callback);
     }
 
+    onChatRehydrated(callback) {
+        this.controller.subscribe(CHAT_EVENTS.CHAT_REHYDRATED, callback);
+    }
+
     sendMessage(args) {
         return this.controller.sendMessage(args);
     }
