@@ -3,13 +3,14 @@ import { csmService } from "../service/csmService";
 import { CHAT_SESSION_FACTORY } from "./chatSession";
 import { ChatController } from "./chatController";
 import { SESSION_TYPES, CHAT_EVENTS } from "../constants";
-
+import { GlobalConfig } from "../globalConfig";
 describe("CSM", () => {
 
     beforeEach(() => {
         jest.resetAllMocks();
-        jest.spyOn(csmService, 'initializeCSM').mockImplementation(() => { });
-        jest.spyOn(CHAT_SESSION_FACTORY, 'createChatSession').mockImplementation(() => { });
+        jest.spyOn(csmService, 'initializeCSM').mockImplementation(() => {});
+        jest.spyOn(CHAT_SESSION_FACTORY, 'createChatSession').mockImplementation(() => {});
+        jest.spyOn(GlobalConfig, 'updateRegionOverride').mockImplementation(() => {});
     });
 
     afterAll(() => {
@@ -23,6 +24,11 @@ describe("CSM", () => {
         ChatSessionObject.create(args);
         expect(CHAT_SESSION_FACTORY.createChatSession).toHaveBeenCalled();
         expect(csmService.initializeCSM).toHaveBeenCalled();
+    });
+
+    test("should call region override", async () => {
+        ChatSessionObject.setRegionOverride('test');
+        expect(GlobalConfig.updateRegionOverride).toHaveBeenCalled();
     });
 
     test("should not initialize csm for non-customer sessions", async () => {

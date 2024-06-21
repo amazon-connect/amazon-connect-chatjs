@@ -27,7 +27,8 @@ const stageRegionCell2 = {
 
 const configInput = {
     ...stageRegionCell,
-    endpoint: "test-endpoint"
+    endpoint: "test-endpoint",
+    regionOverride: "test-regionOverride"
 };
 const logMetaData = {contactId: "abc"};
 const defaultMessageReceiptsError = "WARN [2022-04-12T23:12:36.677Z] ChatJS-GlobalConfig: enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false ";
@@ -55,8 +56,10 @@ describe("globalConfig", () => {
         });
         it("should update all and fetch correct config", () => {
             GlobalConfig.update(configInput);
+            GlobalConfig.updateRegionOverride(configInput.regionOverride);
             expect(GlobalConfig.getStage()).toEqual(configInput.stage);
             expect(GlobalConfig.getRegion()).toEqual(configInput.region);
+            expect(GlobalConfig.getRegionOverride()).toEqual(configInput.regionOverride);
             expect(GlobalConfig.getCell()).toEqual(configInput.cell);
             expect(GlobalConfig.getEndpointOverride()).toEqual(configInput.endpoint);
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(true);

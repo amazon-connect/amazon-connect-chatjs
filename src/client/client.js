@@ -17,22 +17,19 @@ class ChatClientFactoryImpl {
   }
 
   getCachedClient(optionsInput, logMetaData) {
-    var options = Object.assign({}, optionsInput);
-    var region = optionsInput.region || GlobalConfig.getRegion() || REGIONS.pdx;
-    options.region = region;
+    let region = GlobalConfig.getRegionOverride() || optionsInput.region || GlobalConfig.getRegion() || REGIONS.pdx;
     logMetaData.region = region;
     if (this.clientCache[region]) {
       return this.clientCache[region];
     }
-    var client = this._createAwsClient(options, logMetaData);
+    let client = this._createAwsClient(region, logMetaData);
     this.clientCache[region] = client;
     return client;
   }
 
-  _createAwsClient(options, logMetaData) {
-    var region = options.region;
-    var endpointOverride = GlobalConfig.getEndpointOverride();
-    var endpointUrl = `https://participant.connect.${region}.amazonaws.com`;
+  _createAwsClient(region, logMetaData) {
+    let endpointOverride = GlobalConfig.getEndpointOverride();
+    let endpointUrl = `https://participant.connect.${region}.amazonaws.com`;
     if (endpointOverride) {
       endpointUrl = endpointOverride;
     }
