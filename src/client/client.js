@@ -6,7 +6,7 @@ import {
 import { LogManager } from "../log";
 //Note: this imports AWS instead from aws-sdk npm package - details in ReadMe
 import { ConnectParticipant } from "./aws-sdk-connectparticipant";
-import throttle from "lodash/throttle";
+import throttle from "lodash.throttle";
 import { CONTENT_TYPE, TYPING_VALIDITY_TIME } from '../constants';
 
 const DEFAULT_PREFIX = "Amazon-Connect-ChatJS-ChatClient";
