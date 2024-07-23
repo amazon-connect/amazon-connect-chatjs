@@ -984,3 +984,24 @@ Content-type: application/json
    }
 }
 ```
+
+
+## Enabling Attachment Scanner
+
+You can configure Amazon Connect to scan attachments that are sent during a chat or uploaded to a case. You can scan attachments by using your preferred scanning application. For example, you can scan attachments for malware before they are approved to be shared between participants of a chat.
+
+Learn more about attachment scanning: https://docs.aws.amazon.com/connect/latest/adminguide/setup-attachment-scanning.html
+
+Amazon Connect will send the result (APPROVED | REJECTED) of the scanned attachment as a message in the websocket. To render it in your chat, you can use the following example code in the onMessage handler
+
+```
+
+this.client.onMessage(data => {
+  const attachmentStatus = data.data.Attachments?.[0]?.Status;
+    
+  if (attachmentStatus === 'REJECTED') {
+    renderAttachmentError(attachmentStatus) //your custom implementation
+  }
+});
+
+```
