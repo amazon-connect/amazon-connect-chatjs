@@ -790,7 +790,7 @@ Applies only for `AgentChatSession`. See `connect.ChatSession.create()` for more
 
 ## Handle Browser Refresh
 
-Reconnect to an active chat after refreshing the browser. Call the `CreateParticipantConnection` API on refresh with the same `ParticipantToken` generated from the initial `ShatChatContact` request.
+Reconnect to an active chat after refreshing the browser. Call the `CreateParticipantConnection` API on refresh with the same `ParticipantToken` generated from the initial `StartChatContact` request.
 
 ### Reference
 
