@@ -1,5 +1,6 @@
 const path = require("path");
 const webpack = require("webpack");
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: "./src/index",
@@ -32,6 +33,17 @@ module.exports = {
       }
     ]
   },
+
+  plugins: [
+    new CopyWebpackPlugin({
+        patterns: [
+          { 
+            from: path.resolve(__dirname, "src/index.d.ts"),
+            to: path.resolve(__dirname, "dist")
+          }
+        ]
+    })
+  ],
 
   devServer: {
     compress: false,
