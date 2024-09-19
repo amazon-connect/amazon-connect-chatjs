@@ -77,6 +77,9 @@ declare namespace connect {
 
   interface CustomerChatSessionArgs extends ChatSessionArgs {
     readonly type: ChatSessionTypes["CUSTOMER"];
+
+    /** disable client-side-metric so errors/debug messages won't be logged with AWS Connect. */
+    readonly disableCSM?: boolean;
   }
 
   interface AgentChatSessionArgs extends ChatSessionArgs {
