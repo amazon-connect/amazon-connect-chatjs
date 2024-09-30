@@ -217,6 +217,13 @@ var setGlobalConfig = config => {
     GlobalConfig.updateThrottleTime(config.features?.messageReceipts?.throttleTime);
     if (config.features?.messageReceipts?.shouldSendMessageReceipts === false) {
         GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+    } else {
+        /**
+         * Note: if update config is called with `config.features` array, it replaces default config
+         * this ensure `message-receipts` feature is always enabled.
+         * Only way to disable message receipts is by setting config.features.messageReceipts.shouldSendMessageReceipts == false
+         * */
+        setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
     }
 };
 

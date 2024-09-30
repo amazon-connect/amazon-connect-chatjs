@@ -46,7 +46,8 @@ class GlobalConfigImpl {
         this.endpointOverride = config.endpoint || this.endpointOverride;
         this.reconnect = config.reconnect === false ? false : this.reconnect;
         this.messageReceiptThrottleTime = config.throttleTime ? config.throttleTime : 5000;
-        const features = config.features || this.features.values;
+        // update features only if features is of type array.
+        const features = Array.isArray(config.features) ? config.features : this.features.values;
         this.features["values"] = Array.isArray(features) ? [...features] : new Array();
     }
 
