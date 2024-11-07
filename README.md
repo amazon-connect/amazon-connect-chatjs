@@ -386,6 +386,7 @@ The arguments are based on the [API request body](https://docs.aws.amazon.com/co
   - `"application/vnd.amazonaws.connect.event.connection.acknowledged"`
   - `"application/vnd.amazonaws.connect.event.message.delivered"`
   - `"application/vnd.amazonaws.connect.event.message.read"`
+  - `"application/vnd.amazonaws.connect.event.participant.invited"`
 
 The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html#API_SendEvent_ResponseSyntax).
 
