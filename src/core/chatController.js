@@ -322,6 +322,11 @@ class ChatController {
                 });
                 this.breakConnection();
             }
+            if (incomingData.ContentType === CONTENT_TYPE.transferSucceeded && this.sessionType !== SESSION_TYPES.CUSTOMER) {
+                // calls LpcConnectionHelper to remove message subscriptions for agent and supervisor sessions in Agent transfer use case
+                // Customer SIM: https://t.corp.amazon.com/P149853425/communication
+                this.breakConnection();
+            }
         } catch (e) {
             this._sendInternalLogToServer(this.logger.error(
                 "Error occured while handling message from Connection. eventData:",

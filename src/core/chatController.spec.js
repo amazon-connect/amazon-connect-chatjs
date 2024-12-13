@@ -41,14 +41,14 @@ describe("ChatController", () => {
     let startResponse;
     let endResponse;
 
-    function getChatController(shouldSendMessageReceipts = true) {
+    function getChatController(shouldSendMessageReceipts = true, sessionType = SESSION_TYPES.AGENT) {
         if (!shouldSendMessageReceipts) {
             GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
         }
         GlobalConfig.updateThrottleTime(1000);
 
         return new ChatController({
-            sessionType: SESSION_TYPES.AGENT,
+            sessionType: sessionType,
             chatDetails: chatDetails,
             chatClient: chatClient,
             websocketManager: websocketManager,
@@ -120,6 +120,12 @@ describe("ChatController", () => {
                     onEndedHandlers.forEach(f => f({
                         Type: EVENT,
                         ContentType: CONTENT_TYPE.chatEnded
+                    }));
+                },
+                $simulateConnectionTransferred: () => {
+                    messageHandlers.forEach(f => f({
+                        Type: EVENT,
+                        ContentType: CONTENT_TYPE.transferSucceeded
                     }));
                 }
             };
@@ -537,6 +543,20 @@ describe("ChatController", () => {
         await chatController.connect();
         chatController.connectionHelper.$simulateConnectionEnding();
         expect(breakConnectionSpy).toHaveBeenCalledTimes(1);
+    });
+    test("should call breakConnection for agent session method when transfer.succeeded event is received", async () => {
+        const chatController = getChatController();
+        const breakConnectionSpy = jest.spyOn(chatController, "breakConnection");
+        await chatController.connect();
+        chatController.connectionHelper.$simulateConnectionTransferred();
+        expect(breakConnectionSpy).toHaveBeenCalledTimes(1);
+    });
+    test("should not call breakConnection for customer session method when transfer.succeeded event is received", async () => {
+        const chatController = getChatController(true, SESSION_TYPES.CUSTOMER);
+        const breakConnectionSpy = jest.spyOn(chatController, "breakConnection");
+        await chatController.connect();
+        chatController.connectionHelper.$simulateConnectionTransferred();
+        expect(breakConnectionSpy).toHaveBeenCalledTimes(0);
     });
     test("should throttle sendEvent for MessageReceipts", done => {
         jest.useRealTimers();
