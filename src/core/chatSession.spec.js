@@ -89,6 +89,7 @@ describe("chatSession", () => {
         const cb12 = jest.fn();
         const cb13 = jest.fn();
         const cb14 = jest.fn();
+        const cb15 = jest.fn();
 
         session.onParticipantIdle(cb1);
         session.onParticipantReturned(cb2);
@@ -104,9 +105,11 @@ describe("chatSession", () => {
         session.onDeepHeartbeatSuccess(cb12);
         session.onDeepHeartbeatFailure(cb13);
         session.onChatRehydrated(cb14);
+        session.onParticipantInvited(cb15);
 
         controller._forwardChatEvent(CHAT_EVENTS.PARTICIPANT_IDLE, eventData);
         controller._forwardChatEvent(CHAT_EVENTS.PARTICIPANT_RETURNED, eventData);
+        controller._forwardChatEvent(CHAT_EVENTS.PARTICIPANT_INVITED, eventData);
         controller._forwardChatEvent(CHAT_EVENTS.AUTODISCONNECTION, eventData);
         controller._forwardChatEvent(CHAT_EVENTS.INCOMING_MESSAGE, eventData);
         controller._forwardChatEvent(CHAT_EVENTS.INCOMING_TYPING, eventData);
@@ -136,6 +139,7 @@ describe("chatSession", () => {
         expect(cb12).toHaveBeenCalled();
         expect(cb13).toHaveBeenCalled();
         expect(cb14).toHaveBeenCalled();
+        expect(cb15).toHaveBeenCalled();
     });
 
     test('events', () => {
