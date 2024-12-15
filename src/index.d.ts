@@ -304,6 +304,13 @@ declare namespace connect {
      */
     onParticipantReturned(handler: (event: ChatTypingEvent) => void): void;
     
+
+    /**
+     * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.invited" event is received.
+     * @param handler The event handler.
+     */
+    onParticipantInvited(handler: (event: ChatTypingEvent) => void): void;
+
     /**
      * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.autodisconnection" event is created by any participant. 
      * @param handler The event handler.

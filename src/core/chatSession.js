@@ -114,6 +114,10 @@ export class ChatSession {
         this.controller.subscribe(CHAT_EVENTS.PARTICIPANT_RETURNED, callback);
     }
 
+    onParticipantInvited(callback) {
+        this.controller.subscribe(CHAT_EVENTS.PARTICIPANT_INVITED, callback);
+    }
+
     onAutoDisconnection(callback) {
         this.controller.subscribe(CHAT_EVENTS.AUTODISCONNECTION, callback);
     }

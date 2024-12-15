@@ -590,6 +590,7 @@ const EVENT_CONTENT_TYPE: {
     DELIVERED_RECEIPT: "application/vnd.amazonaws.connect.event.message.delivered",
     PARTICIPANT_JOINED: "application/vnd.amazonaws.connect.event.participant.joined",
     PARTICIPANT_LEFT: "application/vnd.amazonaws.connect.event.participant.left",
+    PARTICIPANT_INVITED: "application/vnd.amazonaws.connect.event.participant.invited",
     TRANSFER_SUCCEEDED: "application/vnd.amazonaws.connect.event.transfer.succeed",
     TRANSFER_FAILED: "application/vnd.amazonaws.connect.event.transfer.failed",
     CONNECTION_ACKNOWLEDGED: "application/vnd.amazonaws.connect.event.connection.acknowledged",
@@ -617,6 +618,29 @@ chatSession.onTyping(event => {
 
 Subscribes an event handler that triggers whenever a `application/vnd.amazonaws.connect.event.typing` event is created by any participant.
 The `data` field has the same schema as `chatSession.onMessage()`.
+
+ ##### `chatSession.onParticipantInvited()`
+  
+ ```js
+ /**
+  * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.invited" event is created by any participant. 
+  * @param {
+     AbsoluteTime?: string,
+     ContentType?: string,
+     Type?: string,
+     ParticipantId?: string,
+     DisplayName?: string,
+     ParticipantRole?: string,
+     InitialContactId?: string
+  } event.data
+  */
+ chatSession.onParticipantInvited(event => {
+   const { chatDetails, data } = event;
+   if (data.ParticipantRole === "AGENT") {
+     // ...
+   }
+ });
+ ```
 
 ##### `chatSession.onParticipantIdle()`
 
