@@ -508,7 +508,7 @@ chatSession.onConnectionEstablished(event => {
 });
 ```
 
-Subscribes an event handler that triggers when the session connection is established.
+Subscribes an event handler that triggers when the session connection is established. In the case where the end customer loses network and reconnects to the chat, you can call getTranscript in this event handler to display any messages sent by the agent while end customer was offline.
 
 ##### `chatSession.onEnded()`
 
