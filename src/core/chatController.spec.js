@@ -138,6 +138,8 @@ describe("ChatController", () => {
             sendAttachment: jest.fn(() => Promise.resolve({ testField: "test" })),
             downloadAttachment: jest.fn(() => Promise.resolve({ testField: "test" })),
             describeView: jest.fn(() => Promise.resolve({ testField: "test" })),
+            getAuthenticationUrl: jest.fn(() => Promise.resolve({ testField: "test" })),
+            cancelParticipantAuthentication: jest.fn(() => Promise.resolve({ testField: "test" })),
         };
         jest.spyOn(csmService, 'addLatencyMetricWithStartTime').mockImplementation(() => {});
         jest.spyOn(csmService, 'addCountAndErrorMetric').mockImplementation(() => {});
@@ -409,6 +411,73 @@ describe("ChatController", () => {
             expect(e.metadata).toEqual("metadata");
             expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.DESCRIBE_VIEW, CSM_CATEGORY.API, true, []);
             expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.DESCRIBE_VIEW, expect.anything(), CSM_CATEGORY.API, []);
+        }
+    });
+
+    test("getAuthenticationUrl works as expected", async () => {
+        const args = {
+            metadata: "metadata",
+            sessionId: "sessionId",
+            redirectUri: "redirectUri"
+        };
+        const chatController = getChatController();
+        await chatController.connect();
+ 
+        const response = await chatController.getAuthenticationUrl(args);
+        expect(chatClient.getAuthenticationUrl).toHaveBeenCalledWith("token", "redirectUri", "sessionId");
+        expect(response.metadata).toBe("metadata");
+        expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.GET_AUTHENTICATION_URL, CSM_CATEGORY.API, false, []);
+        expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.GET_AUTHENTICATION_URL, expect.anything(), CSM_CATEGORY.API, []);
+    });
+
+    test("getAuthenticationUrl throws an error", async () => {
+        const args = {
+            metadata: "metadata",
+            sessionId: "sessionId",
+            redirectUri: "redirectUri",
+        };
+        const chatController = getChatController();
+        await chatController.connect();
+        chatClient.getAuthenticationUrl = jest.fn(() => Promise.reject({}));
+        try {
+            await chatController.getAuthenticationUrl(args);
+            expect(false).toEqual(true);
+        } catch (e) {
+            expect(e.metadata).toEqual("metadata");
+            expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.GET_AUTHENTICATION_URL, CSM_CATEGORY.API, true, []);
+            expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.GET_AUTHENTICATION_URL, expect.anything(), CSM_CATEGORY.API, []);
+        }
+    });
+
+    
+    test("cancelParticipantAuthentication works as expected", async () => {
+        const args = {
+            metadata: "metadata",
+            sessionId: "sessionId"
+        };
+        const chatController = getChatController();
+        await chatController.connect();
+ 
+        const response = await chatController.cancelParticipantAuthentication(args);
+        expect(chatClient.cancelParticipantAuthentication).toHaveBeenCalledWith("token", "sessionId");
+        expect(response.metadata).toBe("metadata");
+        expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.CANCEL_AUTHENTICATION, CSM_CATEGORY.API, false, []);
+        expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.CANCEL_AUTHENTICATION, expect.anything(), CSM_CATEGORY.API, []);
+    });
+
+    test("cancelParticipantAuthentication throws an error", async () => {
+        const args = {
+            sessionId: "sessionId"
+        };
+        const chatController = getChatController();
+        await chatController.connect();
+        chatClient.cancelParticipantAuthentication = jest.fn(() => Promise.reject({}));
+        try {
+            await chatController.cancelParticipantAuthentication(args);
+            expect(false).toEqual(true);
+        } catch (e) {
+            expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.CANCEL_AUTHENTICATION, CSM_CATEGORY.API, true, []);
+            expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.CANCEL_AUTHENTICATION, expect.anything(), CSM_CATEGORY.API, []);
         }
     });
 

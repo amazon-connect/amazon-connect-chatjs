@@ -366,6 +366,40 @@ The response `data` is the same as the [API response body](https://docs.aws.amaz
 **Important note:** In order to specify `scanDirection` as `FORWARD`, you need to explicitly include a `startPosition`.
 This is because the default `startPosition` is at the most recent update to the transcript, so requesting a transcript in the `FORWARD` direction from the default `startPosition` is equivalent to asking for a transcript containing only messages more recent than the present (you are asking for messages in the future!).
 
+##### `chatSession.getAuthenticationUrl()`
+
+```js
+const awsSdkResponse = await chatSession.getAuthenticationUrl({
+  redirectUri: 'www.example.com',
+  sessionId: 'exampleId' //This comes from the authentication.initiated event
+});
+const authenticationUrl = getAuthenticationUrlResponse?.data?.AuthenticationUrl
+```
+
+Wraps the [GetAuthenticationUrl](https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-participant_GetAuthenticationUrl.html) API.
+
+The arguments are based on the [API request body](https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-participant_GetAuthenticationUrl.html#API_connect-participant_GetAuthenticationUrl_RequestSyntax) 
+
+The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-participant_GetAuthenticationUrl.html#API_connect-participant_GetAuthenticationUrl_ResponseSyntax).
+
+**Important note:** The session id is only available from the authentication.initiated event which is only emitted when the authenticate customer contact flow block is used. The session id is a 1 time use code for this api. It can be re used in the cancelParticipantAuthentication api below 
+
+##### `chatSession.cancelParticipantAuthentication()`
+
+```js
+const awsSdkResponse = await chatSession.cancelParticipantAuthentication({
+  sessionId: 'exampleId' //This comes from the authentication.initiated event
+});
+```
+
+Wraps the [CancelParticipantAuthentication](https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-participant_CancelParticipantAuthentication.html) API.
+
+The arguments are based on the [API request body](https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-participant_CancelParticipantAuthentication.html#API_connect-participant_CancelParticipantAuthentication_RequestSyntax) 
+
+The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-participant_CancelParticipantAuthentication.html#API_connect-participant_CancelParticipantAuthentication_ResponseSyntax).
+
+**Important note:** The session id is only available from the authentication.initiated event which is only emitted when the authenticate customer contact flow block is used. The session id is a 1 time use code.
+
 ##### `chatSession.sendEvent()`
 
 ```js
@@ -520,6 +554,77 @@ chatSession.onEnded(event => {
 ```
 
 Subscribes an event handler that triggers when the session is ended.
+
+##### `chatSession.onAuthenticationInitiated()`
+
+```js
+chatSession.onAuthenticationInitiated(event => {
+  const eventDetails = data?.data;
+  try {
+      content = JSON.parse(eventDetails?.Content);
+    } catch (error) {
+        console.error("Invalid JSON content", error);
+  }
+  const sessionId = content.SessionId;
+  // use the session id to call getAuthenticationUrl
+});
+```
+
+Subscribes an event handler that triggers when the contact flow reaches the authenticate customer flow block.
+
+##### `chatSession.onAuthenticationSuccessful()`
+
+```js
+chatSession.onAuthenticationSuccessful(event => {
+  const { data } = event;
+});
+```
+
+Subscribes an event handler that triggers when authenticate customer flow block takes the success branch.
+
+##### `chatSession.onAuthenticationFailed()`
+
+```js
+chatSession.onAuthenticationFailed(event => {
+  const { data } = event;
+  // ...
+});
+```
+
+Subscribes an event handler that triggers when the authenticate customer flow block takes the failed branch.
+
+##### `chatSession.onAuthenticationTimeout()`
+
+```js
+chatSession.onAuthenticationTimeout(event => {
+  const { data } = event;
+  // ...
+});
+```
+
+Subscribes an event handler that triggers when the authenticate customer flow block has timed out.
+
+##### `chatSession.onAuthenticationCanceled()`
+
+```js
+chatSession.onAuthenticationCanceled(event => {
+  const { data } = event;
+  // ...
+});
+```
+
+Subscribes an event handler that triggers when the contact flow reaches the authenticate customer flow block and the cancelParticipantAuthentication API is called.
+
+##### `chatSession.onParticipantDisplayNameUpdated()`
+
+```js
+chatSession.onParticipantDisplayNameUpdated(event => {
+  const authenticatedParticipantDisplayName = event.data?.DisplayName;
+  // ...
+});
+```
+
+Subscribes an event handler that triggers when the authenticate customer flow block takes the success branch and there is a customer profile associated with the user. The new display name will come in this event
 
 ##### `chatSession.onMessage()`
 

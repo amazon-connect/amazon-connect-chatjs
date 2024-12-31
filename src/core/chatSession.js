@@ -134,6 +134,34 @@ export class ChatSession {
         this.controller.subscribe(CHAT_EVENTS.DEEP_HEARTBEAT_FAILURE, callback);
     }
 
+    onAuthenticationInitiated(callback) {
+        this.controller.subscribe(CHAT_EVENTS.AUTHENTICATION_INITIATED, callback);
+    }
+
+    onAuthenticationSuccessful(callback) {
+        this.controller.subscribe(CHAT_EVENTS.AUTHENTICATION_SUCCESSFUL, callback);
+    }
+
+    onAuthenticationFailed(callback) {
+        this.controller.subscribe(CHAT_EVENTS.AUTHENTICATION_FAILED, callback);
+    }
+
+    onAuthenticationTimeout(callback) {
+        this.controller.subscribe(CHAT_EVENTS.AUTHENTICATION_TIMEOUT, callback);
+    }
+
+    onAuthenticationExpired(callback) {
+        this.controller.subscribe(CHAT_EVENTS.AUTHENTICATION_EXPIRED, callback);
+    }
+
+    onAuthenticationCanceled(callback) {
+        this.controller.subscribe(CHAT_EVENTS.AUTHENTICATION_CANCELED, callback);
+    }
+
+    onParticipantDisplayNameUpdated(callback) {
+        this.controller.subscribe(CHAT_EVENTS.PARTICIPANT_DISPLAY_NAME_UPDATED, callback);
+    }
+
     onChatRehydrated(callback) {
         this.controller.subscribe(CHAT_EVENTS.CHAT_REHYDRATED, callback);
     }
@@ -168,6 +196,14 @@ export class ChatSession {
 
     describeView(args) {
         return this.controller.describeView(args);
+    }
+
+    getAuthenticationUrl(args) {
+        return this.controller.getAuthenticationUrl(args);
+    }
+
+    cancelParticipantAuthentication(args) {
+        return this.controller.cancelParticipantAuthentication(args);
     }
 }
 

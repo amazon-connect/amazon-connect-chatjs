@@ -46,6 +46,7 @@ describe("CSM", () => {
         expect(CHAT_SESSION_FACTORY.createChatSession).toHaveBeenCalled();
         expect(csmService.initializeCSM).not.toHaveBeenCalled();
     });
+
     test("should not initialize csm when disableCSM flag is true", () => {
         const args = {disableCSM: true};
         ChatSessionObject.create(args);
@@ -55,7 +56,6 @@ describe("CSM", () => {
 });
 
 describe("chatSession", () => {
-
     const chatDetails = {};
     let chatClient = {};
     const websocketManager = {};
@@ -90,6 +90,13 @@ describe("chatSession", () => {
         const cb13 = jest.fn();
         const cb14 = jest.fn();
         const cb15 = jest.fn();
+        const cb16 = jest.fn();
+        const cb17 = jest.fn();
+        const cb18 = jest.fn();
+        const cb19 = jest.fn();
+        const cb20 = jest.fn();
+        const cb21 = jest.fn();
+        const cb22 = jest.fn();
 
         session.onParticipantIdle(cb1);
         session.onParticipantReturned(cb2);
@@ -104,9 +111,16 @@ describe("chatSession", () => {
         session.onConnectionLost(cb11);
         session.onDeepHeartbeatSuccess(cb12);
         session.onDeepHeartbeatFailure(cb13);
-        session.onChatRehydrated(cb14);
-        session.onParticipantInvited(cb15);
-
+        session.onAuthenticationInitiated(cb14);
+        session.onChatRehydrated(cb15);
+        session.onAuthenticationFailed(cb16);
+        session.onAuthenticationTimeout(cb17);
+        session.onAuthenticationExpired(cb18);
+        session.onAuthenticationCanceled(cb19);
+        session.onAuthenticationSuccessful(cb20);
+        session.onParticipantDisplayNameUpdated(cb21);
+        session.onParticipantInvited(cb22);
+        
         controller._forwardChatEvent(CHAT_EVENTS.PARTICIPANT_IDLE, eventData);
         controller._forwardChatEvent(CHAT_EVENTS.PARTICIPANT_RETURNED, eventData);
         controller._forwardChatEvent(CHAT_EVENTS.PARTICIPANT_INVITED, eventData);
@@ -121,6 +135,13 @@ describe("chatSession", () => {
         controller._forwardChatEvent(CHAT_EVENTS.CONNECTION_LOST, eventData);
         controller._forwardChatEvent(CHAT_EVENTS.DEEP_HEARTBEAT_SUCCESS, eventData);
         controller._forwardChatEvent(CHAT_EVENTS.DEEP_HEARTBEAT_FAILURE, eventData);
+        controller._forwardChatEvent(CHAT_EVENTS.AUTHENTICATION_INITIATED, eventData);
+        controller._forwardChatEvent(CHAT_EVENTS.AUTHENTICATION_SUCCESSFUL, eventData);
+        controller._forwardChatEvent(CHAT_EVENTS.AUTHENTICATION_FAILED, eventData);
+        controller._forwardChatEvent(CHAT_EVENTS.AUTHENTICATION_TIMEOUT, eventData);
+        controller._forwardChatEvent(CHAT_EVENTS.AUTHENTICATION_EXPIRED, eventData);
+        controller._forwardChatEvent(CHAT_EVENTS.AUTHENTICATION_CANCELED, eventData);
+        controller._forwardChatEvent(CHAT_EVENTS.PARTICIPANT_DISPLAY_NAME_UPDATED, eventData);
         controller._forwardChatEvent(CHAT_EVENTS.CHAT_REHYDRATED, eventData);
 
         await new Promise((r) => setTimeout(r, 0));
@@ -140,6 +161,13 @@ describe("chatSession", () => {
         expect(cb13).toHaveBeenCalled();
         expect(cb14).toHaveBeenCalled();
         expect(cb15).toHaveBeenCalled();
+        expect(cb16).toHaveBeenCalled();
+        expect(cb17).toHaveBeenCalled();
+        expect(cb18).toHaveBeenCalled();
+        expect(cb19).toHaveBeenCalled();
+        expect(cb20).toHaveBeenCalled();
+        expect(cb21).toHaveBeenCalled();
+        expect(cb22).toHaveBeenCalled();
     });
 
     test('events', () => {
@@ -151,6 +179,7 @@ describe("chatSession", () => {
         jest.spyOn(controller, 'sendEvent').mockImplementation(() => {});
         jest.spyOn(controller, 'getTranscript').mockImplementation(() => {});
         jest.spyOn(controller, 'getChatDetails').mockImplementation(() => {});
+        jest.spyOn(controller, 'cancelParticipantAuthentication').mockImplementation(() => {});
 
         session.sendMessage(args);
         expect(controller.sendMessage).toHaveBeenCalled();
@@ -166,5 +195,7 @@ describe("chatSession", () => {
         expect(controller.getTranscript).toHaveBeenCalled();
         session.getChatDetails(args);
         expect(controller.getChatDetails).toHaveBeenCalled();
+        session.cancelParticipantAuthentication(args);
+        expect(controller.cancelParticipantAuthentication).toHaveBeenCalled();
     });
 });
