@@ -559,7 +559,7 @@ Subscribes an event handler that triggers when the session is ended.
 
 ```js
 chatSession.onAuthenticationInitiated(event => {
-  const eventDetails = data?.data;
+  const eventDetails = event?.data;
   try {
       content = JSON.parse(eventDetails?.Content);
     } catch (error) {
