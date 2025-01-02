@@ -1,11 +1,25 @@
+
+//Note: this imports AWS instead from aws-sdk npm package - details in ReadMe
+import {
+  ConnectParticipantClient,
+  CreateParticipantConnectionCommand,
+  DisconnectParticipantCommand,
+  SendMessageCommand,
+  StartAttachmentUploadCommand,
+  CompleteAttachmentUploadCommand,
+  GetAttachmentCommand,
+  SendEventCommand,
+  GetTranscriptCommand,
+  CancelParticipantAuthenticationCommand,
+  DescribeViewCommand,
+  GetAuthenticationUrlCommand,
+} from "./aws-sdk-connectparticipant";
 import { UnImplementedMethodException } from "../core/exceptions";
 import { GlobalConfig } from "../globalConfig";
 import {
   REGIONS
 } from "../constants";
 import { LogManager } from "../log";
-//Note: this imports AWS instead from aws-sdk npm package - details in ReadMe
-import { ConnectParticipant } from "./aws-sdk-connectparticipant";
 import throttle from "lodash.throttle";
 import { CONTENT_TYPE, TYPING_VALIDITY_TIME } from '../constants';
 
@@ -14,6 +28,7 @@ const DEFAULT_PREFIX = "Amazon-Connect-ChatJS-ChatClient";
 class ChatClientFactoryImpl {
   constructor() {
     this.clientCache = {};
+
   }
 
   getCachedClient(optionsInput, logMetaData) {
@@ -51,7 +66,7 @@ class ChatClient {
     throw new UnImplementedMethodException("sendAttachment in ChatClient");
   }
 
-  downloadAttachment(participantToken, attachmentId){
+  downloadAttachment(participantToken, attachmentId) {
     throw new UnImplementedMethodException("downloadAttachment in ChatClient");
   }
 
@@ -70,19 +85,28 @@ class ChatClient {
   describeView() {
     throw new UnImplementedMethodException("describeView in ChatClient");
   }
+
+  getAuthenticationUrl() {
+    throw new UnImplementedMethodException("getAuthenticationUrl in ChatClient");
+  }
+
+  cancelParticipantAuthentication() {
+    throw new UnImplementedMethodException("cancelParticipantAuthentication in ChatClient");
+  }
 }
 /*eslint-enable*/
 
 class AWSChatClient extends ChatClient {
   constructor(args) {
     super();
-    var creds = new AWS.Credentials('','');
-    var config = new AWS.Config({
-      region: args.region,
+    this.chatClient = new ConnectParticipantClient({
+      credentials: {
+        accessKeyId: '',
+        secretAccessKey: ''
+      },
       endpoint: args.endpoint,
-      credentials: creds
+      region: args.region,
     });
-    this.chatClient = new AWS.ConnectParticipant(config);
     this.invokeUrl = args.endpoint;
     this.logger = LogManager.getLogger({ prefix: DEFAULT_PREFIX, logMetaData: args.logMetaData });
   }
@@ -92,17 +116,54 @@ class AWSChatClient extends ChatClient {
     let params = {
       ViewToken: viewToken,
       ConnectionToken: connectionToken
+    };
+    const command = new DescribeViewCommand(params);
+    return self._sendRequest(command)
+      .then((res) => {
+        self.logger.info("Successful describe view request")?.sendInternalLogToServer?.();
+        return res;
+      })
+      .catch((err) => {
+        self.logger.error("describeView gave an error response", err)?.sendInternalLogToServer?.();
+        return Promise.reject(err);
+      });
+  }
+
+  cancelParticipantAuthentication(connectionToken, sessionId) {
+    let self = this;
+    let params = {
+      ConnectionToken: connectionToken,
+      SessionId: sessionId,
     }
-    let describeViewRequest = self.chatClient.describeView(
-        params
-    );
-    return self._sendRequest(describeViewRequest).then((res) => {
-      self.logger.info("Successful describe view request")?.sendInternalLogToServer?.();
-      return res;
-    }).catch((err) => {
-      self.logger.error("describeView gave an error response", err)?.sendInternalLogToServer?.();
-      return Promise.reject(err);
-    });
+    const command = new CancelParticipantAuthenticationCommand(params);
+    return self._sendRequest(command)
+      .then((res) => {
+        self.logger.info("Successful getAuthenticationUrl request")?.sendInternalLogToServer?.();
+        return res;
+      })
+      .catch((err) => {
+        self.logger.error("getAuthenticationUrl gave an error response", err)?.sendInternalLogToServer?.();
+        return Promise.reject(err);
+      });
+  }
+
+  getAuthenticationUrl(connectionToken, redirectUri, sessionId) {
+    let self = this;
+    let params = {
+      RedirectUri: redirectUri,
+      SessionId: sessionId,
+      ConnectionToken: connectionToken
+    };
+    const command = new GetAuthenticationUrlCommand(params);
+    return self._sendRequest(command)
+      .then((res) => {
+        self.logger.info("Successful getAuthenticationUrl request")?.sendInternalLogToServer?.();
+        return res;
+      })
+      .catch((err) => {
+        self.logger.error("getAuthenticationUrl gave an error response", err)?.sendInternalLogToServer?.();
+        return Promise.reject(err);
+      });
   }
 
   createParticipantConnection(participantToken, type, acknowledgeConnection) {
@@ -112,32 +173,32 @@ class AWSChatClient extends ChatClient {
       Type: type,
       ConnectParticipant: acknowledgeConnection
     };
-    
-    var createParticipantConnectionRequest = self.chatClient.createParticipantConnection(
-      params
-    );
-    return self._sendRequest(createParticipantConnectionRequest).then((res) => {
-      self.logger.info("Successfully create connection request")?.sendInternalLogToServer?.();
-      return res;
-    }).catch((err) => {
-      self.logger.error("Error when creating connection request ", err)?.sendInternalLogToServer?.();
-      return Promise.reject(err);
-    });
+
+    const command = new CreateParticipantConnectionCommand(params);
+    return self._sendRequest(command)
+      .then((res) => {
+        self.logger.info("Successfully create connection request")?.sendInternalLogToServer?.();
+        return res;
+      })
+      .catch((err) => {
+        self.logger.error("Error when creating connection request ", err)?.sendInternalLogToServer?.();
+        return Promise.reject(err);
+      });
   }
 
   disconnectParticipant(connectionToken) {
     let self = this;
-      var params = {
-        ConnectionToken: connectionToken
-      };
+    let params = {
+      ConnectionToken: connectionToken
+    };
 
-      var disconnectParticipantRequest = self.chatClient.disconnectParticipant(
-        params
-      );
-      return self._sendRequest(disconnectParticipantRequest).then((res) => {
+    const command = new DisconnectParticipantCommand(params);
+    return self._sendRequest(command)
+      .then((res) => {
         self.logger.info("Successfully disconnect participant")?.sendInternalLogToServer?.();
         return res;
-      }).catch((err) => {
+      })
+      .catch((err) => {
         self.logger.error("Error when disconnecting participant ", err)?.sendInternalLogToServer?.();
         return Promise.reject(err);
       });
@@ -160,30 +221,34 @@ class AWSChatClient extends ChatClient {
     if (args.contactId) {
       params.ContactId = args.contactId;
     }
-    var getTranscriptRequest = self.chatClient.getTranscript(params);
-    return self._sendRequest(getTranscriptRequest).then((res) => {
-      this.logger.info("Successfully get transcript");
-      return res;
-    }).catch((err) => {
-      this.logger.error("Get transcript error", err);
-      return Promise.reject(err);
-    });
+    const command = new GetTranscriptCommand(params);
+    return self._sendRequest(command)
+      .then((res) => {
+        this.logger.info("Successfully get transcript");
+        return res;
+      })
+      .catch((err) => {
+        this.logger.error("Get transcript error", err);
+        return Promise.reject(err);
+      });
   }
 
   sendMessage(connectionToken, content, contentType) {
     let self = this;
-      var params = {
-        Content: content,
-        ContentType: contentType,
-        ConnectionToken: connectionToken
-      };
-      var sendMessageRequest = self.chatClient.sendMessage(params);
-      return self._sendRequest(sendMessageRequest).then((res) => {
-        const logContent = {id: res.data?.Id, contentType: params.ContentType};
+    let params = {
+      Content: content,
+      ContentType: contentType,
+      ConnectionToken: connectionToken
+    };
+    const command = new SendMessageCommand(params);
+    return self._sendRequest(command)
+      .then((res) => {
+        const logContent = { id: res.data?.Id, contentType: params.ContentType };
         this.logger.debug("Successfully send message", logContent);
         return res;
-      }).catch((err) => {
-        this.logger.error("Send message error", err, {contentType: params.ContentType});
+      })
+      .catch((err) => {
+        this.logger.error("Send message error", err, { contentType: params.ContentType });
         return Promise.reject(err);
       });
   }
@@ -196,28 +261,29 @@ class AWSChatClient extends ChatClient {
       AttachmentSizeInBytes: attachment.size,
       ConnectionToken: connectionToken
     };
-    const startUploadRequest = self.chatClient.startAttachmentUpload(startUploadRequestParams);
-    const logContent = {contentType: attachment.type, size: attachment.size};
-    return self._sendRequest(startUploadRequest)
+    const startUploadCommand = new StartAttachmentUploadCommand(startUploadRequestParams);
+    const logContent = { contentType: attachment.type, size: attachment.size };
+    return self._sendRequest(startUploadCommand)
       .then(startUploadResponse => {
-          return self._uploadToS3(attachment, startUploadResponse.data.UploadMetadata)
-              .then(() => {
-                const completeUploadRequestParams = {
-                  AttachmentIds: [ startUploadResponse.data.AttachmentId ],
-                  ConnectionToken: connectionToken
-                };
-                this.logger.debug("Successfully upload attachment", {...logContent, attachmentId: startUploadResponse.data?.AttachmentId});
-                const completeUploadRequest = self.chatClient.completeAttachmentUpload(completeUploadRequestParams);
-                return self._sendRequest(completeUploadRequest);
-              });
-      }).catch((err) => {
-          this.logger.error("Upload attachment error", err, logContent);
-          return Promise.reject(err);
-        });
+        return self._uploadToS3(attachment, startUploadResponse.data.UploadMetadata)
+          .then(() => {
+            const completeUploadRequestParams = {
+              AttachmentIds: [startUploadResponse.data.AttachmentId],
+              ConnectionToken: connectionToken
+            };
+            this.logger.debug("Successfully upload attachment", { ...logContent, attachmentId: startUploadResponse.data?.AttachmentId });
+            const completeUploadCommand = new CompleteAttachmentUploadCommand(completeUploadRequestParams);
+            return self._sendRequest(completeUploadCommand);
+          });
+      })
+      .catch((err) => {
+        this.logger.error("Upload attachment error", err, logContent);
+        return Promise.reject(err);
+      });
   }
 
   _uploadToS3(file, metadata) {
-    return fetch(metadata.Url,{
+    return fetch(metadata.Url, {
       method: "PUT",
       headers: metadata.HeadersToInclude,
       body: file
@@ -230,74 +296,73 @@ class AWSChatClient extends ChatClient {
       AttachmentId: attachmentId,
       ConnectionToken: connectionToken
     };
-    const logContent = {attachmentId};
-    const getAttachmentRequest = self.chatClient.getAttachment(params);
-    return self._sendRequest(getAttachmentRequest)
+    const logContent = { attachmentId };
+    const command = new GetAttachmentCommand(params);
+    return self._sendRequest(command)
       .then(response => {
         this.logger.debug("Successfully download attachment", logContent);
         return self._downloadUrl(response.data.Url);
-      }).catch(err => {
+      })
+      .catch(err => {
         this.logger.error("Download attachment error", err, logContent);
         return Promise.reject(err);
       });
   }
 
-  _downloadUrl(url){
+  _downloadUrl(url) {
     return fetch(url)
       .then(t => t.blob())
       .catch(err => { return Promise.reject(err); });
   }
 
-  
+
   sendEvent(connectionToken, contentType, content) {
     let self = this;
-    if(contentType === CONTENT_TYPE.typing) {
+    if (contentType === CONTENT_TYPE.typing) {
       return self.throttleEvent(connectionToken, contentType, content)
     }
     return self._submitEvent(connectionToken, contentType, content);
   }
-  
+
   throttleEvent = throttle((connectionToken, contentType, content) => {
     return this._submitEvent(connectionToken, contentType, content);
   }, TYPING_VALIDITY_TIME, { trailing: false, leading: true })
-  
-  async _submitEvent(connectionToken, contentType, content) {
+
+  _submitEvent(connectionToken, contentType, content) {
     let self = this;
     var params = {
       ConnectionToken: connectionToken,
       ContentType: contentType,
       Content: content
     };
-    var sendEventRequest = self.chatClient.sendEvent(params);
-    const logContent = {contentType};
-    try {
-      const res = await self._sendRequest(sendEventRequest);
-      this.logger.debug("Successfully send event", { ...logContent, id: res.data?.Id, });
-      return res;
-    } catch (err) {
-      return await Promise.reject(err);
-    }
+    const command = new SendEventCommand(params);
+    const logContent = { contentType };
+    return self._sendRequest(command)
+      .then((res) => {
+        this.logger.debug("Successfully send event", { ...logContent, id: res.data?.Id });
+        return res;
+      })
+      .catch((err) => {
+        return Promise.reject(err);
+      });
   }
 
-  _sendRequest(request) {
-    return new Promise((resolve, reject) => {
-      request
-        .on("success", function(res) {
-          resolve(res);
-        })
-        .on("error", function(err) {
-          const errObj = {
-            type: err.code,
-            message: err.message,
-            stack: err.stack ? err.stack.split('\n') : [],
-            statusCode: err.statusCode,
-          }
-          reject(errObj);
-        })
-        .send();
-    });
+  _sendRequest(command) {
+    return this.chatClient.send(command)
+      .then(response => {
+        return { data: response };
+      })
+      .catch(error => {
+        const errObj = {
+          type: error.name,
+          message: error.message,
+          stack: error.stack ? error.stack.split('\n') : [],
+          statusCode: error.$metadata ? error.$metadata.httpStatusCode : undefined,
+        };
+        return Promise.reject(errObj);
+      });
   }
 }
 
-var ChatClientFactory = new ChatClientFactoryImpl();
+let ChatClientFactory = new ChatClientFactoryImpl();
 export { ChatClientFactory };

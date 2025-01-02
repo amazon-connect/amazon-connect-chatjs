@@ -446,6 +446,27 @@ class ChatController {
             .catch(this.handleRequestFailure(metadata, ACPS_METHODS.DESCRIBE_VIEW, startTime));
     }
 
+    getAuthenticationUrl(args) {
+        const startTime = new Date().getTime();
+        const metadata = args.metadata || null;
+        const connectionToken = this.connectionHelper.getConnectionToken();
+        return this.chatClient
+            .getAuthenticationUrl(connectionToken, args.redirectUri, args.sessionId)
+            .then(this.handleRequestSuccess(metadata, ACPS_METHODS.GET_AUTHENTICATION_URL, startTime))
+            .catch(this.handleRequestFailure(metadata, ACPS_METHODS.GET_AUTHENTICATION_URL, startTime));
+    }
+
+    cancelParticipantAuthentication(args) {
+        const startTime = new Date().getTime();
+        const metadata = args.metadata || null;
+        const connectionToken = this.connectionHelper.getConnectionToken();
+        return this.chatClient
+            .cancelParticipantAuthentication(connectionToken, args.sessionId)
+            .then(this.handleRequestSuccess(metadata, ACPS_METHODS.CANCEL_AUTHENTICATION, startTime))
+            .catch(this.handleRequestFailure(metadata, ACPS_METHODS.CANCEL_AUTHENTICATION, startTime));
+    }
+
+
     _convertConnectionHelperStatus(connectionHelperStatus) {
         switch (connectionHelperStatus) {
         case ConnectionHelperStatus.NeverStarted:

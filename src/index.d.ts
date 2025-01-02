@@ -182,6 +182,42 @@ declare namespace connect {
       WithMetadata<ParticipantServiceResponse<GetTranscriptResult>, T>
     >;
 
+    cancelParticipantAuthentication(
+      args: CancelParticipantAuthenticationArgs
+    ): Promise<ParticipantServiceResponse<void>>;
+
+    /**
+     * Cancels an ongoing participant authentication flow for a session, with optional metadata.
+     * @param args The arguments of the operation plus additional metadata.
+     */
+    cancelParticipantAuthentication<T>(
+      args: WithMetadata<CancelParticipantAuthenticationArgs, T>
+    ): Promise<
+      WithMetadata<
+        ParticipantServiceResponse<void>,
+        T
+      >
+    >;
+
+    /**
+     * Retrieves the authentication URL for a participant.
+     * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAuthenticationUrl.html
+     * @param args The arguments of the operation.
+     */
+    getAuthenticationUrl(
+      args: GetAuthenticationUrlArgs
+    ): Promise<ParticipantServiceResponse<GetAuthenticationUrlResult>>;
+
+    /**
+     * Retrieves the authentication URL for a participant, with optional metadata.
+     * @param args The arguments of the operation plus additional metadata.
+     */
+    getAuthenticationUrl<T>(
+      args: WithMetadata<GetAuthenticationUrlArgs, T>
+    ): Promise<
+      WithMetadata<ParticipantServiceResponse<GetAuthenticationUrlResult>, T>
+    >;
+
     /**
      * Sends an event as the current session's participant.
      * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html
@@ -255,6 +291,54 @@ declare namespace connect {
     ): void;
 
     /**
+     * Subscribes an event handler that triggers when the authenticate customer flow is initiated.
+     * @param handler The event handler.
+     */
+    onAuthenticationInitiated(
+      handler: (event: ChatAuthenticationInitiatedEvent) => void
+    ): void;
+
+    /**
+     * Subscribes an event handler that triggers when the authenticate customer flow is successful.
+     * @param handler The event handler.
+     */
+    onAuthenticationSuccessful(
+      handler: (event: ChatMessageEvent) => void
+    ): void;
+
+    /**
+     * Subscribes an event handler that triggers when the authenticate customer flow fails.
+     * @param handler The event handler.
+     */
+    onAuthenticationFailed(
+      handler: (event: ChatMessageEvent) => void
+    ): void;
+
+    /**
+     * Subscribes an event handler that triggers when the authenticate customer flow times out.
+     * @param handler The event handler.
+     */
+    onAuthenticationTimeout(
+      handler: (event: ChatMessageEvent) => void
+    ): void;
+
+    /**
+     * Subscribes an event handler that triggers when the authenticate customer flow is canceled.
+     * @param handler The event handler.
+     */
+    onAuthenticationCanceled(
+      handler: (event: ChatMessageEvent) => void
+    ): void;
+
+    /**
+     * Subscribes an event handler that triggers when a participant's display name is updated.
+     * @param handler The event handler.
+     */
+    onParticipantDisplayNameUpdated(
+      handler: (event: ChatParticipantDisplayNameUpdatedEvent) => void
+    ): void;
+
+    /**
      * Subscribes an event handler that triggers when the session is ended.
      * @param handler The event handler.
      */
@@ -280,66 +364,60 @@ declare namespace connect {
      */
     onTyping(handler: (event: ChatTypingEvent) => void): void;
 
-   /**
-     * Subscribes an event handler that triggers when a read message event is received from the customer or agent.
-     * @param handler The event handler.
-     */
-    onReadReceipt(handler: (event: ChatTypingEvent) => void): void;
-    
+    /**
+      * Subscribes an event handler that triggers when a read message event is received from the customer or agent.
+      * @param handler The event handler.
+      */
+    onReadReceipt(handler: (event: ChatMessageEvent) => void): void;
+
     /**
      * Subscribes an event handler that triggers when a delivered message event is received from the customer or agent.
      * @param handler The event handler.
      */
-    onDeliveredReceipt(handler: (event: ChatTypingEvent) => void): void;
-    
+    onDeliveredReceipt(handler: (event: ChatMessageEvent) => void): void;
+
     /**
      * Subscribes an event handler that triggers when a customer or agent "application/vnd.amazonaws.connect.event.participant.idle" event is received.
      * @param handler The event handler.
      */
-    onParticipantIdle(handler: (event: ChatTypingEvent) => void): void;
-    
+    onParticipantIdle(handler: (event: ChatMessageEvent) => void): void;
+
     /**
      * Subscribes an event handler that triggers when a customer or agent "application/vnd.amazonaws.connect.event.participant.returned" event is received.
      * @param handler The event handler.
      */
-    onParticipantReturned(handler: (event: ChatTypingEvent) => void): void;
-    
+    onParticipantReturned(handler: (event: ChatMessageEvent) => void): void;
+
 
     /**
      * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.invited" event is received.
      * @param handler The event handler.
      */
-    onParticipantInvited(handler: (event: ChatTypingEvent) => void): void;
+    onParticipantInvited(handler: (event: ChatMessageEvent) => void): void;
 
     /**
      * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.autodisconnection" event is created by any participant. 
      * @param handler The event handler.
      */
-    onAutoDisconnection(handler: (event: ChatTypingEvent) => void): void;
-    
-    /**
-     * Subscribes an event handler that triggers when the session is lost.
-     * @param handler The event handler.
-     */
-    onConnectionLost(handler: (event: ChatTypingEvent) => void): void;
-    
+    onAutoDisconnection(handler: (event: ChatMessageEvent) => void): void;
+
     /**
      * Subscribes an event handler that triggers when a websocket heartbeat is received successfully.
      * @param handler The event handler.
      */
-    onDeepHeartbeatSuccess(handler: (event: ChatTypingEvent) => void): void;
-    
+    onDeepHeartbeatSuccess(handler: (event: ChatMessageEvent) => void): void;
+
     /**
      * Subscribes an event handler that triggers when a websocket heartbeat fails.
      * @param handler The event handler.
      */
-    onDeepHeartbeatFailure(handler: (event: ChatTypingEvent) => void): void;
-    
+    onDeepHeartbeatFailure(handler: (event: ChatMessageEvent) => void): void;
+
     /**
      * Subscribes an event handler that triggers when pChat hydration completes and chats from previous contact conversation are available in the transcript.
      * @param handler The event handler.
      */
-    onChatRehydrated(handler: (event: ChatTypingEvent) => void): void;
+    onChatRehydrated(handler: (event: ChatMessageEvent) => void): void;
   }
 
   interface AgentChatSession extends ChatSessionInterface {
@@ -378,12 +456,20 @@ declare namespace connect {
     | "application/vnd.amazonaws.connect.event.participant.left"
     | "application/vnd.amazonaws.connect.event.transfer.succeeded"
     | "application/vnd.amazonaws.connect.event.transfer.failed"
-    | "application/vnd.amazonaws.connect.event.chat.ended";
+    | "application/vnd.amazonaws.connect.event.chat.ended"
+    | "application/vnd.amazonaws.connect.event.authentication.initiated"
+    | "application/vnd.amazonaws.connect.event.authentication.succeeded"
+    | "application/vnd.amazonaws.connect.event.authentication.failed"
+    | "application/vnd.amazonaws.connect.event.authentication.timeout"
+    | "application/vnd.amazonaws.connect.event.authentication.expired"
+    | "application/vnd.amazonaws.connect.event.authentication.cancelled"
+    | "application/vnd.amazonaws.connect.event.participant.displayname.updated";
+
 
   type ChatMessageContentType =
-      | "text/plain"
-      | "text/markdown"
-      | "application/json";
+    | "text/plain"
+    | "text/markdown"
+    | "application/json";
 
   type ChatContentType = ChatEventContentType | ChatMessageContentType;
 
@@ -507,6 +593,44 @@ declare namespace connect {
     /** The list of messages in the session. */
     readonly Transcript: ChatTranscriptItem[];
   }
+
+  /**
+ * The arguments for canceling an ongoing participant authentication flow.
+ * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CancelParticipantAuthentication.html
+ */
+  interface CancelParticipantAuthenticationArgs {
+    /**
+     * The unique identifier for the active chat session.
+     */
+    sessionId: string;
+  }
+
+  /**
+   * The arguments for retrieving the authentication URL for a participant.
+   * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAuthenticationUrl.html
+   */
+  interface GetAuthenticationUrlArgs {
+    /**
+     * The URI where the user should be redirected after the authentication flow completes.
+     */
+    redirectUri: string;
+    /**
+     * The unique identifier for the active chat session.
+     */
+    sessionId: string;
+  }
+
+  /**
+   * The result of a get authentication URL request, typically includes the authentication URL.
+   * Extend as needed to include fields returned by the service.
+   */
+  interface GetAuthenticationUrlResult {
+    /**
+     * The URL used to initiate the participant's authentication flow.
+     */
+    AuthenticationUrl?: string;
+  }
+
 
   /**
    * A chat transcript item.
@@ -757,6 +881,22 @@ declare namespace connect {
     };
   }
 
+  interface ChatAuthenticationInitiatedEvent {
+    readonly chatDetails: ChatDetails;
+    readonly data: ChatEventData & {
+      ContentType: string;
+      content: string;
+    };
+  }
+
+  interface ChatParticipantDisplayNameUpdatedEvent {
+    readonly chatDetails: ChatDetails;
+    readonly data: ChatEventData & {
+      ContentType: string;
+      DisplayName: string;
+    };
+  }
+
   interface ChatTypingEvent {
     readonly chatDetails: ChatDetails;
     readonly data: ChatEventData & {
@@ -767,17 +907,17 @@ declare namespace connect {
   interface CSMService {
     widgetType: string;
     logger: {
-        options: any;
-        debug(...args: any[]): any;
-        info(...args: any[]): any;
-        warn(...args: any[]): any;
-        error(...args: any[]): any;
-        advancedLog(...args: any[]): any;
-        _shouldLog(level: any): boolean;
-        _writeToClientLogger(level: any, logStatement: any): any;
-        _log(level: any, args: any): any;
-        _convertToSingleStatement(args: any): string;
-        _convertToString(arg: any): any;
+      options: any;
+      debug(...args: any[]): any;
+      info(...args: any[]): any;
+      warn(...args: any[]): any;
+      error(...args: any[]): any;
+      advancedLog(...args: any[]): any;
+      _shouldLog(level: any): boolean;
+      _writeToClientLogger(level: any, logStatement: any): any;
+      _log(level: any, args: any): any;
+      _convertToSingleStatement(args: any): string;
+      _convertToString(arg: any): any;
     };
     csmInitialized: boolean;
     metricsToBePublished: any[];
@@ -788,8 +928,8 @@ declare namespace connect {
     updateCsmConfig(csmConfig: any): void;
     _hasCSMFailedToImport(): boolean;
     getDefaultDimensions(): {
-        name: string;
-        value: string;
+      name: string;
+      value: string;
     }[];
     addMetric(metric: any): void;
     setDimensions(metric: any, dimensions: any): void;
@@ -814,76 +954,76 @@ declare namespace connect {
      * @public
      */
     Id?: string;
-  
+
     /**
      * The Amazon Resource Name (ARN) of the view.
      * @public
      */
     Arn?: string;
-  
+
     /**
      * The name of the view.
      * @public
      */
     Name?: string;
-  
+
     /**
      * Indicates the view status as either <code>SAVED</code> or <code>PUBLISHED</code>. The
      *     <code>PUBLISHED</code> status will initiate validation on the content.
      * @public
      */
     Status?: ViewStatus;
-  
+
     /**
      * The type of the view - <code>CUSTOMER_MANAGED</code>.
      * @public
      */
     Type?: ViewType;
-  
+
     /**
      * The description of the view.
      * @public
      */
     Description?: string;
-  
+
     /**
      * Current version of the view.
      * @public
      */
     Version?: number;
-  
+
     /**
      * The description of the version.
      * @public
      */
     VersionDescription?: string;
-  
+
     /**
      * View content containing all content necessary to render a view except for runtime input
      *    data.
      * @public
      */
     Content?: ViewContent;
-  
+
     /**
      * The tags associated with the view resource (not specific to view version).
      * @public
      */
     Tags?: Record<string, string>;
-  
+
     /**
      * The timestamp of when the view was created.
      * @public
      */
     CreatedTime?: Date;
-  
+
     /**
      * Latest timestamp of the <code>UpdateViewContent</code> or <code>CreateViewVersion</code>
      *    operations.
      * @public
      */
     LastModifiedTime?: Date;
-  
+
     /**
      * Indicates the checksum value of the latest published view content.
      * @public
@@ -901,14 +1041,6 @@ declare namespace connect {
   interface ViewType {
     readonly AWS_MANAGED: "AWS_MANAGED";
     readonly CUSTOMER_MANAGED: "CUSTOMER_MANAGED";
-  }
-
-  /** Enumerates the log levels. */
-  interface ChatLogLevel {
-    readonly DEBUG: 10;
-    readonly INFO: 20;
-    readonly WARN: 30;
-    readonly ERROR: 40;
   }
 
   /**

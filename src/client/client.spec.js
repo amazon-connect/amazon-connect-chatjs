@@ -51,7 +51,7 @@ describe("client test cases", () => {
       }
     });
   });
-
+  
   describe("Client Method Tests", () => {
     beforeEach(() => {
       jest.spyOn(chatClient, "_submitEvent").mockImplementation(() => {});
@@ -63,7 +63,7 @@ describe("client test cases", () => {
     const options = {};
     const logMetaData = {};
     var chatClient = ChatClientFactory.getCachedClient(options, logMetaData);
-  
+
     describe("DescribeView", () => {
       test("No errors thrown in happy case", async () => {
         expect(chatClient.describeView("token", "type")).resolves.toEqual({});
@@ -73,6 +73,27 @@ describe("client test cases", () => {
         expect(chatClient.describeView("token", "type")).rejects.toThrow();
       });
     });
+
+    describe("GetAuthenticationUrl", () => {
+        test("No errors thrown in happy case", async () => {
+          expect(chatClient.getAuthenticationUrl("connectionToken", "redirectUri", "sessionId")).resolves.toEqual({});
+        });
+        test("Promise rejects in error case", async () => {
+          jest.spyOn(chatClient, "_sendRequest").mockRejectedValueOnce(new Error());
+          expect(chatClient.getAuthenticationUrl("connectionToken", "redirectUri", "sessionId")).rejects.toThrow();
+        });
+      });
+
+    describe("cancelParticipantAuthentication", () => {
+      test("No errors thrown in happy case", async () => {
+        expect(chatClient.cancelParticipantAuthentication("connectionToken", "sessionId")).resolves.toEqual({});
+      });
+      test("Promise rejects in error case", async () => {
+        jest.spyOn(chatClient, "_sendRequest").mockRejectedValueOnce(new Error());
+        expect(chatClient.cancelParticipantAuthentication("connectionToken", "sessionId")).rejects.toThrow();
+      });
+    });
+
     describe("CreateParticipantConnection", () => {
       test("No errors thrown in happy case", async () => {
         expect(chatClient.createParticipantConnection("token", "type", "acknowledgeConnection")).resolves.toEqual({});

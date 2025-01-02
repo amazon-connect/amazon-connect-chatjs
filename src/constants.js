@@ -2,7 +2,6 @@
 export const CHAT_CONFIGURATIONS = {
     CONCURRENT_CHATS: 10
 };
-
 export const PARTICIPANT_TOKEN_HEADER = "x-amzn-connect-participant-token";
 export const AUTH_HEADER = "X-Amz-Bearer";
 
@@ -70,6 +69,13 @@ export const CHAT_EVENTS = {
     AUTODISCONNECTION: "AUTODISCONNECTION",
     DEEP_HEARTBEAT_SUCCESS: "DEEP_HEARTBEAT_SUCCESS",
     DEEP_HEARTBEAT_FAILURE: "DEEP_HEARTBEAT_FAILURE",
+    AUTHENTICATION_INITIATED: "AUTHENTICATION_INITIATED",
+    AUTHENTICATION_SUCCESSFUL: "AUTHENTICATION_SUCCESSFUL",
+    AUTHENTICATION_FAILED: "AUTHENTICATION_FAILED",
+    AUTHENTICATION_TIMEOUT: "AUTHENTICATION_TIMEOUT",
+    AUTHENTICATION_EXPIRED: "AUTHENTICATION_EXPIRED",
+    AUTHENTICATION_CANCELED: "AUTHENTICATION_CANCELED",
+    PARTICIPANT_DISPLAY_NAME_UPDATED: "PARTICIPANT_DISPLAY_NAME_UPDATED",
     CHAT_REHYDRATED: "CHAT_REHYDRATED"
 };
 
@@ -85,6 +91,13 @@ export const CONTENT_TYPE = {
     applicationPptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     applicationXls: "application/vnd.ms-excel",
     applicationXlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    authenticationInitiated: "application/vnd.amazonaws.connect.event.authentication.initiated",
+    authenticationSuccessful: "application/vnd.amazonaws.connect.event.authentication.succeeded",
+    authenticationFailed: "application/vnd.amazonaws.connect.event.authentication.failed",
+    authenticationTimeout: "application/vnd.amazonaws.connect.event.authentication.timeout",
+    authenticationExpired: "application/vnd.amazonaws.connect.event.authentication.expired",
+    authenticationCanceled: "application/vnd.amazonaws.connect.event.authentication.cancelled",
+    participantDisplayNameUpdated: "application/vnd.amazonaws.connect.event.participant.displayname.updated",
     imageJpg: "image/jpeg",
     imagePng: "image/png",
     audioWav: "audio/wav",
@@ -115,11 +128,18 @@ export const CHAT_EVENT_TYPE_MAPPING = {
     [CONTENT_TYPE.readReceipt]: CHAT_EVENTS.INCOMING_READ_RECEIPT,
     [CONTENT_TYPE.deliveredReceipt]: CHAT_EVENTS.INCOMING_DELIVERED_RECEIPT,
     [CONTENT_TYPE.participantIdle]: CHAT_EVENTS.PARTICIPANT_IDLE,
+    [CONTENT_TYPE.authenticationInitiated]: CHAT_EVENTS.AUTHENTICATION_INITIATED,
+    [CONTENT_TYPE.authenticationSuccessful]: CHAT_EVENTS.AUTHENTICATION_SUCCESSFUL,
+    [CONTENT_TYPE.authenticationFailed]: CHAT_EVENTS.AUTHENTICATION_FAILED,
+    [CONTENT_TYPE.authenticationTimeout]: CHAT_EVENTS.AUTHENTICATION_TIMEOUT,
+    [CONTENT_TYPE.authenticationExpired]: CHAT_EVENTS.AUTHENTICATION_EXPIRED,
+    [CONTENT_TYPE.authenticationCanceled]: CHAT_EVENTS.AUTHENTICATION_CANCELED,
+    [CONTENT_TYPE.participantDisplayNameUpdated]: CHAT_EVENTS.PARTICIPANT_DISPLAY_NAME_UPDATED,
     [CONTENT_TYPE.participantReturned]: CHAT_EVENTS.PARTICIPANT_RETURNED,
     [CONTENT_TYPE.participantInvited]: CHAT_EVENTS.PARTICIPANT_INVITED,
     [CONTENT_TYPE.autoDisconnection]: CHAT_EVENTS.AUTODISCONNECTION,
     [CONTENT_TYPE.chatRehydrated]: CHAT_EVENTS.CHAT_REHYDRATED,
-    default: CHAT_EVENTS.INCOMING_MESSAGE,
+    default: CHAT_EVENTS.INCOMING_MESSAGE
 };
 
 export const EVENT = "EVENT";
