@@ -452,6 +452,8 @@ declare namespace connect {
 
   type ChatEventContentType =
     | "application/vnd.amazonaws.connect.event.typing"
+    | "application/vnd.amazonaws.connect.event.message.read"
+    | "application/vnd.amazonaws.connect.event.message.delivered"
     | "application/vnd.amazonaws.connect.event.participant.joined"
     | "application/vnd.amazonaws.connect.event.participant.left"
     | "application/vnd.amazonaws.connect.event.transfer.succeeded"
