@@ -22,6 +22,7 @@ import {
 import { LogManager } from "../log";
 import throttle from "lodash.throttle";
 import { CONTENT_TYPE, TYPING_VALIDITY_TIME } from '../constants';
+import packageJson from '../../package.json';
 
 const DEFAULT_PREFIX = "Amazon-Connect-ChatJS-ChatClient";
 
@@ -51,7 +52,8 @@ class ChatClientFactoryImpl {
     return new AWSChatClient({
       endpoint: endpointUrl,
       region: region,
-      logMetaData
+      logMetaData,
+      customUserAgentSuffix: GlobalConfig.getCustomUserAgentSuffix()
     });
   }
 }
@@ -99,6 +101,7 @@ class ChatClient {
 class AWSChatClient extends ChatClient {
   constructor(args) {
     super();
+    const customUserAgent = args.customUserAgentSuffix ? `AmazonConnect-ChatJS/${packageJson.version} ${args.customUserAgentSuffix}` : `AmazonConnect-ChatJS/${packageJson.version}`;
     this.chatClient = new ConnectParticipantClient({
       credentials: {
         accessKeyId: '',
@@ -106,6 +109,7 @@ class AWSChatClient extends ChatClient {
       },
       endpoint: args.endpoint,
       region: args.region,
+      customUserAgent
     });
     this.invokeUrl = args.endpoint;
     this.logger = LogManager.getLogger({ prefix: DEFAULT_PREFIX, logMetaData: args.logMetaData });

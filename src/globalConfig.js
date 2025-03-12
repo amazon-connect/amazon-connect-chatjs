@@ -37,6 +37,7 @@ class GlobalConfigImpl {
         this.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED); // message receipts enabled by default
         this.messageReceiptThrottleTime = DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS;
         this.featureChangeListeners = [];
+        this.customUserAgentSuffix = "";
     }
     update(configInput) {
         var config = configInput || {};
@@ -49,6 +50,7 @@ class GlobalConfigImpl {
         // update features only if features is of type array.
         const features = Array.isArray(config.features) ? config.features : this.features.values;
         this.features["values"] = Array.isArray(features) ? [...features] : new Array();
+        this.customUserAgentSuffix = config.customUserAgentSuffix || this.customUserAgentSuffix;
     }
 
     updateStageRegionCell(config) {
@@ -85,6 +87,10 @@ class GlobalConfigImpl {
 
     getRegionOverride() {
         return this.regionOverride;
+    }
+
+    getCustomUserAgentSuffix() {
+        return this.customUserAgentSuffix;
     }
 
     getEndpointOverride() {
