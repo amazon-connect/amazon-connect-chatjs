@@ -82,6 +82,7 @@ describe("ChatController", () => {
                 },
                 onConnectionLost: () => {},
                 onConnectionGain: () => {},
+                onBackgroundChatEnded: () => {},
                 onMessage: (handler) => {
                     messageHandlers.push(handler);
                 },
@@ -1053,6 +1054,20 @@ describe("ChatController", () => {
         expect(chatController._forwardChatEvent).toHaveBeenCalledWith(
             CHAT_EVENTS.DEEP_HEARTBEAT_FAILURE,
             { data: { error: 'Heartbeat failed' }, chatDetails: expect.anything() }
+        );
+    });
+
+    test('_handleBackgroundChatEnded is triggered correctly', () => {
+        const chatController = getChatController();
+        chatController._forwardChatEvent = jest.fn(); // Mock _forwardChatEvent to spy on it
+ 
+        // Directly invoke the method
+        chatController._handleBackgroundChatEnded();
+ 
+        // Check if _forwardChatEvent was called correctly
+        expect(chatController._forwardChatEvent).toHaveBeenCalledWith(
+            CHAT_EVENTS.CHAT_ENDED,
+            expect.anything()
         );
     });
 });

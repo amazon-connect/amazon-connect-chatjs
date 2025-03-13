@@ -192,3 +192,11 @@ export const SEND_EVENT_CONACK_FAILURE = "SEND_EVENT_CONACK_FAILURE";
 export const CREATE_PARTICIPANT_CONACK_API_CALL_COUNT = "CREATE_PARTICIPANT_CONACK_CALL_COUNT";
 
 export const TYPING_VALIDITY_TIME = 10000;
+
+export const DUMMY_ENDED_EVENT = {
+    AbsoluteTime: "",
+    ContentType: "application/vnd.amazonaws.connect.event.chat.ended",
+    Id: "",
+    Type: "EVENT",
+    InitialContactId: ""
+};

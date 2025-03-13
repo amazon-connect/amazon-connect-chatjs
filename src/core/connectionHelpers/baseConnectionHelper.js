@@ -16,7 +16,8 @@ const ConnectionHelperEvents = {
     Ended: "Ended", // event data is: {reason: ...}
     IncomingMessage: "IncomingMessage", // event data is: {payloadString: ...}
     DeepHeartbeatSuccess: "DeepHeartbeatSuccess",
-    DeepHeartbeatFailure: "DeepHeartbeatFailure"
+    DeepHeartbeatFailure: "DeepHeartbeatFailure",
+    BackgroundChatEnded: "BackgroundChatEnded"
 };
 
 const ConnectionInfoType = {
