@@ -28,7 +28,8 @@ const stageRegionCell2 = {
 const configInput = {
     ...stageRegionCell,
     endpoint: "test-endpoint",
-    regionOverride: "test-regionOverride"
+    regionOverride: "test-regionOverride",
+    customUserAgentSuffix: "test-customUserAgentOverride"
 };
 const logMetaData = {contactId: "abc"};
 const defaultMessageReceiptsError = "WARN [2022-04-12T23:12:36.677Z] ChatJS-GlobalConfig: enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false ";
@@ -63,6 +64,7 @@ describe("globalConfig", () => {
             expect(GlobalConfig.getCell()).toEqual(configInput.cell);
             expect(GlobalConfig.getEndpointOverride()).toEqual(configInput.endpoint);
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(true);
+            expect(GlobalConfig.getCustomUserAgentSuffix()).toEqual(configInput.customUserAgentSuffix);
         });
         it("should update stage, region and cell and fetch correct config", () => {
             GlobalConfig.updateStageRegionCell(stageRegionCell);

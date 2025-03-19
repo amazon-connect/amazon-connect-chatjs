@@ -1,5 +1,18 @@
 import { ChatClientFactory } from "./client";
 import { CONTENT_TYPE } from "../constants";
+import { GlobalConfig } from "../globalConfig";
+import packageJson from '../../package.json';
+  
+jest.mock('../globalConfig', () => {
+  return {
+    GlobalConfig: {
+      getRegionOverride: jest.fn(),
+      getRegion: jest.fn(),
+      getEndpointOverride: jest.fn(),
+      getCustomUserAgentSuffix: jest.fn(),
+    }
+  }
+});
 
 describe("client test cases", () => {
   const connectionToken = "connectionToken";
@@ -142,6 +155,19 @@ describe("client test cases", () => {
       test("Promise rejects in error case", async () => {
         jest.spyOn(chatClient, "_sendRequest").mockRejectedValueOnce(new Error());
         expect(chatClient.sendMessage("token", "content", "contentType")).rejects.toThrow();
+      });
+    });
+
+    describe("UserAgent Configs", () => {
+      test("Default suffix", async () => {
+        expect(chatClient.chatClient.config.customUserAgent.length).toEqual(1);
+        expect(chatClient.chatClient.config.customUserAgent[0][0]).toEqual(`AmazonConnect-ChatJS/${packageJson.version}`);
+      });
+      test("Passed insuffix", async () => {
+        GlobalConfig.getCustomUserAgentSuffix.mockReturnValue('Test/1.0.0');
+        const testClient = ChatClientFactory._createAwsClient(options, logMetaData);
+        expect(testClient.chatClient.config.customUserAgent.length).toEqual(1);
+        expect(testClient.chatClient.config.customUserAgent[0][0]).toEqual(`AmazonConnect-ChatJS/${packageJson.version} Test/1.0.0`);
       });
     });
   });
