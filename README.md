@@ -177,7 +177,10 @@ connect.ChatSession.setGlobalConfig({
       shouldSendMessageReceipts: true, // DEFAULT: true, set to false to disable Read/Delivered receipts
       throttleTime: 5000 //default throttle time - time to wait before sending Read/Delivered receipt.
     }
-  }
+  },
+  // Pass in a user agent suffix used to configure the AWS SDK client in Amazon Connect ChatJS.
+  // This will be appended to the x-amz-user-agent custom header used in outgoing API requests
+  customUserAgentSuffix: "",
 });
 ```
 
