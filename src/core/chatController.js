@@ -1,5 +1,6 @@
 import { ConnectionHelperStatus } from "./connectionHelpers/baseConnectionHelper";
 import {
+    DUMMY_ENDED_EVENT,
     CHAT_EVENTS,
     TRANSCRIPT_DEFAULT_PARAMS,
     SESSION_TYPES,
@@ -247,6 +248,7 @@ class ChatController {
         this.connectionHelper.onMessage(this._handleIncomingMessage.bind(this));
         this.connectionHelper.onDeepHeartbeatSuccess(this._handleDeepHeartbeatSuccess.bind(this));
         this.connectionHelper.onDeepHeartbeatFailure(this._handleDeepHeartbeatFailure.bind(this));
+        this.connectionHelper.onBackgroundChatEnded(this._handleBackgroundChatEnded.bind(this));
         return this.connectionHelper.start();
     }
 
@@ -295,6 +297,11 @@ class ChatController {
             data: eventData,
             chatDetails: this.getChatDetails()
         });
+    }
+
+    _handleBackgroundChatEnded() {
+        // Simulate end event when chat has ended while WebSocket connection was broken
+        this._handleIncomingMessage(DUMMY_ENDED_EVENT);
     }
 
     _handleIncomingMessage(incomingData) {
