@@ -185,6 +185,10 @@ import { ConnectParticipantClient } from '@aws-sdk/client-connectparticipant';
 
 ## API Reference
 
+// TODO - metadata note
+// TODO - do I have all of them?
+// TODO - not group properly!
+
 ### Global Properties
 
 #### `connect.WebSocketManager`
@@ -222,7 +226,7 @@ const csmService = connect.csmService;
 ```
 [Description pending]
 
-### ChatSession Class
+#### ChatSession Class
 
 #### Static Methods
 
@@ -384,6 +388,31 @@ const details = await chatSession.getChatDetails();
 const view = await chatSession.describeView();
 ```
 [Description pending]
+
+#### `customerChatSession.disconnectParticipant()`
+
+```javascript
+await customerChatSession.disconnectParticipant();
+```
+
+Wraps the [DisconnectParticipant](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_DisconnectParticipant.html) API.
+
+The arguments and response do not overlap with the API request or response.
+
+Once this method is called, the `CustomerChatSession` cannot be used anymore.
+
+Applies only for `CustomerChatSession`. See connect.ChatSession.create() for more info.
+
+#### `agentChatSession.cleanUpOnParticipantDisconnect()`
+
+```javascript
+await agentChatSession.cleanUpOnParticipantDisconnect();
+```
+
+Cleans up all event handlers.
+
+Applies only for AgentChatSession. See connect.ChatSession.create() for more info.
+
 
 #### `chatSession.getAuthenticationUrl()`
 
