@@ -116,6 +116,8 @@ declare namespace connect {
        */
       readonly level?: ChatLogLevel[keyof ChatLogLevel];
     };
+    readonly features?: any;
+    readonly customUserAgentSuffix?: string;
   }
 
   interface ChatLogger {
