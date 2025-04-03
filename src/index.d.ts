@@ -62,6 +62,8 @@ declare namespace connect {
      * @default "us-west-2"
      */
     readonly region?: string;
+    readonly features?: any;
+    readonly customUserAgentSuffix?: string;
   }
 
   interface ChatSessionArgs {
