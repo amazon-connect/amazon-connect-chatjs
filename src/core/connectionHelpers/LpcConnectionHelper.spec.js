@@ -4,6 +4,10 @@ import { ConnectionHelperStatus } from "./baseConnectionHelper";
 import { csmService } from "../../service/csmService";
 import { CSM_CATEGORY, WEBSOCKET_EVENTS, CHAT_EVENTS } from "../../constants";
 
+function timeout(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 describe("LpcConnectionHelper", () => {
 
     let connectionDetailsProvider = {
@@ -365,6 +369,18 @@ describe("LpcConnectionHelper", () => {
             expect(connectionHelper.getStatus()).toBe(ConnectionHelperStatus.Starting);
             connectionHelper.end();
             expect(connectionHelper.getStatus()).toBe(ConnectionHelperStatus.Ended);
+        });
+
+        test("BackgroundChatEnded handler is called", async () => {
+            const error = new Error("error");
+            error._debug = { statusCode: 403};
+            connectionDetailsProvider.fetchConnectionDetails = jest.fn(() => Promise.reject(error));
+            const onBackgroundChatEndedHandler = jest.fn();
+            getLpcConnectionHelper("id1").onBackgroundChatEnded(onBackgroundChatEndedHandler);
+            autoCreatedWebsocketManager.$simulateConnectionLost();
+            autoCreatedWebsocketManager.$simulateRefresh();
+            await timeout(100);
+            expect(onBackgroundChatEndedHandler).toHaveBeenCalledTimes(1);
         });
     });
 });

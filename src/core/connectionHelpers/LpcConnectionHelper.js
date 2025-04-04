@@ -50,7 +50,8 @@ class LpcConnectionHelper extends BaseConnectionHelper {
             this.baseInstance.onConnectionLost(this.handleConnectionLost.bind(this)),
             this.baseInstance.onMessage(this.handleMessage.bind(this)),
             this.baseInstance.onDeepHeartbeatSuccess(this.handleDeepHeartbeatSuccess.bind(this)),
-            this.baseInstance.onDeepHeartbeatFailure(this.handleDeepHeartbeatFailure.bind(this))
+            this.baseInstance.onDeepHeartbeatFailure(this.handleDeepHeartbeatFailure.bind(this)),
+            this.baseInstance.onBackgroundChatEnded(this.handleBackgroundChatEnded.bind(this))
         ];
     }
 
@@ -120,6 +121,14 @@ class LpcConnectionHelper extends BaseConnectionHelper {
 
     onMessage(handler) {
         return this.eventBus.subscribe(ConnectionHelperEvents.IncomingMessage, handler);
+    }
+
+    onBackgroundChatEnded(handler) {
+        return this.eventBus.subscribe(ConnectionHelperEvents.BackgroundChatEnded, handler);
+    }
+ 
+    handleBackgroundChatEnded() {
+        this.eventBus.trigger(ConnectionHelperEvents.BackgroundChatEnded, {});
     }
 
     handleMessage(message) {
@@ -194,6 +203,11 @@ class LpcConnectionHelperBase {
                 }
                 ).catch(error => {
                     this.logger.error("Initializing Websocket Manager failed:", error);
+
+                    // are assuming that the chat has ended while the WebSocket connection was broken.
+                    if (this.status === ConnectionHelperStatus.ConnectionLost && error?._debug?.statusCode === 403) {
+                        this.handleBackgroundChatEnded();
+                    }
                     this._addWebsocketInitCSMMetric(startTime, true);
                     throw error;
                 });
@@ -271,6 +285,14 @@ class LpcConnectionHelperBase {
         } catch (e) {
             this._sendInternalLogToServer(this.logger.error("Wrong message format"));
         }
+    }
+
+    onBackgroundChatEnded(handler) {
+        return this.eventBus.subscribe(ConnectionHelperEvents.BackgroundChatEnded, handler);
+    }
+ 
+    handleBackgroundChatEnded() {
+        this.eventBus.trigger(ConnectionHelperEvents.BackgroundChatEnded);
     }
 
     getStatus() {
