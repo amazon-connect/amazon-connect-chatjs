@@ -1,0 +1,121 @@
+<!--
+Description: ChatJS example implementation for Customer Chat UI
+
+Prerequisites:
+- An Amazon Connect Instance
+- A Contact Flow ready to accept chat contacts
+- AWS SDK credentials (ACCESS_KEY + SECRET_KEY)
+
+Configuration:
+- Find the "Sample inbound contact flow" - docs: https://docs.aws.amazon.com/connect/latest/adminguide/sample-inbound-flow.html
+- Update values for `AMAZON_CONNECT_INSTANCE_CONFIG`
+- Add your AWS SDK credentials to `const connect = new AWS.Connect({ })`
+
+Usage:
+1. Host the html file in local browser (`npx live-server -p 3000`): http://localhost:3000/chatjs-customer.html
+2. Test end-to-end chat with an Amazon Connect Agent, open Contact Control Panel (CCP): https://<instance-alias>.my.connect.aws/ccp-v2
+-->
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1692.0.min.js"></script>
+</head>
+
+<body>
+  <div id="chat-container">
+    <!-- Chat UI elements would go here -->
+    <button id="sendMessageButton">Send Message</button>
+  </div>
+
+  <script type="module">
+    // Option 1: import ChatJS directly from npm
+    import "https://unpkg.com/amazon-connect-chatjs@3.0.3"; // imports `window.connect`
+
+    // Option 2: import ChatJS from local bundle file (npm run release)
+    // import "../dist/amazon-connect-chat.js"; // imports `window.connect`
+
+    const AMAZON_CONNECT_INSTANCE_CONFIG = {
+      instanceId: '<INSTANCE_ID>',  // found here: https://docs.aws.amazon.com/connect/latest/adminguide/find-instance-arn.html
+      contactFlowId: '<CONTACT_FLOW_ID>', // found here: https://docs.aws.amazon.com/connect/latest/adminguide/find-contact-flow-id.html
+      region: '<AWS_REGION>',
+    };
+
+    // CAUTION: For local testing only
+    // Do not use AWS SDK directly in the browser for production applications
+    // For production: use your backend or deploy this sample Cloudformation stack: https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/cloudformationTemplates/startChatContactAPI
+    const connect = new AWS.Connect({
+      region: AMAZON_CONNECT_INSTANCE_CONFIG.region,
+      credentials: new AWS.Credentials({
+        accessKeyId: 'ACCESS_KEY',
+        secretAccessKey: 'SECRET_KEY',
+        sessionToken: 'SESSION_TOKEN'
+      })
+    });
+
+    window.onload = async function () {
+      // Step 0: (optional) Configure ChatJS
+      window.connect.ChatSession.setGlobalConfig({ region: AMAZON_CONNECT_INSTANCE_CONFIG.region });
+
+      // Step 1: Get chat details from your backend
+      const startChatRequest = {
+        InstanceId: AMAZON_CONNECT_INSTANCE_CONFIG.instanceId,
+        ContactFlowId: AMAZON_CONNECT_INSTANCE_CONFIG.contactFlowId,
+        ParticipantDetails: { DisplayName: 'ChatJS-GitHub Local-Test' },
+        // ParticipantDetails: { DisplayName: 'Joe Shmoe' }
+        Attributes: {
+          "myContactAttribute": "string", // pass this to the Contact flow
+          "foo": "bar"
+        },
+        SupportedMessagingContentTypes: ["text/plain", "text/markdown"] // plain text & rich test
+      };
+      const chatDetails = await connect.startChatContact(startChatRequest).promise()
+
+      // Step 2: Connect to the chat session
+      const customerChatSession = window.connect.ChatSession.create({
+        chatDetails: {
+          contactId: chatDetails.ContactId,
+          participantId: chatDetails.ParticipantId,
+          participantToken: chatDetails.ParticipantToken,
+        },
+        options: { region: AMAZON_CONNECT_INSTANCE_CONFIG.region },
+        type: "CUSTOMER",
+      });
+
+      // Step 3: Add event handlers
+      customerChatSession.onConnectionEstablished(event => {
+        console.log('[customerChatSession] Successfully connected via WebSocket');
+
+        const sendMessageButton = document.getElementById("sendMessageButton");
+        sendMessageButton.addEventListener('click', async () => {
+          await customerChatSession.sendMessage({ contentType: "text/plain", message: "Hello World!" });
+        });
+      });
+      customerChatSession.onMessage(event => {
+        console.log('[customerChatSession] Received message:', event.data.Content);
+
+        const chatRootElem = document.getElementById("chat-container");
+        let pElement = document.createElement("p");
+        pElement.textContent = event.data?.Content;
+        chatRootElem.appendChild(pElement);
+      });
+      // customerChatSession.onConnectionBroken(event => { /* ... */ });
+      // customerChatSession.onEnded(event => { /* ... */ });
+      // customerChatSession.onTyping(event => { /* ... */ });
+
+      // Step 4: connect the ChatJS session
+      await customerChatSession.connect();
+
+      // Step 5: Trigger events, add additional
+      // These would typically be triggered by user actions or buttons
+      await customerChatSession.sendMessage({ contentType: "text/plain", message: "Hello World!" });
+
+      // Step 6: End chat gracefully
+      // This would typically be triggered by a user action
+      // await customerChatSession.disconnectParticipant();
+    };
+  </script>
+</body>
+
+</html>
