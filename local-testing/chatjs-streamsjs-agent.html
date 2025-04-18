@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+</head>
+
+<body>
+  <div id="prebuilt-agent-ui-iframe" style="width: 400px; height: 800px;"></div>
+  <div id="my-custom-agent-chat-ui" style="width: 400px; height: 800px;">
+    <div id="custom-agent-chat-transcript">
+      <button id="sendMessageButton">Send Message</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import "https://unpkg.com/amazon-connect-streams@2.18.1"; // StreamJS must be imported first
+    import "../dist/amazon-connect-chat.js"; // imports `window.connect`
+    // import "https://unpkg.com/amazon-connect-chatjs@3.0.3"; // import from npm
+
+    // Note: StreamJS requires allowlisting an endpoint (e.g., `http://localhost:8080`)
+    // See: https://github.com/amazon-connect/amazon-connect-streams#allowlisting
+    const INSTANCE_URL = "https://<INSTANCE_NAME>.my.connect.aws/ccp-v2/";
+    const REGION = 'us-west-2';
+
+    window.onload = async function () {
+      const prebuiltAgentUIRootElem = document.getElementById("prebuilt-agent-ui-iframe");
+      const customAgentUITranscriptElem = document.getElementById("my-custom-agent-chat-ui");
+      const sendMessageButton = document.getElementById("sendMessageButton");
+
+      // Configure CCP iframe
+      await connect.core.initCCP(prebuiltAgentUIRootElem, {
+        ccpUrl: INSTANCE_URL,
+        region: REGION,
+        loginPopup: true,
+      });
+
+      // (optional) Configure ChatJS
+      connect.ChatSession.setGlobalConfig({ /* ... */ })
+
+      connect.contact(contact => {
+        if (contact.getType() !== connect.ContactType.CHAT) return;
+
+        contact.onAccepted(async () => {
+          const agentConnection = contact.getConnections().find(conn => conn.getType() === connect.ConnectionType.AGENT);
+
+          // Option 1: Default
+          const agentChatSession = await agentConnection.getMediaController();
+
+          // Option 2: Customizations
+          // const agentChatSession = connect.ChatSession.create({
+          //   chatDetails: agentConnection.getMediaInfo(), // REQUIRED
+          //   options: {
+          //     region: REGION, // REQUIRED, must match the value provided to `connect.core.initCCP()`
+          //   },
+          //   type: connect.ChatSession.SessionTypes.AGENT, // REQUIRED
+          //   websocketManager: connect.core.getWebSocketManager() // REQUIRED
+          // });
+
+          agentChatSession.onConnectionEstablished(event => {
+            sendMessageButton.addEventListener('click', async () => {
+              await agentChatSession.sendMessage({ contentType: "text/plain", message: "Hello World!" });
+            });
+          });
+
+          agentChatSession.onMessage(event => {
+            let pElement = document.createElement("p");
+            pElement.textContent = event.data?.Content;
+            customAgentUITranscriptElem.appendChild(pElement);
+          });
+        });
+      });
+    };
+  </script>
+</body>
+
+</html>
