@@ -27,7 +27,7 @@ this.session = connect.ChatSession.create({
 
 ## Configuration
 
-Use `amazon-connect-chatjs@^1.5.0` and customize the global configuration:
+Use `"amazon-connect-chatjs@>=1.5.0"` and customize the global configuration:
 
 ```
 connect.ChatSession.setGlobalConfig({
