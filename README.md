@@ -19,6 +19,8 @@ Please upgrade your ChatJS to [1.4.0](https://github.com/amazon-connect/amazon-c
     - [Events](#events)
     - [Client side metric](#client-side-metric)
     - [Other](#other)
+- [Feature Documentation](#features)
+- [Common Problems & Solutions](#common-problems--solutions)
 
 ## About
 
@@ -138,12 +140,6 @@ git clone https://github.com/amazon-connect/amazon-connect-chatjs
     1. `npm run watch`
 
 Find build artifacts in **dist** directory -  This will generate a file called `amazon-connect-chat.js` - this is the full Connect ChatJS API which you will want to include in your page.
-
-## React Native Support
-
-Additional configuration is required to support ChatJS in React Native applications. Use `amazon-connect-chatjs@^1.5.0` and follow the documenation: [ReactNativeSupport.md](./.github/docs/ReactNativeSupport.md)
-
-A demo application implementing basic ChatJS functionality is also available in the ui-examples repository: [connectReactNativeChat](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/connectReactNativeChat)
 
 ## API
 
@@ -381,11 +377,11 @@ const authenticationUrl = getAuthenticationUrlResponse?.data?.AuthenticationUrl
 
 Wraps the [GetAuthenticationUrl](https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-participant_GetAuthenticationUrl.html) API.
 
-The arguments are based on the [API request body](https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-participant_GetAuthenticationUrl.html#API_connect-participant_GetAuthenticationUrl_RequestSyntax) 
+The arguments are based on the [API request body](https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-participant_GetAuthenticationUrl.html#API_connect-participant_GetAuthenticationUrl_RequestSyntax)
 
 The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-participant_GetAuthenticationUrl.html#API_connect-participant_GetAuthenticationUrl_ResponseSyntax).
 
-**Important note:** The session id is only available from the authentication.initiated event which is only emitted when the authenticate customer contact flow block is used. The session id is a 1 time use code for this api. It can be re used in the cancelParticipantAuthentication api below 
+**Important note:** The session id is only available from the authentication.initiated event which is only emitted when the authenticate customer contact flow block is used. The session id is a 1 time use code for this api. It can be re used in the cancelParticipantAuthentication api below
 
 ##### `chatSession.cancelParticipantAuthentication()`
 
@@ -397,7 +393,7 @@ const awsSdkResponse = await chatSession.cancelParticipantAuthentication({
 
 Wraps the [CancelParticipantAuthentication](https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-participant_CancelParticipantAuthentication.html) API.
 
-The arguments are based on the [API request body](https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-participant_CancelParticipantAuthentication.html#API_connect-participant_CancelParticipantAuthentication_RequestSyntax) 
+The arguments are based on the [API request body](https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-participant_CancelParticipantAuthentication.html#API_connect-participant_CancelParticipantAuthentication_RequestSyntax)
 
 The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-participant_CancelParticipantAuthentication.html#API_connect-participant_CancelParticipantAuthentication_ResponseSyntax).
 
@@ -484,7 +480,7 @@ const awsSdkResponse = await chatSession.downloadAttachment({
   attachmentId: "string"
 });
 const { attachment } = awsSdkResponse.data;
-/* 
+/*
 Attachment Object - This is the actual file that will be downloaded by either agent or end-customer.
 attachment => {
   lastModified: long
@@ -669,7 +665,7 @@ const _addItemsToTranscript = (items) => {
   items = items.filter((item) => !_isSystemEvent(item));
 
   //remove duplicate messageIds
-  const newItemMap = items.reduce((acc, item) => 
+  const newItemMap = items.reduce((acc, item) =>
                       ({ ...acc, [item.id]: item }), {});
   //remove messages missing messageIds
   const newTranscript = this.transcript.filter((item) =>
@@ -728,10 +724,10 @@ Subscribes an event handler that triggers whenever a `application/vnd.amazonaws.
 The `data` field has the same schema as `chatSession.onMessage()`.
 
  ##### `chatSession.onParticipantInvited()`
-  
+
  ```js
  /**
-  * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.invited" event is created by any participant. 
+  * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.invited" event is created by any participant.
   * @param {
      AbsoluteTime?: string,
      ContentType?: string,
@@ -754,7 +750,7 @@ The `data` field has the same schema as `chatSession.onMessage()`.
 
 ```js
 /**
- * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.idle" event is created by any participant. 
+ * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.idle" event is created by any participant.
  * @param {
     AbsoluteTime?: string,
     ContentType?: string,
@@ -777,7 +773,7 @@ chatSession.onParticipantIdle(event => {
 
 ```js
 /**
- * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.returned" event is created by any participant. 
+ * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.returned" event is created by any participant.
  * @param {
     AbsoluteTime?: string,
     ContentType?: string,
@@ -800,7 +796,7 @@ chatSession.onParticipantReturned(event => {
 
 ```js
 /**
- * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.autodisconnection" event is created by any participant. 
+ * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.autodisconnection" event is created by any participant.
  * @param {
     AbsoluteTime?: string,
     ContentType?: string,
@@ -847,7 +843,7 @@ Subscribes an event handler that triggers when deep heartbeat fails.
 **Note**: Only when persistent chat is enabled.
 ```js
 /**
- * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.chat.rehydrated" event is fired. 
+ * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.chat.rehydrated" event is fired.
  * @param {
     AbsoluteTime?: string,
     ContentType?: string,
@@ -902,12 +898,12 @@ const {
 }).data;
 ```
  Wraps the [DescribeView](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_DescribeView.html) API.
- 
+
 The arguments are based on the [API model](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_DescribeView.html) with the following differences:
- 
-- All fields are in camelCase. 
- 
-ChatJS automatically supplies the connectionToken via the session's internal data. 
+
+- All fields are in camelCase.
+
+ChatJS automatically supplies the connectionToken via the session's internal data.
 This api will only function after `chatSession.connect()` succeeds.
 
 ##### `agentChatSession.cleanUpOnParticipantDisconnect()`
@@ -920,159 +916,9 @@ Cleans up all event handlers.
 
 Applies only for `AgentChatSession`. See `connect.ChatSession.create()` for more info.
 
-## Handle Browser Refresh
+## Features
 
-Reconnect to an active chat after refreshing the browser. Call the `CreateParticipantConnection` API on refresh with the same `ParticipantToken` generated from the initial `StartChatContact` request.
-
-### Reference
-
-- `StartChatContact` API: initiate the chat contact [[Documentation](https://docs.aws.amazon.com/connect/latest/APIReference/API_StartChatContact.html)]
-- `CreateParticipantConnection` API: create the participant's connection [[Documentation](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CreateParticipantConnection.html)]
-- "Enable real-time chat message streaming": further streaming capabilities [[Documentation](https://docs.aws.amazon.com/connect/latest/adminguide/chat-message-streaming.html)]
-
-### Walkthrough
-
-1. Initial StartChatContact request is made, `ParticipantToken` gets stored
-
-```js
-// Option #1 - Invoking the startChatContactAPI lambda CloudFormation template
-
-// https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/cloudformationTemplates/startChatContactAPI
-var contactFlowId = "12345678-1234-1234-1234-123456789012";
-var instanceId = "12345678-1234-1234-1234-123456789012";
-var apiGatewayEndpoint = "https://<api-id>.execute-api.<region>.amazonaws.com/Prod/";
-var region = "<region>";
-
-// Details passed to the lambda
-const initiateChatRequest = {
-  ParticipantDetails: {
-    DisplayName: name
-  },
-  ContactFlowId: contactFlowId,
-  InstanceId: instanceId,
-  Attributes: JSON.stringify({
-    "customerName": name // pass this to the Contact flow
-  }),
-  SupportedMessagingContentTypes: ["text/plain", "text/markdown"]
-};
-
-window.fetch(apiGatewayEndpoint, {
-  method: 'post',
-  body: JSON.stringify(initiateChatRequest),
-})
-    .then((res) => res.json())
-    .then((res) => {
-      return res.data.startChatResult;
-    })
-    .catch((err) => {
-      console.error('StartChatContact Failure', err)
-    });
-
-// StartChatContact response gets stored
-const initialStartChatResponse = {
-    ContactId,
-    ParticipantId,
-    ParticipantToken
-};
-```
-
-```js
-// Option #2 - Invoking the AWK SDK `connect.startChatContact`
-
-var AWS = require('aws-sdk');
-AWS.config.update({region: process.env.REGION});
-var connect = new AWS.Connect();
-
-// https://docs.aws.amazon.com/connect/latest/APIReference/API_StartChatContact.html
-const startChatRequest = {
-  ParticipantDetails: {
-    DisplayName: "Customer1"
-  },
-  ContactFlowId: contactFlowId,
-  InstanceId: instanceId,
-  Attributes: JSON.stringify({
-    customerName: "Customer1" // pass this to the Contact flow
-  }),
-  SupportedMessagingContentTypes: ["text/plain", "text/markdown"]
-};
-
-// Initial StartChatContact call
-connect.startChatContact(startChatRequest, function(err, data) {
-    if (err) {
-        console.log("Error starting the chat.", err);
-        reject(err);
-    } else {
-        console.log("Start chat succeeded with the response: " + JSON.stringify(data));
-        resolve(data);
-    }
-});
-```
-
-2. Initial `CreateParticipantConnection` request is made, customer initializes chat session
-
-```js
-// global "connect" imported from `amazon-connect-chatjs`
-
-var chatSession;
-
-// Initial CreateParticipantConnection call
-chatSession = await connect.ChatSession.create({
-  options: { // optional
-    region: "us-west-2", // optional, defaults to `region` set in `connect.ChatSession.setGlobalConfig()`
-  },
-  chatDetails: {
-    ContactId
-    ParticipantId
-    ParticipantToken     //  <---- from initialStartChatResponse
-  },
-  type: "CUSTOMER",
-});
-```
-
-3. Events and messages are sent in the current chat session from customer
-
-```js
-await chatSession.connect();
-
-await chatSession.sendMessage({
-  contentType: "text/plain",
-  message: "Hello World!"
-});
-```
-
-4. Customer refreshes the browser tab and loses websocket connection
-
-```js
-// Browser is refreshed
-location.reload();
-```
-
-5. Another `CreateParticipantConnection` request is made with the initial `ParticipantToken`
-
-```js
-// Second CreateParticipantConnection request
-chatSession = await connect.ChatSession.create({
-  chatDetails: {
-    ContactId
-    ParticipantId
-    ParticipantToken     //  <---- from initialStartChatResponse
-  },
-  type: "CUSTOMER",
-});
-```
-
-6. Events and messages are sent in the same current chat session
-
-```js
-await chatSession.connect();
-
-await chatSession.sendMessage({
-  contentType: "text/plain",
-  message: "Hello World!"
-});
-```
-
-## Enabling Persistent Chat
+### Enabling Persistent Chat
 
 > For latest documentation, please follow instructions in ["Admin guide: Enable persistent chat"](https://docs.aws.amazon.com/connect/latest/adminguide/chat-persistence.html)
 
@@ -1080,13 +926,13 @@ Persistent chats enable customers to resume previous conversations with the cont
 
 Learn more about persistent chat: https://docs.aws.amazon.com/connect/latest/adminguide/chat-persistence.html
 
-### Reference
+#### Reference
 
  - Initial release date: 1/20/2023
  - [Admin Guide Documentation](https://docs.aws.amazon.com/connect/latest/adminguide/chat-persistence.html)
  - [Launch Annoucement](https://aws.amazon.com/about-aws/whats-new/2023/01/amazon-connect-persistent-chat-experiences/)
 
-### Configuration
+#### Configuration
 
 > ⚠️ Only chat sessions that have ended are allowed to rehydrate onto a new chat session.
 
@@ -1117,8 +963,7 @@ Content-type: application/json
 }
 ```
 
-
-## Enabling Attachment Scanner
+### Enabling Attachment Scanner
 
 You can configure Amazon Connect to scan attachments that are sent during a chat or uploaded to a case. You can scan attachments by using your preferred scanning application. For example, you can scan attachments for malware before they are approved to be shared between participants of a chat.
 
@@ -1130,10 +975,206 @@ Amazon Connect will send the result (APPROVED | REJECTED) of the scanned attachm
 
 this.client.onMessage(data => {
   const attachmentStatus = data.data.Attachments?.[0]?.Status;
-    
+
   if (attachmentStatus === 'REJECTED') {
     renderAttachmentError(attachmentStatus) //your custom implementation
   }
 });
 
+```
+
+## Common Problems & Solutions
+
+### Enable Debug Logging
+
+```js
+connect.ChatSession.setGlobalConfig({
+  loggerConfig: {
+    level: connect.LogLevel.DEBUG // INFO, WARN, ERROR, ADVANCED_LOG
+  }
+});
+```
+
+### Disable Logging
+
+```js
+window.connect.ChatSession.setGlobalConfig({
+  loggerConfig: { useDefaultLogger: false }, // disable
+  // loggerConfig: { useDefaultLogger: true }, // enable (default)
+});
+```
+
+### Connection Management
+
+```js
+chatSession.onConnectionLost(async () => {
+  console.log('Websocket lost connection');
+  // Implement reconnection logic
+  await chatSession.connect();
+});
+
+chatSession.onConnectionEstablished(() => {
+  console.log('WebSocket connection has been established/reestablished');
+});
+
+chatSession.onConnectionBroken(event => {
+  console.log('WebSocket connection is broken or terminated');
+});
+```
+
+### Network Health Checks
+
+```js
+chatSession.onDeepHeartbeatSuccess(() => {
+  console.log('WebSocket connection healthy');
+});
+
+chatSession.onDeepHeartbeatFailure(() => {
+  console.log('WebSocket connection issues detected');
+});
+```
+
+### Handle Browser Refresh
+
+When a user refreshes their browser during an active chat, you'll want to reconnect them to their existing session instead of starting a new one.
+
+When initially creating a chat session, store the `chatDetails` (received from [StartChatContact](https://docs.aws.amazon.com/connect/latest/APIReference/API_StartChatContact.html) API) in `sessionStorage`
+On page load, check if `chatDetails` exists in `sessionStorage`:
+
+```js
+/* Initial page load */
+const startChatResponse = await fetch('url-to-my-chat-backend').then(response => response.data);
+// --- Sample Backend Code ---
+// import AWS from 'aws-sdk'; // v2.1692.0
+// const connect = new AWS.Connect({
+//   region: 'us-west-2',
+//   credentials: new AWS.Credentials({ accessKeyId, secretAccessKey, sessionToken })
+// });
+// const startChatRequest = { InstanceId, ContactFlowId, SupportedMessagingContentTypes };
+// chatDetails = await connect.startChatContact(startChatRequest).promise(); // StartChatContact API
+// return { data: chatDetails } // { ContactId, ParticipantId, ParticipantToken }
+const chatDetails = startChatResponse; // { ContactId, ParticipantId, ParticipantToken }
+sessionStorage.setItem('chatjs-session-chat-details', JSON.stringify(chatDetails));
+
+const chatSession = connect.ChatSession.create({ chatDetails: { contactId, participantId, participantToken }, /* ... */ });
+await chatSession.connect(); // Establish the WebSocket connection
+```
+
+```js
+/* Second page load (browser refresh) */
+const existingChatDetails = sessionStorage.getItem('chatjs-session-chat-details'); // { ContactId, ParticipantId, ParticipantToken }
+const reloadedChatSession = connect.ChatSession.create({ chatDetails: existingChatDetails, /* ... */ });
+await reloadedChatSession.connect(); // Reestablish the WebSocket connection
+
+// (Optional) Fetch any unreceived messages/events
+reloadedChatSession.getTranscript({
+    scanDirection: "BACKWARD",
+    sortOrder: "ASCENDING",
+    maxResults: 15
+}).then((response) => {
+  const { Transcript } = response.data; // [{message}, {message}, ...]
+  // render the updated transcript
+});
+```
+
+### Handling Out-of-Order WebSocket Messages
+
+ChatJS delivers messages in the order they are received, which may not match their actual timestamp order. You'll need to manually sort messages using their timestamps and filter duplicates by ID.
+
+```js
+const response = await chatSession.getTranscript({
+    scanDirection: "BACKWARD",
+    sortOrder: "ASCENDING",
+    maxResults: 15
+});
+
+const { Transcript } = response.data;
+Transcript.forEach(message => {
+    const timestamp = new Date(message.AbsoluteTime).toLocaleTimeString();
+    const id = message.Id;
+    // Sort messages by timestamp and filter duplicates using message ID
+});
+```
+
+### Messages Not Received During Network Disconnection
+
+If a chat participant loses network connection during a session, the client may fail to receive WebSocket messages.
+
+ChatJS requires manually calling `chatSession.getTranscript()` to fetch missed messages after reconnecting.
+
+```js
+// Fetch any missed messages by retrieving the recent transcript
+chatSession.onConnectionEstablished(() => {
+    console.log('WebSocket connection has been established/reestablished');
+
+    // Get recent messages including any that were missed while offline
+    const response = await chatSession.getTranscript({
+        scanDirection: "BACKWARD",
+        sortOrder: "ASCENDING",
+        maxResults: 15
+    });
+
+    const { Transcript } = response.data;
+    // ... filter and render the updated transcript
+});
+```
+
+### React Native Support
+
+> Also see: **ChatJS React Native demo app** available at: https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/mobileChatExamples/connectReactNativeChat
+
+ChatJS relies on browser's `window.navigator.onLine` for network monitoring, which isn't available in React Native (Hermes JS Engine). Instead, you'll need to configure ChatJS to use React Native's NetInfo API for network status checks. Ensure you're using `amazon-connect-chatjs >= v1.5.0`.
+
+```bash
+npm install amazon-connect-chatjs@latest @react-native-community/netinfo --save
+```
+
+```js
+// App.jsx
+
+import React, { useState, useEffect } from 'react';
+import 'amazon-connect-chatjs' // >= v1.5.0 (imports `window.connect`)
+import NetInfo from '@react-native-community/netinfo';
+
+const MyChatApp = () => {
+  const [deviceIsOnline, setDeviceIsOnline] = useState(true);
+
+  useEffect(() => {
+    // Subscribe to network status updates
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setDeviceIsOnline(state.isConnected);
+    });
+
+    return () => { unsubscribe(); }; // Cleanup to prevent memory leaks
+  }, []);
+
+  const getNetworkStatus = () => deviceIsOnline;
+
+  window.connect.ChatSession.setGlobalConfig({
+    webSocketManagerConfig: {
+      isNetworkOnline: getNetworkStatus, // ADD THIS
+    },
+  })
+};
+```
+
+### CSM not initialized
+
+Client-side-metric (CSM) is an internal feature. This functionality is enabled by default but completely safe to disable.
+
+```log
+ChatJS-csmService: Failed to addCountAndErrorMetric csm:  ReferenceError: Property 'csm' doesn't exist undefined
+
+ChatJS-csmService: Failed to addLatencyMetric csm:  ReferenceError: Property 'csm' doesn't exist undefined
+
+addCSMCountMetric: CSM not initialized TypeError: Cannot read properties of null (reading 'Metric')
+```
+
+**Fix:**
+
+```js
+connect.ChatSession.create({
+  // ...
+  disableCSM: true
+})
 ```
