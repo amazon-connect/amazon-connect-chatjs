@@ -1,0 +1,100 @@
+<!--
+Description: ChatJS example implementation for Agent Chat UI
+
+Prerequisites:
+- An Amazon Connect Instance
+- An Agent user profile assigned to `Basic Queue` (or use the default Admin)
+
+Configuration:
+- Allow-list your hostname in Amazon Connect AWS Console (http://localhost:8080): https://github.com/amazon-connect/amazon-connect-streams#allowlisting
+- Update values for `INSTANCE_URL` and `REGION`
+
+Usage:
+1. Host the html file in local browser (`npx live-server -p 8080`): http://localhost:8080/chatjs-streamsjs-agent.html
+2. Login to your Contact Control Panel (CCP) your Agent username/password
+3. Keep CCP tab open, wait for an incoming chat contact
+4. In a second browser tab, launch Amazon Connect Test Chat Page and open the Customer widget: https://<instance-alias>.my.connect.aws/test-chat
+-->
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+</head>
+
+<body>
+  <div id="prebuilt-agent-ui-iframe" style="width: 400px; height: 800px;"></div>
+  <div id="my-custom-agent-chat-ui" style="width: 400px; height: 800px;">
+    <!-- Chat UI elements would go here -->
+    <div id="custom-agent-chat-transcript">
+      <button id="sendMessageBtn">Send Message</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import "https://unpkg.com/amazon-connect-streams@2.18.1"; // StreamJS must be imported first
+    // Option 1: import ChatJS directly from npm
+    import "https://unpkg.com/amazon-connect-chatjs@3.0.3"; // imports `window.connect`
+    // Option 2: import ChatJS from local bundle file (npm run release)
+    // import "../dist/amazon-connect-chat.js"; // imports `window.connect`
+
+    // Note: StreamJS requires allowlisting an endpoint (e.g., `http://localhost:8080`)
+    // Instructions: https://github.com/amazon-connect/amazon-connect-streams#allowlisting
+    const INSTANCE_URL = "https://<INSTANCE_ALIAS>.my.connect.aws/ccp-v2/";
+    const REGION = 'us-west-2';
+
+    window.onload = async function () {
+      const prebuiltAgentUIRootElem = document.getElementById("prebuilt-agent-ui-iframe");
+      const customAgentUITranscriptElem = document.getElementById("my-custom-agent-chat-ui");
+      const sendMessageBtn = document.getElementById("sendMessageBtn");
+
+      // Configure CCP iframe
+      await connect.core.initCCP(prebuiltAgentUIRootElem, {
+        ccpUrl: INSTANCE_URL,
+        region: REGION,
+        loginPopup: true,
+      });
+
+      // (optional) Configure ChatJS
+      connect.ChatSession.setGlobalConfig({ /* ... */ })
+
+      connect.contact(contact => {
+        if (contact.getType() !== connect.ContactType.CHAT) return;
+
+        contact.onAccepted(async () => {
+          const agentConnection = contact.getConnections().find(conn => conn.getType() === connect.ConnectionType.AGENT);
+
+          // Option 1: Get the incoming ChatJS session
+          const agentChatSession = await agentConnection.getMediaController();
+
+          // Option 2: Customize the incoming ChatJS session
+          // const agentChatSession = connect.ChatSession.create({
+          //   chatDetails: agentConnection.getMediaInfo(), // REQUIRED
+          //   options: {
+          //     region: REGION, // REQUIRED, must match the value provided to `connect.core.initCCP()`
+          //   },
+          //   type: connect.ChatSession.SessionTypes.AGENT, // REQUIRED
+          //   websocketManager: connect.core.getWebSocketManager() // REQUIRED
+          // });
+
+
+          // Add event handlers
+          agentChatSession.onConnectionEstablished(event => {
+            sendMessageBtn.addEventListener('click', async () => {
+              await agentChatSession.sendMessage({ contentType: "text/plain", message: "Hello World!" });
+            });
+          });
+
+          // Connect the ChatJS session
+          agentChatSession.onMessage(event => {
+            let pElement = document.createElement("p");
+            pElement.textContent = event.data?.Content;
+            customAgentUITranscriptElem.appendChild(pElement);
+          });
+        });
+      });
+    };
+  </script>
+</body>
+
+</html>

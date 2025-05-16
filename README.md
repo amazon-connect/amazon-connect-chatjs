@@ -1257,12 +1257,14 @@ Detailed feature documentation can be found in our [docs/](docs) directory:
 ## Example Code
 
 - **HTML Examples**
-  - [Customer Chat Implementation](./local-testing/chatjs-customer.html)
-  - [Agent Chat with StreamsJS](./local-testing/chatjs-streamsjs-agent.html)
+  - [Customer Chat UI](./examples/chatjs-customer.html)
+  - [Agent Chat UI with StreamsJS](./examples/chatjs-streamsjs-agent.html)
 - **React Examples**
-  - [Customer Chat Interface](https://github.com/amazon-connect/amazon-connect-chat-interface) - Production-ready reference implementation
+  - [Customer Chat UI](https://github.com/amazon-connect/amazon-connect-chat-interface) - Production-ready reference implementation
 - **Mobile Examples**
-  - [React Native Customer Chat](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/mobileChatExamples/connectReactNativeChat)
+  - [React Native Customer Chat UI](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/mobileChatExamples/connectReactNativeChat)
+  - [Android Native Chat UI](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/mobileChatExamples/androidChatExample)
+  - [iOS Native Chat UI](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/mobileChatExamples/androidChatExample)
 
 ## Common Problems & Solutions
 
