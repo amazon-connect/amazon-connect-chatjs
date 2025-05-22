@@ -19,6 +19,7 @@ Please upgrade your ChatJS to [1.4.0](https://github.com/amazon-connect/amazon-c
     - [Events](#events)
     - [Client side metric](#client-side-metric)
     - [Other](#other)
+- [Common Issues & Solutions](#common-issues--solutions)
 
 ## About
 
@@ -1136,4 +1137,149 @@ this.client.onMessage(data => {
   }
 });
 
+```
+
+## Common Issues & Solutions
+
+### Enable Debug Logging
+
+```js
+connect.ChatSession.setGlobalConfig({
+  loggerConfig: {
+    level: connect.LogLevel.DEBUG // INFO, WARN, ERROR, ADVANCED_LOG
+  }
+});
+```
+
+### Disable Logging
+
+```js
+window.connect.ChatSession.setGlobalConfig({
+  loggerConfig: { useDefaultLogger: false }, // disable
+  // loggerConfig: { useDefaultLogger: true }, // default
+});
+```
+
+### Connection Management
+
+```js
+chatSession.onConnectionLost(async () => {
+  console.log('Websocket lost connection');
+});
+
+chatSession.onConnectionEstablished(() => {
+  console.log('WebSocket connection has been established/reestablished');
+});
+
+chatSession.onConnectionBroken(event => {
+  console.log('WebSocket connection is broken or terminated');
+  // Implement reconnection logic
+  await chatSession.connect();
+});
+```
+
+### Handling Browser Refresh
+
+When a user refreshes their browser during an active chat, you'll want to reconnect them to their existing session instead of starting a new one.
+
+When initially creating a chat session, store the `chatDetails` (received from [StartChatContact](https://docs.aws.amazon.com/connect/latest/APIReference/API_StartChatContact.html) API) in `sessionStorage`
+On page load, check if `chatDetails` exists in `sessionStorage`:
+
+```js
+/* Initial page load */
+const startChatResponse = await fetch('url-to-my-chat-backend').then(response => response.data);
+// --- Sample Backend Code ---
+// import AWS from 'aws-sdk'; // v2.1692.0
+// const connect = new AWS.Connect({
+//   region: 'us-west-2',
+//   credentials: new AWS.Credentials({ accessKeyId, secretAccessKey, sessionToken })
+// });
+// const startChatRequest = { InstanceId, ContactFlowId, SupportedMessagingContentTypes };
+// chatDetails = await connect.startChatContact(startChatRequest).promise(); // StartChatContact API
+// return { data: chatDetails } // { ContactId, ParticipantId, ParticipantToken }
+const chatDetails = startChatResponse; // { ContactId, ParticipantId, ParticipantToken }
+sessionStorage.setItem('chatjs-session-chat-details', JSON.stringify(chatDetails));
+
+const chatSession = connect.ChatSession.create({ chatDetails: { contactId, participantId, participantToken }, /* ... */ });
+await chatSession.connect(); // Establish the WebSocket connection
+```
+
+```js
+/* Second page load (browser refresh) */
+const existingChatDetails = sessionStorage.getItem('chatjs-session-chat-details'); // { ContactId, ParticipantId, ParticipantToken }
+const reloadedChatSession = connect.ChatSession.create({ chatDetails: existingChatDetails, /* ... */ });
+await reloadedChatSession.connect(); // Reestablish the WebSocket connection
+
+// (Optional) Fetch any unreceived messages/events
+reloadedChatSession.getTranscript({
+    scanDirection: "BACKWARD",
+    sortOrder: "ASCENDING",
+    maxResults: 15
+}).then((response) => {
+  const { Transcript } = response.data; // [{message}, {message}, ...]
+  // render the updated transcript
+});
+```
+
+### Handling Out-of-Order WebSocket Messages
+
+ChatJS delivers messages in the order they are received, which may not match their actual timestamp order. You'll need to manually sort messages using their timestamps and filter duplicates by ID.
+
+```js
+const response = await chatSession.getTranscript({
+    scanDirection: "BACKWARD",
+    sortOrder: "ASCENDING",
+    maxResults: 15
+});
+
+const { Transcript } = response.data;
+Transcript.forEach(message => {
+    const timestamp = new Date(message.AbsoluteTime).toLocaleTimeString();
+    const id = message.Id;
+    // Sort messages by timestamp and filter duplicates using message ID
+});
+```
+
+### Messages Not Received During Network Disconnection
+
+If a chat participant loses network connection during a session, the client may fail to receive WebSocket messages.
+
+ChatJS requires manually calling `chatSession.getTranscript()` to fetch missed messages after reconnecting.
+
+```js
+// Fetch any missed messages by retrieving the recent transcript
+chatSession.onConnectionEstablished(() => {
+    console.log('WebSocket connection has been established/reestablished');
+
+    // Get recent messages including any that were missed while offline
+    const response = await chatSession.getTranscript({
+        scanDirection: "BACKWARD",
+        sortOrder: "ASCENDING",
+        maxResults: 15
+    });
+
+    const { Transcript } = response.data;
+    // ... filter and render the updated transcript
+});
+```
+
+### CSM not initialized
+
+Client-side-metric (CSM) is an internal feature. This functionality is enabled by default but completely safe to disable.
+
+```log
+ChatJS-csmService: Failed to addCountAndErrorMetric csm:  ReferenceError: Property 'csm' doesn't exist undefined
+
+ChatJS-csmService: Failed to addLatencyMetric csm:  ReferenceError: Property 'csm' doesn't exist undefined
+
+addCSMCountMetric: CSM not initialized TypeError: Cannot read properties of null (reading 'Metric')
+```
+
+**Fix:**
+
+```js
+connect.ChatSession.create({
+  // ...
+  disableCSM: true
+});
 ```
