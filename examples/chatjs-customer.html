@@ -1,0 +1,370 @@
+<!--
+Description: ChatJS example implementation for Customer Chat UI
+npx live-server index.hmtl --port=3000
+
+Prerequisites:
+- An existing Amazon Connect Instance (instanceId)
+- An existing Amazon Connect Contact Flow (contactFlowId, "Sample inbound flow" recommended)
+- Agent Contact Control Panel (CCP) access: https://<instance-alias>.my.connect.aws/ccp-v2
+- Security Profile: "CCP: Access CCP"
+- IAM User with "Access key" credentials (ACCESS_KEY + SECRET_KEY) for AWS SDK
+
+Configuration:
+- Find your `instanceId` - docs: https://docs.aws.amazon.com/connect/latest/adminguide/find-instance-arn.html
+- Find your `contactFlowId` for "Sample inbound flow" - docs: https://docs.aws.amazon.com/connect/latest/adminguide/sample-inbound-flow.html
+- Save these values in `AMAZON_CONNECT_INSTANCE_CONFIG`
+- Add your AWS SDK credentials to `const connect = new AWS.Connect({ })`
+
+Usage:
+1. Launch the End-customer Chat UI, open the html file in your local browser (e.g. file:///path/to/folder/chatjs-local-testing.html)
+2. Start a chat session
+3. Launch the Agent Chat UI, Contact Control Panel (CCP): https://<instance-alias>.my.connect.aws/ccp-v2
+
+Troubleshooting:
+- StartChatContact API 403 error - TODO?
+- CreateParticipantConnect API 403 error - TODO?
+- Browser refresh feature - TODO ??
+- Contact Attribute documentation - TODO ??
+-->
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>End-customer Chat UI [Amazon Connect]</title>
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1692.0.min.js"></script>
+  <style>
+    /* Simple styles for better readability */
+    #chat-ui-container {
+      max-width: 600px;
+      margin: 20px auto;
+      font-family: Arial, sans-serif;
+    }
+
+    #messages-container {
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 300px;
+      overflow-y: auto;
+    }
+
+    .message {
+      margin: 5px 0;
+      padding: 5px;
+      border-radius: 5px;
+    }
+
+    .controls {
+      margin-bottom: 10px;
+    }
+
+    #message-input-container {
+      display: flex;
+    }
+
+    #messageInput {
+      flex-grow: 1;
+      margin-right: 5px;
+      padding: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="chat-ui-container">
+    <!-- Chat UI controls -->
+    <div class="controls">
+      <button id="connectButton">Connect</button>
+      <button id="endChatButton" style="display: none;">End Chat</button>
+    </div>
+
+    <!-- Messages will be displayed here -->
+    <div id="messages-container" style="display: none;"></div>
+
+    <!-- Message input area -->
+    <div id="message-input-container" style="display: none; margin-top: 10px;">
+      <input type="text" id="messageInput" placeholder="Type your message..." disabled>
+      <button id="sendMessageButton" disabled>Send</button>
+    </div>
+  </div>
+
+  <script type="module">
+    // Option 1: import ChatJS directly from npm
+    import "https://unpkg.com/amazon-connect-chatjs@3.0.3"; // imports `window.connect`
+
+    // Option 2: import ChatJS from local bundle file (npm run release)
+    // import "../dist/amazon-connect-chat.js"; // imports `window.connect`
+
+    // ===== CONFIGURATION =====
+    const AMAZON_CONNECT_INSTANCE_CONFIG = {
+      instanceId: '<INSTANCE_ID>',  // found here: https://docs.aws.amazon.com/connect/latest/adminguide/find-instance-arn.html
+      contactFlowId: '<CONTACT_FLOW_ID>', // found here: https://docs.aws.amazon.com/connect/latest/adminguide/find-contact-flow-id.html
+      region: '<AWS_REGION>',
+    };
+
+    // CAUTION: Do not use AWS SDK directly in the browser for production applications
+    // For production: use your backend or deploy this sample Cloudformation stack: https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/cloudformationTemplates/startChatContactAPI
+    const AWS_SDK_CREDENTIALS = {
+      accessKeyId: 'ACCESS_KEY',
+      secretAccessKey: 'SECRET_KEY',
+      sessionToken: 'SESSION_TOKEN'
+    };
+    const connect = new AWS.Connect({
+      region: AMAZON_CONNECT_INSTANCE_CONFIG.region,
+      credentials: new AWS.Credentials(AWS_SDK_CREDENTIALS)
+    });
+
+    const STORAGE_KEY = 'chatjs-session-chat-details';
+
+    // ===== UI ELEMENTS =====
+    // Get references to UI elements once on page load
+    let connectButton, endChatButton, messageInput, sendMessageButton,
+      messageInputContainer, messagesContainer;
+
+    // ===== INITIALIZATION =====
+    window.onload = function () {
+      // Configure ChatJS
+      window.connect.ChatSession.setGlobalConfig({
+        // loggerConfig: { useDefaultLogger: false }, // disable logs
+        loggerConfig: { useDefaultLogger: true }, // enable logs (default)
+        region: AMAZON_CONNECT_INSTANCE_CONFIG.region,
+      });
+
+      // Cache UI elements
+      connectButton = document.getElementById("connectButton");
+      endChatButton = document.getElementById("endChatButton");
+      messageInput = document.getElementById("messageInput");
+      sendMessageButton = document.getElementById("sendMessageButton");
+      messageInputContainer = document.getElementById("message-input-container");
+      messagesContainer = document.getElementById("messages-container");
+
+      // Add click event listener to the connect button
+      connectButton.addEventListener('click', initializeChat);
+
+      // Auto-reconnect if there's an existing chat session
+      if (sessionStorage.getItem(STORAGE_KEY)) {
+        initializeChat();
+      }
+    };
+
+    // ===== CHAT INITIALIZATION =====
+    // Function to initialize chat when the connect button is clicked
+    async function initializeChat() {
+      // Update UI state
+      connectButton.disabled = true;
+      connectButton.textContent = "Connecting...";
+
+      try {
+        // Start a new chat contact with Amazon Connect
+        let chatDetails = null;
+        const existingChatDetails = sessionStorage.getItem(STORAGE_KEY);
+
+        if (existingChatDetails) {
+          console.log('Found existing chatDetails, calling CreateParticipantConnection with existing ParticipantToken');
+          chatDetails = JSON.parse(existingChatDetails);
+        } else {
+          console.log('No existing chat session found. Initiating new chat contact [StartChatContact API]');
+
+          // Note: In production, this request must be initiated securely from your backend
+          // StartChatContact API: Public endpoint with SigV4 authentication
+          // Reference: https://docs.aws.amazon.com/connect/latest/APIReference/API_StartChatContact.html
+          const startChatRequest = {
+            // Amazon Connect instance configuration
+            InstanceId: AMAZON_CONNECT_INSTANCE_CONFIG.instanceId,
+            ContactFlowId: AMAZON_CONNECT_INSTANCE_CONFIG.contactFlowId,
+
+            // Participant details
+            ParticipantDetails: {
+              DisplayName: 'Joe Shmoe'
+            },
+
+            // Custom attributes to pass to the Contact flow
+            Attributes: {
+              // Accessible under User defined namespace or via $.Attributes['myContactAttribute']
+              myContactAttribute: "string",
+              foo: "bar"
+            },
+
+            // Supported messaging content types
+            SupportedMessagingContentTypes: [
+              "text/plain",    // Standard plain text (required)
+              "text/markdown"  // Rich text support
+            ],
+
+            ChatDurationInMinutes: 1500, // min 60, max 10080 - default 1500 (25 hours)
+          };
+          chatDetails = await connect.startChatContact(startChatRequest).promise();
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(chatDetails));
+        }
+
+        // Step 2: Connect to the chat session
+        const customerChatSession = window.connect.ChatSession.create({
+          chatDetails: {
+            contactId: chatDetails.ContactId,
+            participantId: chatDetails.ParticipantId,
+            participantToken: chatDetails.ParticipantToken,
+          },
+          options: { region: AMAZON_CONNECT_INSTANCE_CONFIG.region },
+          type: "CUSTOMER",
+          disableCSM: true, // CSM is an internal feature, safe to disable
+        });
+
+        // TODO - HERE
+
+        // ===== EVENT HANDLERS =====
+        // Step 3: Add event handlers
+        setupEventHandlers(customerChatSession, existingChatDetails);
+
+        // Step 4: connect the ChatJS session
+        const connectionResult = await customerChatSession.connect();
+        if (!connectionResult.connectSuccess) {
+          alert("chatSession.connect() failed [CreateParticipantConnection API]");
+          sessionStorage.clear();
+          resetUI();
+          return;
+        }
+
+        // Send initial message
+        await customerChatSession.sendMessage({ contentType: "text/plain", message: "Hello, I'm connected!" });
+
+      } catch (error) {
+        console.error("Chat initialization error:", error);
+        alert("Failed to initialize ChatJS. Please check your configuration");
+        resetUI();
+      }
+    }
+
+    // ===== HELPER FUNCTIONS =====
+    // Setup all event handlers for the chat session
+    function setupEventHandlers(chatSession, existingChatDetails) {
+      // Handle successful connection
+      chatSession.onConnectionEstablished(event => {
+        console.log('[customerChatSession] Successfully connected via WebSocket');
+
+        // Update UI for connected state
+        updateUIForConnectedState();
+
+        // Setup message sending functionality
+        setupMessageSending(chatSession);
+
+        // Setup end chat functionality
+        setupEndChatButton(chatSession);
+
+        // Load previous messages for existing chats
+        if (existingChatDetails) {
+          loadPreviousMessages(chatSession);
+        }
+      });
+
+      // Handle incoming messages
+      chatSession.onMessage(event => {
+        renderMessage(event.data);
+      });
+
+      // Other event handlers could be added here
+      // chatSession.onConnectionBroken(event => { /* ... */ });
+      // chatSession.onEnded(event => { /* ... */ });
+      // chatSession.onTyping(event => { /* ... */ });
+    }
+
+    // Load previous messages from transcript
+    function loadPreviousMessages(chatSession) {
+      chatSession.getTranscript({
+        scanDirection: "BACKWARD",
+        sortOrder: "ASCENDING",
+        maxResults: 15
+      }).then((response) => {
+        const { Transcript } = response.data;
+        Transcript.forEach(message => {
+          renderMessage(message);
+        });
+      });
+    }
+
+    // Update UI elements for connected state
+    function updateUIForConnectedState() {
+      connectButton.textContent = "Connected";
+      endChatButton.style.display = "inline-block";
+      messageInputContainer.style.display = "flex";
+      messagesContainer.style.display = "block";
+      messageInput.disabled = false;
+      sendMessageButton.disabled = false;
+    }
+
+    // Reset UI elements to initial state
+    function resetUI() {
+      connectButton.disabled = false;
+      connectButton.textContent = "Connect";
+      endChatButton.style.display = "none";
+      messageInputContainer.style.display = "none";
+      messagesContainer.style.display = "none";
+    }
+
+    // Setup message sending functionality
+    function setupMessageSending(chatSession) {
+      // Function to send message
+      async function sendMessage() {
+        const message = messageInput.value.trim();
+        if (message) {
+          await chatSession.sendMessage({ contentType: "text/plain", message });
+          messageInput.value = '';
+        }
+      }
+
+      // Add event listeners
+      sendMessageButton.addEventListener('click', sendMessage);
+      messageInput.addEventListener('keypress', e => e.key === 'Enter' && sendMessage());
+    }
+
+    // Setup end chat button functionality
+    function setupEndChatButton(chatSession) {
+      endChatButton.addEventListener('click', async () => {
+        endChatButton.disabled = true;
+        endChatButton.textContent = "Ending...";
+
+        try {
+          // End chat gracefully
+          await chatSession.disconnectParticipant();
+
+          // Update UI
+          endChatButton.textContent = "Disconnected";
+          setTimeout(() => {
+            resetUI();
+            // Clear session storage
+            sessionStorage.removeItem(STORAGE_KEY);
+          }, 1000);
+
+        } catch (error) {
+          console.error("Error ending chat:", error);
+          endChatButton.disabled = false;
+          endChatButton.textContent = "End Chat";
+        }
+      });
+    }
+
+    // Render a message in the UI
+    function renderMessage(message) {
+      console.log('[customerChatSession] Received message:', message);
+
+      if (message.ContentType === "text/plain" || message.ContentType === "text/markdown") {
+
+        const messageElement = document.createElement("p");
+        messageElement.className = "message";
+        messageElement.textContent = `${message.DisplayName || 'System'}: ${message.Content}`;
+        messageElement.id = `msg-${message.Id}`;
+
+        // Add timestamp as title attribute for hover
+        const timestamp = new Date(message.AbsoluteTime).toLocaleTimeString();
+        messageElement.title = timestamp;
+
+        messagesContainer.appendChild(messageElement);
+
+        // Scroll to bottom
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+    }
+  </script>
+</body>
+
+</html>
