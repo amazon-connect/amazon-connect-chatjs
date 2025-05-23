@@ -1290,6 +1290,8 @@ ChatJS relies on browser's `window.navigator.onLine` for network monitoring, whi
 
 > 📌 Important: ensure you are using `amazon-connect-chatjs >= v1.5.0`
 
+For a boilerplate React Native demo application, check out the [Amazon Connect React Native ChatJS Example](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/mobileChatExamples/connectReactNativeChat).
+
 ```sh
 npm install amazon-connect-chatjs@latest
 npm install @react-native-community/netinfo@latest
