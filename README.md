@@ -1283,3 +1283,54 @@ connect.ChatSession.create({
   disableCSM: true
 });
 ```
+
+### Configure ChatJS WebSocket Manager for React Native Environment
+
+ChatJS relies on browser's `window.navigator.onLine` for network monitoring, which isn't available in React Native (Hermes JS Engine). Instead, you'll need to configure ChatJS to use React Native's NetInfo API for network status checks.
+
+> 📌 Important: ensure you are using `amazon-connect-chatjs >= v1.5.0`
+
+```sh
+npm install amazon-connect-chatjs@latest
+npm install @react-native-community/netinfo@latest
+```
+
+```diff
+// MyChatUI.jsx
+
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import "amazon-connect-chatjs"; // >= v1.5.0 - imports the "window.connect" class
+import NetInfo, { useNetInfo } from '@react-native-community/netinfo';
+
+const MyChatUI = () => {
+  useEffect(() => {
++   window.connect.ChatSession.setGlobalConfig({
++       webSocketManagerConfig: {
++         isNetworkOnline: async () => {
++           const state = await NetInfo.fetch();
++           return state.isConnected;
++         }
++       }
++     });
+
+      // Your proxy backend makes StartChatContact API request: https://docs.aws.amazon.com/connect/latest/APIReference/API_StartChatContact.html
+      // Boilerplate backend: https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/cloudformationTemplates/startChatContactAPI
+     const startChatResponse = await fetch('url-to-my-chat-backend').then(response => response.data);
+
+      // Initialize ChatJS session
+      const chatSession = window.connect.ChatSession.create({
+      chatDetails: {
+        contactId: startChatResponse.ContactId,
+        participantId: startChatResponse.ParticipantId,
+        participantToken: startChatResponse.ParticipantToken,
+      },
+      options: { region: '<AWS_REGION>' },
+      type: "CUSTOMER",
+      disableCSM: true // CSM is an internal feature, safe to disable
+    })
+
+    // Connect to chat session WebsSocket connection
+    await chatSession.connect();
+  }, [])
+}
+```
