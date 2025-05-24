@@ -610,21 +610,70 @@ The response `data` is the same as the [StartAttachmentUpload](https://docs.aws.
 #### `chatSession.downloadAttachment()`
 
 ```js
-const awsSDKResponse = await chatSession.downloadAttachment({
-   attachmentId: "string",
-   metadata: { foo: "bar" }, // optional
+chatSession.onMessage(event => {
+  console.log('[DEBUG] chatSession.onMessage()');
+
+  if (event.data && event.data.Type === "ATTACHMENT") {
+    console.log(event.data);
+    const attachmentItem = event.data.Attachments[0];
+    //  {
+    //     "AbsoluteTime": "2025-05-24T21:42:55.867Z",
+    //     "Attachments": [
+    //         {
+    //             "ContentType": "image/png",
+    //             "AttachmentId": "asdfasdfasdfsadf",
+    //             "AttachmentName": "Screenshot 2025-05-24 at 2.42.48 PM.png",
+    //             "Status": "APPROVED"
+    //         }
+    //     ],
+    //     "Id": "86a061a2-f99c-4691-a63e-47d145628a80",
+    //     "Type": "ATTACHMENT",
+    //     "ParticipantId": "4393212f-4481-4c7d-8184-5be9d811d7ce",
+    //     "DisplayName": "Spencer",
+    //     "ParticipantRole": "CUSTOMER",
+    //     "InitialContactId": "f50e4cc0-b825-4da7-849a-27fa75f993de",
+    //     "ContactId": "7d007f43-a0cc-4efb-abc9-628fc216e6d5"
+    // }
+  }
+
+  // ...
 });
-const { attachment } = awsSdkResponse.data;
-/*
-Attachment Object - This is the actual file that will be downloaded by either agent or end-customer.
-attachment = {
-  lastModified: long
-  name: "string"
-  size: long
-  type: "string"
-  webkitRelativePath: "string"
-}
-*/
+
+chatSession.downloadAttachment({
+  attachmentId: attachmentItem.AttachmentId
+}).then((awsSDKResponse) => {
+  console.log('Download response:', awsSDKResponse); // Blob
+  const attachmentBlob = awsSDKResponse;
+  /*
+    Attachment Object - This is the actual file that will be downloaded by either agent or end-customer.
+    {
+      lastModified: long
+      name: "string"
+      size: long
+      type: "string"
+      webkitRelativePath: "string"
+    }
+  */
+
+  // Create a download link for the Blob
+  const downloadUrl = URL.createObjectURL(attachmentBlob);
+  const downloadLink = document.createElement('a');
+  downloadLink.href = downloadUrl;
+  downloadLink.download = attachmentItem.AttachmentName; // Use the name from the attachment item
+  downloadLink.style.display = 'none';
+
+  // Append to document and trigger download
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+
+  // Clean up
+  setTimeout(() => {
+    document.body.removeChild(downloadLink);
+    URL.revokeObjectURL(downloadUrl);
+  }, 100);
+}).catch(error => {
+  console.error('Error downloading attachment:', error);
+});
 ```
 
 Wraps the [GetAttachment](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html) API.
