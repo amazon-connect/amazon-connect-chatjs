@@ -1315,7 +1315,8 @@ Detailed feature documentation can be found in our [docs/](docs) directory:
   - [Android Native Chat UI](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/mobileChatExamples/androidChatExample)
   - [iOS Native Chat UI](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/mobileChatExamples/androidChatExample)
 
-## Common Problems & Solutions
+
+## Common Issues & Solutions
 
 ### Enable Debug Logging
 
@@ -1332,7 +1333,7 @@ connect.ChatSession.setGlobalConfig({
 ```js
 window.connect.ChatSession.setGlobalConfig({
   loggerConfig: { useDefaultLogger: false }, // disable
-  // loggerConfig: { useDefaultLogger: true }, // enable (default)
+  // loggerConfig: { useDefaultLogger: true }, // default
 });
 ```
 
@@ -1341,8 +1342,6 @@ window.connect.ChatSession.setGlobalConfig({
 ```js
 chatSession.onConnectionLost(async () => {
   console.log('Websocket lost connection');
-  // Implement reconnection logic
-  await chatSession.connect();
 });
 
 chatSession.onConnectionEstablished(() => {
@@ -1351,6 +1350,8 @@ chatSession.onConnectionEstablished(() => {
 
 chatSession.onConnectionBroken(event => {
   console.log('WebSocket connection is broken or terminated');
+  // Implement reconnection logic
+  await chatSession.connect();
 });
 ```
 
@@ -1366,7 +1367,7 @@ chatSession.onDeepHeartbeatFailure(() => {
 });
 ```
 
-### Handle Browser Refresh
+### Handling Browser Refresh
 
 When a user refreshes their browser during an active chat, you'll want to reconnect them to their existing session instead of starting a new one.
 
@@ -1469,40 +1470,60 @@ addCSMCountMetric: CSM not initialized TypeError: Cannot read properties of null
 connect.ChatSession.create({
   // ...
   disableCSM: true
-})
+});
 ```
 
-### React Native WebSocket Configuration
+### Configure ChatJS WebSocket Manager for React Native Environment
 
 ChatJS relies on browser's `window.navigator.onLine` for network monitoring, which isn't available in React Native (Hermes JS Engine). Instead, you'll need to configure ChatJS to use React Native's NetInfo API for network status checks.
 
-```js
-// App.jsx
+> 📌 Important: ensure you are using `amazon-connect-chatjs >= v1.5.0`
 
-import React, { useState, useEffect } from 'react';
-import 'amazon-connect-chatjs' // ^1.5.0 (imports `window.connect`)
-import NetInfo from '@react-native-community/netinfo';
+For a boilerplate React Native demo application, check out the [Amazon Connect React Native ChatJS Example](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/mobileChatExamples/connectReactNativeChat).
 
-const MyChatApp = () => {
-  const [deviceIsOnline, setDeviceIsOnline] = useState(true);
+```sh
+npm install amazon-connect-chatjs@latest
+npm install @react-native-community/netinfo@latest
+```
 
+```diff
+// MyChatUI.jsx
+
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import "amazon-connect-chatjs"; // >= v1.5.0 - imports the "window.connect" class
+import NetInfo, { useNetInfo } from '@react-native-community/netinfo';
+
+const MyChatUI = () => {
   useEffect(() => {
-    // Subscribe to network status updates
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      setDeviceIsOnline(state.isConnected);
-    });
++   window.connect.ChatSession.setGlobalConfig({
++       webSocketManagerConfig: {
++         isNetworkOnline: async () => {
++           const state = await NetInfo.fetch();
++           return state.isConnected;
++         }
++       }
++     });
 
-    const getNetworkStatus = () => deviceIsOnline;
+      // Your proxy backend makes StartChatContact API request: https://docs.aws.amazon.com/connect/latest/APIReference/API_StartChatContact.html
+      // Boilerplate backend: https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/cloudformationTemplates/startChatContactAPI
+     const startChatResponse = await fetch('url-to-my-chat-backend').then(response => response.data);
 
-    window.connect.ChatSession.setGlobalConfig({
-      webSocketManagerConfig: {
-        isNetworkOnline: getNetworkStatus, // ADD THIS
+      // Initialize ChatJS session
+      const chatSession = window.connect.ChatSession.create({
+      chatDetails: {
+        contactId: startChatResponse.ContactId,
+        participantId: startChatResponse.ParticipantId,
+        participantToken: startChatResponse.ParticipantToken,
       },
+      options: { region: '<AWS_REGION>' },
+      type: "CUSTOMER",
+      disableCSM: true // CSM is an internal feature, safe to disable
     })
 
-    return () => { unsubscribe(); }; // Cleanup to prevent memory leaks
-  }, []);
-};
+    // Connect to chat session WebsSocket connection
+    await chatSession.connect();
+  }, [])
+}
 ```
 
 ## License
