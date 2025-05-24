@@ -1,0 +1,55 @@
+<!--
+Feature: https://docs.aws.amazon.com/connect/latest/adminguide/customize-widget-launch.html#chat-persistence-across-tabs
+
+1. Copy/paste your widget script into this index.html - docs: https://docs.aws.amazon.com/connect/latest/adminguide/add-chat-to-website.html
+2. Allow-list the domain "http://127.0.0.1:8080" - docs: https://docs.aws.amazon.com/connect/latest/adminguide/add-chat-to-website.html#chat-widget-domains
+3. Host the index.html file: `npx live-server index.html --port=8080`
+4. Open in local browser: http://127.0.0.1:8080
+5. Start a chat session by opening the widget
+6. Click the link "Open fresh new tab"
+7. On the new tab, chat widget should automatically connect to ongoing chat session
+-->
+
+<a href="http://127.0.0.1:8080" target="_blank">Open fresh new tab</a>
+
+
+<script type="text/javascript">
+  // NEW
+  var cookie = document.cookie.split('; ').find(c => c.startsWith('activeChat='));
+  console.log('[DEBUG] activeChat Cookie', cookie);
+  if (cookie) {
+    const activeChatValue = cookie.split('=')[1];
+    localStorage.setItem('persistedChatSession', activeChatValue);
+  }
+
+  (function (w, d, x, id) {
+    s = d.createElement('script');
+    s.src =
+      'https://my-instance-url/connectwidget/static/amazon-connect-chat-interface-client.js';
+    s.async = 1;
+    s.id = id;
+    d.getElementsByTagName('head')[0].appendChild(s);
+    w[x] = w[x] || function () { (w[x].ac = w[x].ac || []).push(arguments) };
+  })(window, document, 'amazon_connect', '<WIDGET_ID>');
+
+  amazon_connect('styles', {
+    iconType: 'CHAT', openChat: { color: '#ffffff', backgroundColor: '#123456' }, closeChat: {
+      color: '#ffffff', backgroundColor: '#123456'
+    }
+  });
+  amazon_connect('snippetId',
+    '<SNIPPET_ID>');
+  amazon_connect('supportedMessagingContentTypes', ['text/plain', 'text/markdown',
+    'application/vnd.amazonaws.connect.message.interactive',
+    'application/vnd.amazonaws.connect.message.interactive.response']);
+
+  // NEW
+  amazon_connect('registerCallback', {
+    'CONNECTION_ESTABLISHED': (eventName, { chatDetails, data }) => {
+      document.cookie = `activeChat=${localStorage.getItem("persistedChatSession")}; SameSite=None; Secure`;
+    },
+    'CHAT_ENDED': () => {
+      document.cookie = "activeChat=; SameSite=None; Secure";
+    }
+  });
+</script>

@@ -1,0 +1,394 @@
+<!-- chatjs-streamsjs-example.html -->
+<!--
+# Amazon Connect Custom Agent Chat UI
+
+## Overview
+Custom Agent Chat UI integrating ChatJS and StreamsJS for Amazon Connect Chat
+
+- StreamsJS: https://github.com/amazon-connect/amazon-connect-streams
+- ChatJS: https://github.com/amazon-connect/amazon-connect-chatjs
+- AWS Documentation: https://docs.aws.amazon.com/connect/latest/adminguide/chat-with-connect-contacts.html
+
+## Prerequisites
+- Amazon Connect Instance
+- Login credentials for a user profile assigned to "Agent"
+
+## Configuration Steps
+1. Allowlisting
+   - Login to your AWS Account, then navigate to the Amazon Connect console.
+   - Click the instance name of the instance for which you would like to allowlist pages to load the settings page for your instance.
+   - Click the "Application integration" link on the left.
+   - Click "Add Origin", then enter a domain URL: http://localhost:8080
+
+2. Configuration Updates
+   - Update the following values in the script:
+     * `INSTANCE_URL`: Your Amazon Connect instance URL
+     * `REGION`: Your AWS region
+
+## Local Testing Instructions
+1. Host the HTML file in a local browser
+   ```
+   npx live-server --port=8080 chatjs-streamsjs-example.html
+   ```
+   - Access URL: http://localhost:8080
+
+2. Login Process
+   - Open Contact Control Panel (CCP)
+   - Login with your Agent username/password
+
+3. Chat Interaction
+   - Keep CCP tab open
+   - In a second browser tab, launch Amazon Connect Test Chat Page: https://<instance-alias>.my.connect.aws/test-chat
+   - Open the Customer widget
+   - Back on CCP tab, wait for an incoming chat contact, click "Accept"
+-->
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Agent Chat UI [Amazon Connect]</title>
+  <style>
+    body {
+      display: flex;
+    }
+
+    #prebuilt-agent-ui-iframe,
+    #chat-ui-container {
+      width: 400px;
+      height: 800px;
+    }
+
+    #chat-ui-container {
+      font-family: Arial, sans-serif;
+      border: 1px solid #ddd;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 20px auto;
+    }
+
+    #custom-agent-chat-transcript {
+      height: 300px;
+      overflow-y: auto;
+      background-color: #f8f8f8;
+      padding: 10px;
+      margin-top: 20px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    #custom-agent-chat-transcript::after {
+      content: "";
+      display: table;
+      clear: both;
+    }
+
+    .message {
+      margin: 5px 0;
+      padding: 8px;
+      border-radius: 5px;
+      max-width: 80%;
+      word-wrap: break-word;
+      clear: both;
+    }
+
+    .incoming-message {
+      background-color: #f0f0f0;
+      border: 1px solid #ddd;
+      float: left;
+      text-align: left;
+    }
+
+    .outgoing-message {
+      background-color: #0084ff;
+      color: white;
+      border: 1px solid #0073e6;
+      float: right;
+      text-align: right;
+    }
+
+    #message-input-container {
+      display: flex;
+      margin-top: 15px;
+    }
+
+    #messageInput {
+      flex-grow: 1;
+      margin-right: 5px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #0084ff;
+      color: white;
+      border: none;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="prebuilt-agent-ui-iframe"></div>
+  <div id="chat-ui-container">
+    <h3>Custom Agent Chat UI (ChatJS + StreamsJS)</h3>
+    <div id="custom-agent-chat-transcript"></div>
+    <div id="message-input-container" style="display: none">
+      <input type="text" id="messageInput" placeholder="Type your message..." disabled>
+      <button id="sendMessageButton" disabled>Send</button>
+    </div>
+  </div>
+
+  <script type="module">
+    // Option 1: import ChatJS and StreamJS directly from npm (order is important)
+    import "https://unpkg.com/amazon-connect-streams@2.18.1"; // imports `window.connect.*`
+    import "https://unpkg.com/amazon-connect-chatjs@3.0.5"; // also imports `window.connect.*`
+
+    // Option 2: Import bundle files
+    // import "amazon-connect-streams.js";
+    // import "amazon-connect-chat.js";
+
+    const INSTANCE_URL = "https://<INSTANCE_ALIAS>.my.connect.aws/ccp-v2?visual-refresh=true";
+    const REGION = 'us-west-2';
+    const MAX_TRANSCRIPT_MESSAGES = 15;
+
+    window.onload = async function () {
+      // DOM element references
+      const elements = {
+        prebuiltAgentUI: document.getElementById("prebuilt-agent-ui-iframe"),
+        transcript: document.getElementById("custom-agent-chat-transcript"),
+        messageInput: document.getElementById("messageInput"),
+        sendButton: document.getElementById("sendMessageButton"),
+        inputContainer: document.getElementById("message-input-container"),
+      };
+
+      // Initialize Connect CCP and set up handlers
+      await connect.core.initCCP(elements.prebuiltAgentUI, {
+        ccpUrl: INSTANCE_URL,
+        region: REGION,
+        loginPopup: true,
+      });
+
+      connect.ChatSession.setGlobalConfig({
+        loggerConfig: { useDefaultLogger: true },
+        region: REGION,
+      });
+
+      // Handle new contacts
+      connect.contact(contact => {
+        if (contact.getType() === connect.ContactType.CHAT) {
+          // Automatically accept chat
+          contact.accept();
+        }
+
+        contact.onAccepted(() => initializeChatContact(contact));
+      });
+
+      // Check for existing contacts
+      connect.agent(agent => {
+        agent.onRefresh(() => {
+          agent.getContacts().forEach(contact => {
+            const contactStatus = contact.getStatus().type;
+            const isActiveChat =
+              contact.getType() === connect.ContactType.CHAT &&
+              (contactStatus === connect.ContactStateType.CONNECTED ||
+                contactStatus === connect.ContactStateType.ACCEPTED);
+
+            if (isActiveChat) initializeChatContact(contact);
+          });
+        });
+      });
+
+      /**
+       * Initialize a chat contact and set up the UI
+       */
+      async function initializeChatContact(contact) {
+        if (contact.getType() !== connect.ContactType.CHAT) return;
+
+        const agentConnection = contact.getConnections().find(
+          conn => conn.getType() === connect.ConnectionType.AGENT
+        );
+
+        let chatSession;
+        try {
+          chatSession = await agentConnection.getMediaController();
+
+          if (!chatSession) {
+            chatSession = connect.ChatSession.create({
+              chatDetails: agentConnection.getMediaInfo(),
+              options: { region: REGION },
+              type: connect.ChatSession.SessionTypes.AGENT,
+              websocketManager: connect.core.getWebSocketManager()
+            });
+            await chatSession.connect();
+          }
+
+          setupChat(chatSession, elements);
+        } catch (error) {
+          console.error('Error getting chat session:', error);
+        }
+      }
+
+      /**
+       * Set up the chat UI and handlers
+       */
+      function setupChat(chatSession, elements) {
+        if (!chatSession) return;
+
+        // Show and enable UI elements
+        elements.transcript.style.display = "block";
+        elements.transcript.style.visibility = "visible";
+        elements.inputContainer.style.display = "flex";
+        elements.messageInput.disabled = false;
+        elements.sendButton.disabled = false;
+
+        // Set up message sending
+        const sendMessage = async () => {
+          const message = elements.messageInput.value.trim();
+          if (message) {
+            try {
+              await chatSession.sendMessage({ contentType: "text/plain", message });
+              elements.messageInput.value = '';
+            } catch (error) {
+              console.error('Error sending message:', error);
+            }
+          }
+        };
+
+        elements.sendButton.addEventListener('click', sendMessage);
+        elements.messageInput.addEventListener('keypress', e => {
+          if (e.key === 'Enter') sendMessage();
+        });
+
+        // Set up chat session handlers
+        chatSession.onConnectionEstablished(() => {
+          // Load previous messages
+          chatSession.getTranscript({
+            scanDirection: "BACKWARD",
+            sortOrder: "ASCENDING",
+            maxResults: MAX_TRANSCRIPT_MESSAGES
+          }).then(response => {
+            if (response.data?.Transcript) {
+              response.data.Transcript.forEach(msg => renderMessage(msg, chatSession, elements));
+            }
+          }).catch(error => console.error("Error loading transcript:", error));
+        });
+
+        /**
+         * Subscribes an event handler that triggers whenever a message or an event (except for `application/vnd.amazonaws.connect.event.typing`) is created by any participant.
+         * @param {
+            chatDetails: Object,
+            data: {
+              AbsoluteTime: string,
+              Content?: string,
+              ContentType: string,
+              DisplayName?: string,
+              Id: string,
+              ParticipantId?: string,
+              ParticipantRole?: "AGENT" | "CUSTOMER" | "SYSTEM",
+              Type: "MESSAGE" | "EVENT" | "ATTACHMENT" | "CONNECTION_ACK",
+              ContactId?: string,
+              InitialContactId?: string
+            }
+        } event
+        */
+        chatSession.onMessage(event => {
+          if (event.data) renderMessage(event.data, chatSession, elements);
+        });
+
+        /**
+         * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.typing" event is created by any participant.
+         * @param {
+            AbsoluteTime?: string,
+            ContentType: "application/vnd.amazonaws.connect.event.typing",
+            Type?: string,
+            ParticipantId?: string,
+            DisplayName?: string,
+            ParticipantRole?: "AGENT" | "CUSTOMER" | "SYSTEM",
+            InitialContactId?: string
+        } event.data
+        */
+        chatSession.onTyping((event) => {
+          // Handle typing indicator
+          renderMessage({
+            "AbsoluteTime": "2025-05-23T06:01:24.287Z",
+            "ContentType": "text/plain",
+            "Content": "...",
+            "Id": "e69634e9-2b31-4598-923e-5b2be62d436b",
+            "Type": "EVENT",
+            "ParticipantId": "5b370166-c0ee-4e23-ac1b-87ceffa611c4",
+            "DisplayName": "Customer",
+            "ParticipantRole": "CUSTOMER",
+            "InitialContactId": "3358be3e-368d-4cde-ae92-352f44c35440"
+          }, chatSession, elements);
+        })
+
+        /**
+         * Subscribes an event handler that triggers when a read message event is received from the customer or agent.
+         * @param {
+            AbsoluteTime?: string,
+            ContentType: "application/vnd.amazonaws.connect.event.message.read",
+            Type?: string,
+            ParticipantId?: string,
+            DisplayName?: string,
+            ParticipantRole?: "AGENT" | "CUSTOMER" | "SYSTEM",
+            InitialContactId?: string
+         } event.data
+         */
+        chatSession.onReadReceipt((event) => {
+          // TODO - handle message receipt
+        })
+
+        /**
+         * Subscribes an event handler that triggers when a delivered message event is received from the customer or agent.
+         * @param {
+            AbsoluteTime?: string,
+            ContentType: "application/vnd.amazonaws.connect.event.message.delivered",
+            Type?: string,
+            ParticipantId?: string,
+            DisplayName?: string,
+            ParticipantRole?: "AGENT" | "CUSTOMER" | "SYSTEM",
+            InitialContactId?: string
+         } event.data
+         */
+        chatSession.onDeliveredReceipt((event) => {
+          // TODO - handle message receipt
+        })
+      }
+
+      /**
+       * Render a message in the chat UI
+       */
+      function renderMessage(message, chatSession, elements) {
+        if (message.ContentType === "text/plain" || message.ContentType === "text/markdown") {
+          const messageElement = document.createElement("div");
+          messageElement.className = "message";
+
+          const isFromAgent = message.ParticipantId === chatSession.getChatDetails().participantId;
+          messageElement.classList.add(isFromAgent ? "outgoing-message" : "incoming-message");
+
+          const displayName = message.DisplayName || (isFromAgent ? 'Agent' : 'Customer');
+          const content = document.createElement("div");
+          const messageContent = message.Content || message.content;
+          content.textContent = `${displayName}: ${messageContent}`;
+          messageElement.appendChild(content);
+
+          messageElement.id = `msg-${message.Id}`;
+          messageElement.title = new Date(message.AbsoluteTime).toLocaleTimeString();
+
+          elements.transcript.appendChild(messageElement);
+          elements.transcript.scrollTop = elements.transcript.scrollHeight;
+        }
+      }
+    };
+  </script>
+</body>
+
+</html>
