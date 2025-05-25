@@ -406,6 +406,11 @@ The response `data` is the same as the [API response body](https://docs.aws.amaz
 ##### `chatSession.sendEvent()`
 
 ```js
+/**
+ * @param {Object} args - Event arguments with contentType and optional metadata and content
+ * @param {string} args.contentType - Content type of the event
+ * @param {string|Object} [args.content] - Optional payload (stringified if object)
+ */
 const awsSdkResponse = await chatSession.sendEvent({
   contentType: "application/vnd.amazonaws.connect.event.typing"
 });

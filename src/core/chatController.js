@@ -143,6 +143,11 @@ class ChatController {
         return this.chatClient.sendEvent(...args);
     }
 
+    /**
+     * @param {Object} args - Event arguments with contentType and optional metadata and content
+     * @param {string} args.contentType - Content type of the event
+     * @param {string|Object} [args.content] - Optional payload (stringified if object)
+     */
     sendEvent(args) {
         if (!this._validateConnectionStatus('sendEvent')) {
             return Promise.reject(`Failed to call sendEvent, No active connection`);
@@ -154,6 +159,7 @@ class ChatController {
         const content = args.content || null;
         var eventType = getEventTypeFromContentType(args.contentType);
         var parsedContent = typeof content === "string" ? JSON.parse(content) : content;
+        var stringifiedContent = content && (typeof content === "string" ? content : (typeof content === "object" ? JSON.stringify(content) : null));
         if (this.messageReceiptUtil.isMessageReceipt(eventType, args)) {
             // Ignore all MessageReceipt events
             if(!GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED) || !parsedContent.messageId) {
@@ -167,7 +173,7 @@ class ChatController {
             return this.messageReceiptUtil.prioritizeAndSendMessageReceipt(this.chatClient, this.sendEventIfChatHasNotEnded.bind(this),
                 connectionToken,
                 args.contentType,
-                content, 
+                stringifiedContent,
                 eventType, 
                 GlobalConfig.getMessageReceiptsThrottleTime())
                 .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType))
@@ -177,7 +183,7 @@ class ChatController {
             .sendEvent(
                 connectionToken,
                 args.contentType,
-                content
+                stringifiedContent
             )
             .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType))
             .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType));
