@@ -1,3 +1,4 @@
+import { CONTENT_TYPE } from "../constants";
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
 import { IllegalArgumentException } from "./exceptions";
 
@@ -56,5 +57,23 @@ describe("ChatServiceArgsValidator", () => {
         sendEventRequest.contentType = "application/vnd.amazonaws.connect.event.participant.disengaged";
         const validateCall = () => chatArgsValidator.validateSendEvent(sendEventRequest);
         expect(validateCall).toThrow(IllegalArgumentException);
+    });
+
+    test("validateSendMessage only passes on valid content types", () => {
+      const sendMessageRequest = {
+        message: "Hello world",
+        contentType: CONTENT_TYPE.textPlain
+      };
+      const chatArgsValidator = getValidator();
+      chatArgsValidator.validateSendMessage(sendMessageRequest);
+
+      sendMessageRequest.contentType = CONTENT_TYPE.textMarkdown;
+      expect(() => chatArgsValidator.validateSendMessage(sendMessageRequest)).not.toThrow();
+
+      sendMessageRequest.contentType = CONTENT_TYPE.typing;
+      expect(() => chatArgsValidator.validateSendMessage(sendMessageRequest)).toThrow(IllegalArgumentException);
+
+      sendMessageRequest.contentType = "text/html";
+      expect(() => chatArgsValidator.validateSendMessage(sendMessageRequest)).toThrow(IllegalArgumentException);
     });
 });

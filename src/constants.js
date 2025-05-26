@@ -200,3 +200,39 @@ export const DUMMY_ENDED_EVENT = {
     Type: "EVENT",
     InitialContactId: ""
 };
+
+// Content types valid for sendMessage operations
+export const SEND_MESSAGE_CONTENT_TYPES = [
+  CONTENT_TYPE.textPlain,
+  CONTENT_TYPE.textMarkdown,
+  CONTENT_TYPE.applicationJson,
+  CONTENT_TYPE.interactiveMessage,
+  CONTENT_TYPE.interactiveMessageResponse
+];
+
+// Content types valid for sendEvent operations
+export const SEND_EVENT_CONTENT_TYPES = [
+  CONTENT_TYPE.typing,
+  CONTENT_TYPE.connectionAcknowledged,
+  CONTENT_TYPE.readReceipt,
+  CONTENT_TYPE.deliveredReceipt,
+  CONTENT_TYPE.participantIdle,
+  CONTENT_TYPE.participantReturned,
+  CONTENT_TYPE.participantInactive,
+  CONTENT_TYPE.participantActive,
+  CONTENT_TYPE.participantJoined,
+  CONTENT_TYPE.participantLeft,
+  CONTENT_TYPE.chatEnded,
+  CONTENT_TYPE.transferSucceeded,
+  CONTENT_TYPE.transferFailed,
+  CONTENT_TYPE.autoDisconnection,
+  CONTENT_TYPE.authenticationInitiated,
+  CONTENT_TYPE.authenticationSuccessful,
+  CONTENT_TYPE.authenticationFailed,
+  CONTENT_TYPE.authenticationTimeout,
+  CONTENT_TYPE.authenticationExpired,
+  CONTENT_TYPE.authenticationCanceled,
+  CONTENT_TYPE.participantDisplayNameUpdated,
+  CONTENT_TYPE.chatRehydrated,
+  CONTENT_TYPE.participantInvited
+];
