@@ -1,6 +1,8 @@
 declare namespace connect {
   export const ChatSession: ChatSessionObject;
 
+  export const ChatJSVersion: Readonly<string>;
+
   // ==========
   // Main entry
   // ==========
