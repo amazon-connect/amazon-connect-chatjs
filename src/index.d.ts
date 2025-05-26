@@ -107,17 +107,46 @@ declare namespace connect {
   interface ChatGlobalConfig extends ChatSessionOptions {
     /** The logging configuration. */
     readonly loggerConfig?: {
-      /** The logger object. */
-      readonly logger?: ChatLogger;
+      /** Custom logger implementation */
+      readonly customizedLogger?: {
+        /** Debug level logging function */
+        debug: (...msg: any[]) => void;
+        /** Info level logging function */
+        info: (...msg: any[]) => void;
+        /** Warning level logging function */
+        warn: (...msg: any[]) => void;
+        /** Error level logging function */
+        error: (...msg: any[]) => void;
+      };
 
-      /**
-       * The logging level.
-       * @default connect.ChatSession.LogLevel.INFO
-       */
+      /** The logging level */
       readonly level?: ChatLogLevel[keyof ChatLogLevel];
+
+      /** Flag to use default logger */
+      readonly useDefaultLogger?: boolean;
     };
-    readonly features?: any;
+
+    /** AWS Region for the chat service */
+    readonly region?: string;
+
+    /** Feature configurations */
+    readonly features?: {
+      /** Message receipt configuration */
+      messageReceipts?: {
+        /** Enable/disable Read/Delivered receipts */
+        shouldSendMessageReceipts?: boolean;
+        /** Throttle time in milliseconds before sending Read/Delivered receipt */
+        throttleTime?: number;
+      };
+    };
+
+    /** Custom user agent suffix */
     readonly customUserAgentSuffix?: string;
+
+    /** WebSocket manager configuration for React Native */
+    readonly webSocketManagerConfig?: {
+      isNetworkOnline: () => boolean;
+    }
   }
 
   interface ChatLogger {
