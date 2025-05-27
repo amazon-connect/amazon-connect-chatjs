@@ -19,7 +19,7 @@ This stand-alone library supports customer chat sessions by default. For agent c
 - [Usage](#usage)
   - [Customer Session](#customer-session)
   - [Agent Session](#agent-session)
-- [API Reference](#api-reference)
+- [API Reference](#api)
   - [Global Properties](#global-properties)
   - [ChatSession Class](#chatsession-class)
   - [`chatSession` Methods](#chatsession-methods)
@@ -854,7 +854,7 @@ sequenceDiagram
 ```
 </details>
 
-## API Reference
+## API
 
 - [Global Properties](#global-properties)
 - [ChatSession Class](#chatsession-class)
@@ -1885,7 +1885,7 @@ chatSession.onDeepHeartbeatFailure(() => {
 });
 ```
 
-### Handling Browser Refresh
+### Handle Browser Refresh
 
 When a user refreshes their browser during an active chat, you'll want to reconnect them to their existing session instead of starting a new one.
 
