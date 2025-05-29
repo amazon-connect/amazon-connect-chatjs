@@ -31,6 +31,7 @@ This stand-alone library supports customer chat sessions by default. For agent c
 
 ## 📢 Announcements
 
+- **2025-05-29**: Migrated baked-in dependency from AWS SDK v2 to AWS SDK v3: `src/client/aws-sdk-connectparticipant.js`
 - **2024-04-02**: Connection Acknowledgement (ConnAck) has migrated from [SendEvent](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html) API to the [CreateParticipant](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CreateParticipantConnection.html) API. Please upgrade to `amazon-connect-chatjs@^1.4.0` by **Dec 31, 2024**
 - **2023-03-30**: v1.5.0 - Added support for _React Native environments_
 - **2023-12-23**: v1.3.0 - Added Message Receipts feature, enabled by default
