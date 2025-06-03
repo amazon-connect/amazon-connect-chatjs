@@ -35,6 +35,12 @@ module.exports = {
   },
 
   plugins: [
+    // Expose ChatJS version
+    // window.connect.ChatJSVersion = process.env.npm_package_version;
+    new webpack.DefinePlugin({
+      'process.env.npm_package_version': JSON.stringify(process.env.npm_package_version ?? 'live'),
+    }),
+
     new CopyWebpackPlugin({
         patterns: [
           { 

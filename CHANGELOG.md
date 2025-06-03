@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0]
+### Added
+- Expose ChatJS version to global `window.connect.ChatJSVersion`
+- Add missing typescript declarations to `index.d.ts`
+- Updating `ChatGlobalConfig` interface in `index.d.ts` for React Native `webSocketManagerConfig`
+
 ## [3.0.6]
 ### Added
 - Updating connectivity and websocket logic
@@ -21,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.0.3]
 ### Added
 - Authentication lifecycle events and APIs for authenticate customer flow block 
+- Migrated baked-in dependency from AWS SDK v2 to AWS SDK v3: `src/client/aws-sdk-connectparticipant.js` #247
 
 ## [3.0.2]
 ### Added
