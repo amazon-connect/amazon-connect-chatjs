@@ -1,0 +1,9 @@
+{
+  "name": "chatjs-typescript-demo",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node --experimental-specifier-resolution=node dist/index.js"
+  }
+}
