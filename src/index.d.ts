@@ -1,6 +1,19 @@
 declare namespace connect {
   export const ChatSession: ChatSessionObject;
 
+  export const ChatJS: ChatJSObject;
+
+  interface ChatJSObject {
+      readonly version: string;
+      readonly name: string;
+      readonly source: string;
+      readonly repository: string;
+      readonly build: {
+          readonly timestamp: string;
+          readonly environment: 'production' | 'development';
+      };
+  }
+
   // ==========
   // Main entry
   // ==========
@@ -88,7 +101,19 @@ declare namespace connect {
     /**
      * The `amazon-connect-streams` websocket manager obtained with `connect.core.getWebSocketManager()`.
      */
-    readonly websocketManager: any;
+    readonly websocketManager: WebSocketManager;
+  }
+
+  /**
+   * WebSocketManager interface for the websocket manager from amazon-connect-streams
+   */
+  interface WebSocketManager {
+    onConnectionGain: (callback: (event: unknown) => void) => void;
+    onConnectionLost: (callback: (event: unknown) => void) => void;
+    onMessage: (callback: (event: unknown) => void) => void;
+    sendMessage: (message: Record<string, unknown>) => void;
+    connect: () => void;
+    disconnect: () => void;
   }
 
   // =======
@@ -107,17 +132,46 @@ declare namespace connect {
   interface ChatGlobalConfig extends ChatSessionOptions {
     /** The logging configuration. */
     readonly loggerConfig?: {
-      /** The logger object. */
-      readonly logger?: ChatLogger;
+      /** Custom logger implementation */
+      readonly customizedLogger?: {
+        /** Debug level logging function */
+        debug: (...msg: any[]) => void;
+        /** Info level logging function */
+        info: (...msg: any[]) => void;
+        /** Warning level logging function */
+        warn: (...msg: any[]) => void;
+        /** Error level logging function */
+        error: (...msg: any[]) => void;
+      };
 
-      /**
-       * The logging level.
-       * @default connect.ChatSession.LogLevel.INFO
-       */
+      /** The logging level */
       readonly level?: ChatLogLevel[keyof ChatLogLevel];
+
+      /** Flag to use default logger */
+      readonly useDefaultLogger?: boolean;
     };
-    readonly features?: any;
+
+    /** AWS Region for the chat service */
+    readonly region?: string;
+
+    /** Feature configurations */
+    readonly features?: {
+      /** Message receipt configuration */
+      messageReceipts?: {
+        /** Enable/disable Read/Delivered receipts */
+        shouldSendMessageReceipts?: boolean;
+        /** Throttle time in milliseconds before sending Read/Delivered receipt */
+        throttleTime?: number;
+      };
+    };
+
+    /** Custom user agent suffix */
     readonly customUserAgentSuffix?: string;
+
+    /** WebSocket manager configuration for React Native */
+    readonly webSocketManagerConfig?: {
+      isNetworkOnline: () => boolean;
+    }
   }
 
   interface ChatLogger {
@@ -150,8 +204,37 @@ declare namespace connect {
   // Chat session
   // ============
 
+  /**
+   * Represents the network connection status
+   */
+  interface NetworkLinkStatus {
+    readonly NeverEstablished: "NeverEstablished";
+    readonly Establishing: "Establishing";
+    readonly Established: "Established";
+    readonly Broken: "Broken";
+  }
+
+  /**
+   * The ChatController interface that handles the core chat functionality
+   */
+  interface ChatController {
+    subscribe(eventName: string, callback: (event: unknown) => void): void;
+    sendMessage(args: SendMessageArgs): Promise<ParticipantServiceResponse<SendMessageResult>>;
+    sendAttachment(args: SendAttachmentArgs): Promise<ParticipantServiceResponse<SendAttachmentResult>>;
+    downloadAttachment(args: DownloadAttachmentArgs): Promise<Blob>;
+    sendEvent(args: SendEventArgs): Promise<ParticipantServiceResponse<SendEventResult>>;
+    getTranscript(args: GetTranscriptArgs): Promise<ParticipantServiceResponse<GetTranscriptResult>>;
+    connect(args?: ConnectArgs): Promise<ConnectChatResult>;
+    getChatDetails(): ChatDetails;
+    describeView(args: DescribeViewArgs): Promise<ParticipantServiceResponse<DescribeViewResult>>;
+    getAuthenticationUrl(args: GetAuthenticationUrlArgs): Promise<ParticipantServiceResponse<GetAuthenticationUrlResult>>;
+    cancelParticipantAuthentication(args: CancelParticipantAuthenticationArgs): Promise<ParticipantServiceResponse<void>>;
+    cleanUpOnParticipantDisconnect?(): void;
+    disconnectParticipant?(): Promise<ParticipantServiceResponse<void>>;
+  }
+
   interface ChatSessionInterface {
-    controller: any;
+    controller: ChatController;
 
     /** Gets the chat session details. */
     getChatDetails(): ChatDetails;
@@ -398,7 +481,7 @@ declare namespace connect {
     onParticipantInvited(handler: (event: ChatMessageEvent) => void): void;
 
     /**
-     * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.autodisconnection" event is created by any participant. 
+     * Subscribes an event handler that triggers whenever a "application/vnd.amazonaws.connect.event.participant.autodisconnection" event is created by any participant.
      * @param handler The event handler.
      */
     onAutoDisconnection(handler: (event: ChatMessageEvent) => void): void;
@@ -458,9 +541,15 @@ declare namespace connect {
     | "application/vnd.amazonaws.connect.event.message.delivered"
     | "application/vnd.amazonaws.connect.event.participant.joined"
     | "application/vnd.amazonaws.connect.event.participant.left"
+    | "application/vnd.amazonaws.connect.event.participant.idle"
+    | "application/vnd.amazonaws.connect.event.participant.returned"
+    | "application/vnd.amazonaws.connect.event.participant.invited"
+    | "application/vnd.amazonaws.connect.event.participant.autodisconnection"
     | "application/vnd.amazonaws.connect.event.transfer.succeeded"
     | "application/vnd.amazonaws.connect.event.transfer.failed"
     | "application/vnd.amazonaws.connect.event.chat.ended"
+    | "application/vnd.amazonaws.connect.event.chat.rehydrated"
+    | "application/vnd.amazonaws.connect.event.connection.acknowledged"
     | "application/vnd.amazonaws.connect.event.authentication.initiated"
     | "application/vnd.amazonaws.connect.event.authentication.succeeded"
     | "application/vnd.amazonaws.connect.event.authentication.failed"
@@ -473,7 +562,22 @@ declare namespace connect {
   type ChatMessageContentType =
     | "text/plain"
     | "text/markdown"
-    | "application/json";
+    | "text/csv"
+    | "application/msword"
+    | "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    | "application/json"
+    | "application/pdf"
+    | "application/vnd.ms-powerpoint"
+    | "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    | "application/vnd.ms-excel"
+    | "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    | "image/jpeg"
+    | "image/png"
+    | "audio/wav"
+    | "audio/x-wav"
+    | "audio/vnd.wave"
+    | "application/vnd.amazonaws.connect.message.interactive"
+    | "application/vnd.amazonaws.connect.message.interactive.response";
 
   type ChatContentType = ChatEventContentType | ChatMessageContentType;
 
@@ -804,48 +908,48 @@ declare namespace connect {
     readonly Id: string;
   }
 
-    /**
-   * Represents the response of the Amazon Connect Participant Service `CompleteAttachmentUpload` API.
-   * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CompleteAttachmentUpload.html
-   */
+  /**
+ * Represents the response of the Amazon Connect Participant Service `CompleteAttachmentUpload` API.
+ * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CompleteAttachmentUpload.html
+ */
   interface SendAttachmentResult {
   }
 
+  /**
+ * An object that is transformed to a request of the Amazon Connect Participant Service `SendMessage` API.
+ * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendMessage.html#API_SendMessage_RequestSyntax
+ */
+  interface DescribeViewArgs {
     /**
-   * An object that is transformed to a request of the Amazon Connect Participant Service `SendMessage` API.
-   * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendMessage.html#API_SendMessage_RequestSyntax
-   */
-    interface DescribeViewArgs {
-      /**
-       * The identifier of the Amazon Connect instance. You can find the instanceId in the ARN of
-       * the instance.
-       * @public
-       */
-      InstanceId: string | undefined;
-
-      /**
-       * The ViewId of the view. This must be an ARN for Amazon Web Services managed views.
-       * @public
-       */
-      viewToken: string | undefined;
-      /**
-       * additional metadata to echo back in response
-       * @public
-       */
-      metadata: any;
-    }
-  
-    /**
-     * Represents the response of the Amazon Connect Participant Service `SendMessage` API.
-     * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendMessage.html#API_SendMessage_ResponseSyntax
+     * The identifier of the Amazon Connect instance. You can find the instanceId in the ARN of
+     * the instance.
+     * @public
      */
-    interface DescribeViewResult {
-     /**
-       * All view data is contained within the View object.
-       * @public
-       */
-      View?: View;
-    }
+    InstanceId: string | undefined;
+
+    /**
+     * The ViewId of the view. This must be an ARN for Amazon Web Services managed views.
+     * @public
+     */
+    viewToken: string | undefined;
+    /**
+     * additional metadata to echo back in response
+     * @public
+     */
+    metadata?: unknown;
+  }
+
+  /**
+   * Represents the response of the Amazon Connect Participant Service `SendMessage` API.
+   * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendMessage.html#API_SendMessage_ResponseSyntax
+   */
+  interface DescribeViewResult {
+    /**
+      * All view data is contained within the View object.
+      * @public
+      */
+    View?: View;
+  }
 
   // ======
   // Events
@@ -888,15 +992,15 @@ declare namespace connect {
   interface ChatAuthenticationInitiatedEvent {
     readonly chatDetails: ChatDetails;
     readonly data: ChatEventData & {
-      ContentType: string;
-      content: string;
+      ContentType: "application/vnd.amazonaws.connect.event.authentication.initiated";
+      Content: string; // Contains JSON with SessionId
     };
   }
 
   interface ChatParticipantDisplayNameUpdatedEvent {
     readonly chatDetails: ChatDetails;
     readonly data: ChatEventData & {
-      ContentType: string;
+      ContentType: "application/vnd.amazonaws.connect.event.participant.displayname.updated";
       DisplayName: string;
     };
   }
@@ -908,48 +1012,51 @@ declare namespace connect {
     };
   }
 
+  /**
+   * Client-side metrics service for tracking API metrics (count, latency, error count)
+   */
   interface CSMService {
     widgetType: string;
     logger: {
-      options: any;
-      debug(...args: any[]): any;
-      info(...args: any[]): any;
-      warn(...args: any[]): any;
-      error(...args: any[]): any;
-      advancedLog(...args: any[]): any;
-      _shouldLog(level: any): boolean;
-      _writeToClientLogger(level: any, logStatement: any): any;
-      _log(level: any, args: any): any;
-      _convertToSingleStatement(args: any): string;
-      _convertToString(arg: any): any;
+      options: Record<string, unknown>;
+      debug(...args: unknown[]): void;
+      info(...args: unknown[]): void;
+      warn(...args: unknown[]): void;
+      error(...args: unknown[]): void;
+      advancedLog(...args: unknown[]): void;
+      _shouldLog(level: number): boolean;
+      _writeToClientLogger(level: number, logStatement: string): void;
+      _log(level: number, args: unknown[]): void;
+      _convertToSingleStatement(args: unknown[]): string;
+      _convertToString(arg: unknown): string;
     };
     csmInitialized: boolean;
-    metricsToBePublished: any[];
-    agentMetricToBePublished: any[];
+    metricsToBePublished: Record<string, unknown>[];
+    agentMetricToBePublished: Record<string, unknown>[];
     MAX_RETRY: number;
     loadCsmScriptAndExecute(): void;
     initializeCSM(): void;
-    updateCsmConfig(csmConfig: any): void;
+    updateCsmConfig(csmConfig: Record<string, unknown>): void;
     _hasCSMFailedToImport(): boolean;
     getDefaultDimensions(): {
       name: string;
       value: string;
     }[];
-    addMetric(metric: any): void;
-    setDimensions(metric: any, dimensions: any): void;
-    addLatencyMetric(method: any, timeDifference: any, category: any, otherDimensions?: any[]): void;
-    addLatencyMetricWithStartTime(method: any, startTime: any, category: any, otherDimensions?: any[]): void;
-    addCountAndErrorMetric(method: any, category: any, error: any, otherDimensions?: any[]): void;
-    addCountMetric(method: any, category: any, otherDimensions?: any[]): void;
-    addAgentCountMetric(metricName: any, count: any): void;
+    addMetric(metric: Record<string, unknown>): void;
+    setDimensions(metric: Record<string, unknown>, dimensions: Array<{ name: string, value: string }>): void;
+    addLatencyMetric(method: string, timeDifference: number, category: string, otherDimensions?: Array<{ name: string, value: string }>): void;
+    addLatencyMetricWithStartTime(method: string, startTime: number, category: string, otherDimensions?: Array<{ name: string, value: string }>): void;
+    addCountAndErrorMetric(method: string, category: string, error: boolean, otherDimensions?: Array<{ name: string, value: string }>): void;
+    addCountMetric(method: string, category: string, otherDimensions?: Array<{ name: string, value: string }>): void;
+    addAgentCountMetric(metricName: string, count: number): void;
   }
 
   interface SetFeatureFlag {
-    (feature: any): void
+    (feature: string): void
   }
 
   interface SetRegionOverride {
-    (regionOverride: any): void
+    (regionOverride: string): void
   }
 
   interface View {
