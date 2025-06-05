@@ -103,7 +103,7 @@ class ChatController {
         this.argsValidator.validateSendMessage(args);
         const connectionToken = this.connectionHelper.getConnectionToken();
         return this.chatClient
-            .sendMessage(connectionToken, args.message, args.contentType)
+            .sendMessage(connectionToken, args.message, args.contentType, args.clientToken)
             .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_MESSAGE, startTime, args.contentType))
             .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_MESSAGE, startTime, args.contentType));
     }
@@ -177,7 +177,8 @@ class ChatController {
             .sendEvent(
                 connectionToken,
                 args.contentType,
-                content
+                content,
+                args.clientToken
             )
             .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType))
             .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType));

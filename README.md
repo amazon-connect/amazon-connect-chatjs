@@ -407,7 +407,8 @@ The response `data` is the same as the [API response body](https://docs.aws.amaz
 
 ```js
 const awsSdkResponse = await chatSession.sendEvent({
-  contentType: "application/vnd.amazonaws.connect.event.typing"
+  contentType: "application/vnd.amazonaws.connect.event.typing",
+  clientToken: "12345", // (optional) idempotency key
 });
 const { AbsoluteTime, Id } = awsSdkResponse.data;
 ```
@@ -431,7 +432,8 @@ The response `data` is the same as the [API response body](https://docs.aws.amaz
 ```js
 const awsSdkResponse = await chatSession.sendMessage({
   contentType: "text/plain",
-  message: "Hello World!"
+  message: "Hello World!",
+  clientToken: "12345", // (optional) idempotency key
 });
 const { AbsoluteTime, Id } = awsSdkResponse.data;
 ```
