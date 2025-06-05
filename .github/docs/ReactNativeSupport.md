@@ -2,7 +2,7 @@
 
 ChatJS relies on browser's `window.navigator.onLine` for network monitoring, which isn't available in React Native (Hermes JS Engine). Instead, you'll need to configure ChatJS to use React Native's NetInfo API for network status checks.
 
-> 📌 Important: ensure you are using `amazon-connect-chatjs >= v1.5.0`
+> 📌 Important: ensure you are using `amazon-connect-chatjs >= v1.5.0` `>=1.5.0 <=3.0.2`
 
 For a boilerplate React Native demo application, check out the [Amazon Connect React Native ChatJS Example](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/mobileChatExamples/connectReactNativeChat).
 
