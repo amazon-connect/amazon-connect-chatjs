@@ -1,6 +1,6 @@
 # Configure ChatJS WebSocket Manager for React Native Environment
 
-> 📌 Important: ensure you are using `amazon-connect-chatjs >= v1.5.0`
+> 📌 Important: ensure you are using `amazon-connect-chatjs >= v1.5.0` (`>=1.5.0 <=3.0.2`)
 
 ChatJS is officially supported in React Native environments, but requires additional configuration. You'll need to pass in a custom network status hook, since the browser-based `window.navigator.onLine` isn't available.
 
