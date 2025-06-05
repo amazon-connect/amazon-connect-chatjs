@@ -1,7 +1,7 @@
 # Amazon Connect ChatJS
 
 [![npm](https://img.shields.io/npm/v/amazon-connect-chatjs.svg?color=orange)](https://www.npmjs.com/package/amazon-connect-chatjs) ![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg) [![Apache License](https://img.shields.io/badge/License-Apache%202.0-yellow.svg)](https://opensource.org/licenses/Apache-2.0) ![package size](https://img.shields.io/bundlephobia/minzip/amazon-connect-chatjs)
-
+R
 A browser-based JavaScript library to build custom chat interfaces for [Amazon Connect](https://docs.aws.amazon.com/connect/latest/adminguide/what-is-amazon-connect.html). Includes TypeScript support, fully managed WebSocket connections, and simplified API calls with internal AWS SDK integration. The Amazon Connect Chat javascript library (ChatJS) gives you the power to customize your chat experience and build your own chat widget or agent chat UI.
 
 This stand-alone library supports customer chat sessions by default. For agent chat sessions and **Custom Contact Control Panel (CCP)**, please integrate with the [Amazon Connect Streams](https://github.com/aws/amazon-connect-streams) library.
@@ -1994,7 +1994,7 @@ connect.ChatSession.create({
 
 ### React Native Support
 
-> 📌 Important: ensure you are using `amazon-connect-chatjs >= v1.5.0`
+> 📌 Important: ensure you are using `amazon-connect-chatjs >= v1.5.0` (`>=1.5.0 <=3.0.2`)
 
 ChatJS is officially supported in React Native environments, but requires additional configuration. You'll need to pass in a custom network status hook, since the browser-based `window.navigator.onLine` isn't available.
 
