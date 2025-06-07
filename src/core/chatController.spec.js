@@ -807,6 +807,77 @@ describe("ChatController", () => {
     });
 
     describe("Test ChatController induvidual methods with mock data", () => {
+        describe("sendEvent content handling", () => {
+            let chatController;
+
+            beforeEach(async () => {
+                chatController = getChatController();
+                await chatController.connect();
+                chatClient.sendEvent.mockClear();
+            });
+
+            test("handles string content without modification", async () => {
+                const stringContent = JSON.stringify({ key: "value" });
+                const args = {
+                    contentType: CONTENT_TYPE.participantJoined,
+                    content: stringContent
+                };
+
+                await chatController.sendEvent(args);
+
+                expect(chatClient.sendEvent).toHaveBeenCalledWith(
+                    "token",
+                    CONTENT_TYPE.participantJoined,
+                    stringContent
+                );
+            });
+
+            test("stringifies object content", async () => {
+                const objectContent = { key: "value" };
+                const args = {
+                    contentType: CONTENT_TYPE.participantJoined,
+                    content: objectContent
+                };
+
+                await chatController.sendEvent(args);
+
+                expect(chatClient.sendEvent).toHaveBeenCalledWith(
+                    "token",
+                    CONTENT_TYPE.participantJoined,
+                    JSON.stringify(objectContent)
+                );
+            });
+
+            test("handles null content as null", async () => {
+                const args = {
+                    contentType: CONTENT_TYPE.participantJoined,
+                    content: null
+                };
+
+                await chatController.sendEvent(args);
+
+                expect(chatClient.sendEvent).toHaveBeenCalledWith(
+                    "token",
+                    CONTENT_TYPE.participantJoined,
+                    null
+                );
+            });
+
+            test("handles undefined content as null", async () => {
+                const args = {
+                    contentType: CONTENT_TYPE.participantJoined
+                };
+
+                await chatController.sendEvent(args);
+
+                expect(chatClient.sendEvent).toHaveBeenCalledWith(
+                    "token",
+                    CONTENT_TYPE.participantJoined,
+                    null
+                );
+            });
+        });
+
         test("getEventTypeFromContentType should return default INCOMING_MESSAGE type", () => {
             const chatController = getChatController();
             chatController._forwardChatEvent = jest.fn();
