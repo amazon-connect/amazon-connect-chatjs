@@ -1,6 +1,6 @@
 import Utils from "../utils";
 import { IllegalArgumentException } from "./exceptions";
-import { CONTENT_TYPE, SESSION_TYPES } from "../constants";
+import { CONTENT_TYPE, SESSION_TYPES, SEND_MESSAGE_CONTENT_TYPES, SEND_EVENT_CONTENT_TYPES } from "../constants";
 
 class ChatControllerArgsValidator {
     /*eslint-disable no-unused-vars*/
@@ -13,7 +13,15 @@ class ChatControllerArgsValidator {
         if (!Utils.isString(args.message)) {
             throw new IllegalArgumentException(args.message + "is not a valid message");
         }
-        this.validateContentType(args.contentType);
+        this.validateSendMessageContentType(args.contentType);
+    }
+
+    validateSendMessageContentType(contentType) {
+        Utils.assertIsEnum(contentType, SEND_MESSAGE_CONTENT_TYPES, "contentType for sendMessage");
+    }
+
+    validateSendEventContentType(contentType) {
+        Utils.assertIsEnum(contentType, SEND_EVENT_CONTENT_TYPES, "contentType for sendEvent");
     }
 
     validateContentType(contentType) {
@@ -39,7 +47,7 @@ class ChatControllerArgsValidator {
     }
 
     validateSendEvent(args) {
-        this.validateContentType(args.contentType);
+        this.validateSendEventContentType(args.contentType);
     }
 
     /*eslint-disable no-unused-vars*/
