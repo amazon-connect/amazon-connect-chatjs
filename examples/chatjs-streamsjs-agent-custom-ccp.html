@@ -147,6 +147,12 @@ Custom Agent Chat UI integrating ChatJS and StreamsJS for Amazon Connect Chat
     </div>
   </div>
 
+  <script>
+    if (typeof global === 'undefined') {
+        window.global = window;
+    }
+  </script>
+
   <script type="module">
     // Option 1: import ChatJS and StreamJS directly from npm (order is important)
     import "https://unpkg.com/amazon-connect-streams@2.18.1"; // imports `window.connect.*`
