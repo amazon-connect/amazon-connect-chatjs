@@ -4,12 +4,13 @@ import {
 } from "./exceptions";
 import { ChatClientFactory } from "../client/client";
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
-import { SESSION_TYPES, CHAT_EVENTS, FEATURES } from "../constants";
+import { SESSION_TYPES, CHAT_EVENTS, FEATURES, STREAM_JS, CHAT_SESSION_ERROR_TYPES, STREAM_METRIC_ERROR_TYPES } from "../constants";
 import { GlobalConfig } from "../globalConfig";
 import { ChatController } from "./chatController";
 import { LogManager, LogLevel, Logger } from "../log";
 import { csmService } from "../service/csmService";
 import WebSocketManager from "../lib/amazon-connect-websocket-manager";
+import StreamMetricUtils from "../streamMetricUtils";
 
 const logger = LogManager.getLogger({ prefix: "ChatJS-GlobalConfig" });
 
@@ -52,24 +53,31 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
     }
 
     _createChatController(sessionType, chatDetailsInput, options, websocketManager) {
-        var chatDetails = this.argsValidator.normalizeChatDetails(chatDetailsInput);
-        var logMetaData = {
-            contactId: chatDetails.contactId,
-            participantId: chatDetails.participantId,
-            sessionType
-        };
+        try {
+            var chatDetails = this.argsValidator.normalizeChatDetails(chatDetailsInput);
+            var logMetaData = {
+                contactId: chatDetails.contactId,
+                participantId: chatDetails.participantId,
+                sessionType,
+            };
 
-        var chatClient = ChatClientFactory.getCachedClient(options, logMetaData);
-    
-        var args = {
-            sessionType: sessionType,
-            chatDetails,
-            chatClient,
-            websocketManager: websocketManager,
-            logMetaData,
-        };
+            var chatClient = ChatClientFactory.getCachedClient(options, logMetaData);
 
-        return new ChatController(args);
+            var args = {
+                sessionType: sessionType,
+                chatDetails,
+                chatClient,
+                websocketManager: websocketManager,
+                logMetaData,
+            };
+
+            return new ChatController(args);
+        }
+        catch (err){
+            const metricName = `${STREAM_JS}-${window.connect.version}-${CHAT_SESSION_ERROR_TYPES.CHATJS_CREATE_SESSION_ERROR}`;
+            StreamMetricUtils.publishError(metricName, STREAM_METRIC_ERROR_TYPES.INTERNAL_SERVER_ERROR);
+            logger.error("Error while creating chat session", err);
+        }
     }
 }
 
