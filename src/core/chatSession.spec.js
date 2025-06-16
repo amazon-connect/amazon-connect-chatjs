@@ -2,8 +2,14 @@ import { ChatSession, ChatSessionObject } from "./chatSession";
 import { csmService } from "../service/csmService";
 import { CHAT_SESSION_FACTORY } from "./chatSession";
 import { ChatController } from "./chatController";
-import { SESSION_TYPES, CHAT_EVENTS } from "../constants";
+import { SESSION_TYPES, CHAT_EVENTS, STREAM_JS, CHAT_SESSION_ERROR_TYPES, STREAM_METRIC_ERROR_TYPES } from "../constants";
 import { GlobalConfig } from "../globalConfig";
+import StreamMetricUtils from "../streamMetricUtils";
+
+jest.mock('../streamMetricUtils', () => ({
+    publishError: jest.fn()
+}));
+
 describe("CSM", () => {
 
     beforeEach(() => {
@@ -197,5 +203,76 @@ describe("chatSession", () => {
         expect(controller.getChatDetails).toHaveBeenCalled();
         session.cancelParticipantAuthentication(args);
         expect(controller.cancelParticipantAuthentication).toHaveBeenCalled();
+    });
+});
+
+describe('CHAT_SESSION_FACTORY._createChatController', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        // Mock window.connect.version
+        window.connect = { version: '2.18.1' };
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
+    test('should publish error metric when error occurs', () => {
+        // Arrange
+        const sessionType = 'AGENT';
+        const chatDetails = { contactId: '123', participantId: '456' };
+        const options = {};
+        const websocketManager = {};
+
+        // Mock argsValidator to throw an error
+        jest.spyOn(CHAT_SESSION_FACTORY.argsValidator, 'normalizeChatDetails')
+            .mockImplementation(() => {
+                throw new Error('Test error');
+            });
+
+        // Act
+        CHAT_SESSION_FACTORY._createChatController(
+            sessionType,
+            chatDetails,
+            options,
+            websocketManager
+        );
+
+        // Assert
+        const expectedMetricName = `${STREAM_JS}-${window.connect.version}-${CHAT_SESSION_ERROR_TYPES.CHATJS_CREATE_SESSION_ERROR}`;
+        expect(StreamMetricUtils.publishError).toHaveBeenCalledWith(
+            expectedMetricName,
+            STREAM_METRIC_ERROR_TYPES.INTERNAL_SERVER_ERROR
+        );
+    });
+
+    test('should create ChatController successfully when no error occurs', () => {
+        // Arrange
+        const sessionType = 'AGENT';
+        const chatDetails = { contactId: '123', participantId: '456' };
+        const options = {};
+        const websocketManager = {};
+        const normalizedChatDetails = {
+            contactId: '123',
+            participantId: '456',
+            normalized: true
+        };
+
+        // Mock successful normalization
+        jest.spyOn(CHAT_SESSION_FACTORY.argsValidator, 'normalizeChatDetails')
+            .mockReturnValue(normalizedChatDetails);
+
+        // Act
+        const result = CHAT_SESSION_FACTORY._createChatController(
+            sessionType,
+            chatDetails,
+            options,
+            websocketManager
+        );
+
+        // Assert
+        expect(result).toBeDefined();
+        expect(result.constructor.name).toBe('ChatController');
+        expect(StreamMetricUtils.publishError).not.toHaveBeenCalled();
     });
 });

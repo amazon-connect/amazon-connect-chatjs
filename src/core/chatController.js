@@ -10,7 +10,10 @@ import {
     ACPS_METHODS,
     FEATURES,
     CREATE_PARTICIPANT_CONACK_FAILURE,
-    CREATE_PARTICIPANT_CONACK_API_CALL_COUNT
+    CREATE_PARTICIPANT_CONACK_API_CALL_COUNT,
+    STREAM_JS,
+    CHAT_SESSION_ERROR_TYPES,
+    STREAM_METRIC_ERROR_TYPES
 } from "../constants";
 import { LogManager } from "../log";
 import { EventBus } from "./eventbus";
@@ -20,6 +23,7 @@ import LpcConnectionHelper from "./connectionHelpers/LpcConnectionHelper";
 import MessageReceiptsUtil from './MessageReceiptsUtil';
 import { csmService } from "../service/csmService";
 import { GlobalConfig } from "../globalConfig";
+import StreamMetricUtils from "../streamMetricUtils";
 
 var NetworkLinkStatus = {
     NeverEstablished: "NeverEstablished",
@@ -387,6 +391,9 @@ class ChatController {
             metadata: this.sessionMetadata
         };
         this._sendInternalLogToServer(this.logger.error("Connect Failed. Error: ", errorObject));
+
+        const metricName = `${STREAM_JS}-${window.connect.version}-${CHAT_SESSION_ERROR_TYPES.CHATJS_CONNECT_SESSION_ERROR}`;
+        StreamMetricUtils.publishError(metricName, STREAM_METRIC_ERROR_TYPES.INTERNAL_SERVER_ERROR);
 
         return Promise.reject(errorObject);
     }

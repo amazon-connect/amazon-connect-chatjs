@@ -200,3 +200,21 @@ export const DUMMY_ENDED_EVENT = {
     Type: "EVENT",
     InitialContactId: ""
 };
+
+export const STREAM_JS = "StreamsJS";
+
+export const CUSTOM_CCP_NAME = "ChatJS";
+
+export const CHAT_SESSION_ERROR_TYPES = {
+    CHATJS_CREATE_SESSION_ERROR: "ChatJSCreateSessionError",
+    CHATJS_CONNECT_SESSION_ERROR: "ChatJSConnectSessionError",
+};
+
+export const STREAM_METRIC_TYPES = {
+    EVENT_METRIC:"EventMetric",
+    SUCCESS_METRIC: "SuccessMetric",
+};
+
+export const STREAM_METRIC_ERROR_TYPES = {
+    INTERNAL_SERVER_ERROR: "InternalServerError",
+};
