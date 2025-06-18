@@ -251,7 +251,7 @@ describe("ChatController", () => {
             const chatController = getChatController();
             await chatController.connect();
             const response = await chatController.sendMessage(args);
-            expect(chatClient.sendMessage).toHaveBeenCalledWith("token", "message", chatMessageContentType);
+            expect(chatClient.sendMessage).toHaveBeenCalledWith("token", "message", chatMessageContentType, undefined);
             expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.SEND_MESSAGE, CSM_CATEGORY.API, false, [{name: "ContentType", value: chatMessageContentType}]);
             expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.SEND_MESSAGE, expect.anything(), CSM_CATEGORY.API, [{name: "ContentType", value: chatMessageContentType}]);
             expect(response.metadata).toBe("metadata");
@@ -287,7 +287,7 @@ describe("ChatController", () => {
         const chatController = getChatController();
         await chatController.connect();
         const response = await chatController.sendEvent(args);
-        expect(chatClient.sendEvent).toHaveBeenCalledWith("token", CONTENT_TYPE.participantJoined, null);
+        expect(chatClient.sendEvent).toHaveBeenCalledWith("token", CONTENT_TYPE.participantJoined, null, undefined);
         expect(response.metadata).toBe("metadata");
         expect(response.testField).toBe("test");
         expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.SEND_EVENT, CSM_CATEGORY.API, false, [{name: "ContentType", value: CONTENT_TYPE.participantJoined}]);

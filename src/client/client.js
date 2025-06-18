@@ -237,13 +237,16 @@ class AWSChatClient extends ChatClient {
       });
   }
 
-  sendMessage(connectionToken, content, contentType) {
+  sendMessage(connectionToken, content, contentType, clientToken) {
     let self = this;
     let params = {
       Content: content,
       ContentType: contentType,
       ConnectionToken: connectionToken
     };
+    if (clientToken) {
+      params['ClientToken'] = clientToken;
+    }
     const command = new SendMessageCommand(params);
     return self._sendRequest(command)
       .then((res) => {
@@ -320,25 +323,28 @@ class AWSChatClient extends ChatClient {
   }
 
 
-  sendEvent(connectionToken, contentType, content) {
+  sendEvent(connectionToken, contentType, content, clientToken) {
     let self = this;
     if (contentType === CONTENT_TYPE.typing) {
-      return self.throttleEvent(connectionToken, contentType, content)
+      return self.throttleEvent(connectionToken, contentType, content, clientToken)
     }
-    return self._submitEvent(connectionToken, contentType, content);
+    return self._submitEvent(connectionToken, contentType, content, clientToken);
   }
 
-  throttleEvent = throttle((connectionToken, contentType, content) => {
-    return this._submitEvent(connectionToken, contentType, content);
+  throttleEvent = throttle((connectionToken, contentType, content, clientToken) => {
+    return this._submitEvent(connectionToken, contentType, content, clientToken);
   }, TYPING_VALIDITY_TIME, { trailing: false, leading: true })
 
-  _submitEvent(connectionToken, contentType, content) {
+  _submitEvent(connectionToken, contentType, content, clientToken) {
     let self = this;
     var params = {
       ConnectionToken: connectionToken,
       ContentType: contentType,
       Content: content
     };
+    if (clientToken) {
+      params.ClientToken = clientToken;
+    }
     const command = new SendEventCommand(params);
     const logContent = { contentType };
     return self._sendRequest(command)

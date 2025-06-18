@@ -408,6 +408,7 @@ The response `data` is the same as the [API response body](https://docs.aws.amaz
 ```js
 const awsSdkResponse = await chatSession.sendEvent({
   contentType: "application/vnd.amazonaws.connect.event.typing"
+  clientToken: "12345", // (optional) idempotency key
 });
 const { AbsoluteTime, Id } = awsSdkResponse.data;
 ```
@@ -417,7 +418,7 @@ Wraps the [SendEvent](https://docs.aws.amazon.com/connect-participant/latest/API
 The arguments are based on the [API request body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html#API_SendEvent_RequestSyntax) with the following differences:
 
 - Fields are in `camelCase`.
-- `ClientToken` cannot be specified.
+- `ClientToken`  is optional and can be used to ensure idempotency of the request.
 - `ContentType` allows the following values:
   - `"application/vnd.amazonaws.connect.event.typing"`
   - `"application/vnd.amazonaws.connect.event.connection.acknowledged"`
@@ -432,6 +433,7 @@ The response `data` is the same as the [API response body](https://docs.aws.amaz
 const awsSdkResponse = await chatSession.sendMessage({
   contentType: "text/plain",
   message: "Hello World!"
+  clientToken: "12345", // (optional) idempotency key
 });
 const { AbsoluteTime, Id } = awsSdkResponse.data;
 ```
@@ -441,7 +443,7 @@ Wraps the [SendMessage](https://docs.aws.amazon.com/connect-participant/latest/A
 The arguments are based on the [API request body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendMessage.html#API_SendMessage_RequestSyntax) with the following differences:
 
 - Fields are in `camelCase`.
-- `ClientToken` cannot be specified.
+- `ClientToken`  is optional and can be used to ensure idempotency of the request.
 
 The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendMessage.html#API_SendMessage_ResponseSyntax).
 

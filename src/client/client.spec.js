@@ -44,6 +44,22 @@ describe("client test cases", () => {
       expect(chatClient._submitEvent).toHaveBeenCalledTimes(1);
     });
 
+    test("sendEvent supports clientToken parameter for idempotency", () => {
+      jest.clearAllMocks();
+      const submitEventSpy = jest.spyOn(chatClient, "_submitEvent").mockImplementation(() => {});
+      
+      // Use a non-typing content type to avoid throttling
+      chatClient.sendEvent(connectionToken, CONTENT_TYPE.read, content, "client-token-123");
+      
+      expect(submitEventSpy).toHaveBeenCalledTimes(1);
+      expect(submitEventSpy).toHaveBeenLastCalledWith(
+        connectionToken, 
+        CONTENT_TYPE.read, 
+        content, 
+        "client-token-123"
+      );
+    });
+
     test("Other events should not be throttled", () => {
       for (let key in CONTENT_TYPE) {
         jest.clearAllTimers();
@@ -84,6 +100,67 @@ describe("client test cases", () => {
       test("Promise rejects in error case", async () => {
         jest.spyOn(chatClient, "_sendRequest").mockRejectedValueOnce(new Error());
         expect(chatClient.describeView("token", "type")).rejects.toThrow();
+      });
+      test("Supports clientToken parameter for idempotency", async () => {
+        const sendRequestSpy = jest.spyOn(chatClient, "_sendRequest").mockResolvedValue({});
+        await chatClient.sendMessage("token", "content", "contentType", "client-token-123");
+        
+        expect(sendRequestSpy).toHaveBeenCalledTimes(1);
+        const commandCall = sendRequestSpy.mock.calls[0][0];
+        expect(commandCall.input).toEqual({
+          ConnectionToken: "token",
+          Content: "content",
+          ContentType: "contentType",
+          ClientToken: "client-token-123"
+        });
+      });
+      test("Works without clientToken parameter", async () => {
+        const sendRequestSpy = jest.spyOn(chatClient, "_sendRequest").mockResolvedValue({});
+        await chatClient.sendMessage("token", "content", "contentType");
+        
+        expect(sendRequestSpy).toHaveBeenCalledTimes(1);
+        const commandCall = sendRequestSpy.mock.calls[0][0];
+        expect(commandCall.input).toEqual({
+          ConnectionToken: "token",
+          Content: "content",
+          ContentType: "contentType"
+        });
+        expect(commandCall.input.ClientToken).toBeUndefined();
+      });
+    });
+    
+    describe("_submitEvent", () => {
+      beforeEach(() => {
+        // Remove the mock implementation for _submitEvent so we can test it directly
+        chatClient._submitEvent.mockRestore();
+      });
+      
+      test("Supports clientToken parameter for idempotency", async () => {
+        const sendRequestSpy = jest.spyOn(chatClient, "_sendRequest").mockResolvedValue({});
+        await chatClient._submitEvent("token", "contentType", "content", "client-token-123");
+        
+        expect(sendRequestSpy).toHaveBeenCalledTimes(1);
+        const commandCall = sendRequestSpy.mock.calls[0][0];
+        expect(commandCall.input).toEqual({
+          ConnectionToken: "token",
+          ContentType: "contentType",
+          Content: "content",
+          ClientToken: "client-token-123"
+        });
+      });
+      
+      test("Works without clientToken parameter", async () => {
+        const sendRequestSpy = jest.spyOn(chatClient, "_sendRequest").mockResolvedValue({});
+        await chatClient._submitEvent("token", "contentType", "content");
+        
+        expect(sendRequestSpy).toHaveBeenCalledTimes(1);
+        const commandCall = sendRequestSpy.mock.calls[0][0];
+        expect(commandCall.input).toEqual({
+          ConnectionToken: "token",
+          ContentType: "contentType",
+          Content: "content"
+        });
+        expect(commandCall.input.ClientToken).toBeUndefined();
       });
     });
 
