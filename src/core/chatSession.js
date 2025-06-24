@@ -4,7 +4,7 @@ import {
 } from "./exceptions";
 import { ChatClientFactory } from "../client/client";
 import { ChatServiceArgsValidator } from "./chatArgsValidator";
-import { SESSION_TYPES, CHAT_EVENTS, FEATURES, STREAM_JS, CHAT_SESSION_ERROR_TYPES, STREAM_METRIC_ERROR_TYPES } from "../constants";
+import { SESSION_TYPES, CHAT_EVENTS, FEATURES, STREAM_JS, CHAT_SESSION_ERROR_TYPES, STREAM_METRIC_ERROR_TYPES, CHAT_SESSION_SUCCESS_TYPES } from "../constants";
 import { GlobalConfig } from "../globalConfig";
 import { ChatController } from "./chatController";
 import { LogManager, LogLevel, Logger } from "../log";
@@ -70,6 +70,8 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
                 websocketManager: websocketManager,
                 logMetaData,
             };
+
+            StreamMetricUtils.publishEvent(`${STREAM_JS}-${window.connect.version}-${CHAT_SESSION_SUCCESS_TYPES.CHATJS_CONNECT_SESSION_SUCCESS}`);
 
             return new ChatController(args);
         }

@@ -210,6 +210,10 @@ export const CHAT_SESSION_ERROR_TYPES = {
     CHATJS_CONNECT_SESSION_ERROR: "ChatJSConnectSessionError",
 };
 
+export const CHAT_SESSION_SUCCESS_TYPES = {
+    CHATJS_CONNECT_SESSION_SUCCESS: "ChatJSConnectSessionSuccess"
+};
+
 export const STREAM_METRIC_TYPES = {
     EVENT_METRIC:"EventMetric",
     SUCCESS_METRIC: "SuccessMetric",
