@@ -2,12 +2,13 @@ import { ChatSession, ChatSessionObject } from "./chatSession";
 import { csmService } from "../service/csmService";
 import { CHAT_SESSION_FACTORY } from "./chatSession";
 import { ChatController } from "./chatController";
-import { SESSION_TYPES, CHAT_EVENTS, STREAM_JS, CHAT_SESSION_ERROR_TYPES, STREAM_METRIC_ERROR_TYPES } from "../constants";
+import { SESSION_TYPES, CHAT_EVENTS, STREAM_JS, CHAT_SESSION_ERROR_TYPES, STREAM_METRIC_ERROR_TYPES, CHAT_SESSION_SUCCESS_TYPES } from "../constants";
 import { GlobalConfig } from "../globalConfig";
 import StreamMetricUtils from "../streamMetricUtils";
 
 jest.mock('../streamMetricUtils', () => ({
-    publishError: jest.fn()
+    publishError: jest.fn(),
+    publishEvent: jest.fn()
 }));
 
 describe("CSM", () => {
@@ -246,33 +247,36 @@ describe('CHAT_SESSION_FACTORY._createChatController', () => {
         );
     });
 
-    test('should create ChatController successfully when no error occurs', () => {
-        // Arrange
-        const sessionType = 'AGENT';
-        const chatDetails = { contactId: '123', participantId: '456' };
-        const options = {};
-        const websocketManager = {};
-        const normalizedChatDetails = {
-            contactId: '123',
-            participantId: '456',
-            normalized: true
-        };
-
-        // Mock successful normalization
-        jest.spyOn(CHAT_SESSION_FACTORY.argsValidator, 'normalizeChatDetails')
-            .mockReturnValue(normalizedChatDetails);
-
-        // Act
-        const result = CHAT_SESSION_FACTORY._createChatController(
-            sessionType,
-            chatDetails,
-            options,
-            websocketManager
-        );
-
-        // Assert
-        expect(result).toBeDefined();
-        expect(result.constructor.name).toBe('ChatController');
-        expect(StreamMetricUtils.publishError).not.toHaveBeenCalled();
-    });
+    test('should create ChatController successfully when no error occurs', () => {      
+        // Arrange                                                                      
+        const sessionType = 'AGENT';                                                    
+        const chatDetails = { contactId: '123', participantId: '456' };                 
+        const options = {};                                                             
+        const websocketManager = {};                                                    
+        const normalizedChatDetails = {                                                 
+            contactId: '123',                                                           
+            participantId: '456',                                                       
+            normalized: true                                                            
+        };                                                                              
+                                                                                      
+        // Mock successful normalization                                                
+        jest.spyOn(CHAT_SESSION_FACTORY.argsValidator, 'normalizeChatDetails')          
+            .mockReturnValue(normalizedChatDetails);                                    
+                                                                                      
+        // Act                                                                          
+        const result = CHAT_SESSION_FACTORY._createChatController(                      
+            sessionType,                                                                
+            chatDetails,                                                                
+            options,                                                                    
+            websocketManager                                                            
+        );                                                                              
+                                                                                      
+        // Assert                                                                       
+        expect(result).toBeDefined();                                                   
+        expect(result.constructor.name).toBe('ChatController');                         
+        expect(StreamMetricUtils.publishError).not.toHaveBeenCalled();                                                                                                          
+        expect(StreamMetricUtils.publishEvent).toHaveBeenCalledWith(                    
+            expect.stringContaining(CHAT_SESSION_SUCCESS_TYPES.CHATJS_CONNECT_SESSION_SUCCESS)      
+        );                                                                              
+    }); 
 });

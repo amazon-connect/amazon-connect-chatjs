@@ -14,6 +14,3 @@ export const metadata = {
         environment: 'production'
     }
 };
-
-// Expose the metadata with frozen object to prevent tampering
-export const getMetadata = () => Object.freeze({ ...metadata });
