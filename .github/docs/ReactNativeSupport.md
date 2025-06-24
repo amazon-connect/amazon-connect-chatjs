@@ -1,8 +1,10 @@
-# Configure ChatJS WebSocket Manager for React Native Environment
+# Configure ChatJS for React Native Environment
+
+1. Install `amazon-connect-chatjs` version 1.5.0 or newer
+
+2. Configure ChatJS WebSocket manager
 
 ChatJS relies on browser's `window.navigator.onLine` for network monitoring, which isn't available in React Native (Hermes JS Engine). Instead, you'll need to configure ChatJS to use React Native's NetInfo API for network status checks.
-
-> 📌 Important: ensure you are using `amazon-connect-chatjs >= v1.5.0` `>=1.5.0 <=3.0.2`
 
 For a boilerplate React Native demo application, check out the [Amazon Connect React Native ChatJS Example](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/mobileChatExamples/connectReactNativeChat).
 
@@ -45,6 +47,54 @@ const MyChatUI = () => {
   }, [])
 }
 ```
+3. Configure polyfills for missing Web APIs in React Native environment
+
+For `amazon-connect-chatjs >= v3.0.3`, you need to configure polyfills to support certain Web APIs. These include:
+ * Crypto
+ * ReadableStream
+ * TextEncoding
+ * ArrayBuffer
+
+ The following code snippet implements polyfills for the above mentioned unsupported web APIs.
+ ```
+ // polyfills.js
+ import 'react-native-get-random-values'; // polyfill for Crypto getRandomValues() method
+import { polyfill as polyfillEncoding } from 'react-native-polyfill-globals/src/encoding';
+import { ReadableStream } from "web-streams-polyfill";
+
+//polyfill for readable stream
+if (typeof global.ReadableStream !== 'function') {
+  global.ReadableStream = ReadableStream;
+}
+
+
+//polyfill for arrayBuffer
+if (!global.Response || !global.Response.prototype.arrayBuffer) {
+  if (global.Response) {
+    global.Response.prototype.arrayBuffer = function() {
+      return Promise.resolve(this._bodyInit);
+    };
+  }
+}
+
+// Also ensure Blob has arrayBuffer method
+if (global.Blob && !global.Blob.prototype.arrayBuffer) {
+  global.Blob.prototype.arrayBuffer = function() {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        resolve(reader.result);
+      };
+      reader.readAsArrayBuffer(this);
+    });
+  };
+}
+
+//polyfill for text encoding
+polyfillEncoding();
+
+ ```
+
 
 ## Troubleshooting
 
