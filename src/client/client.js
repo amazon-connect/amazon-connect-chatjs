@@ -316,6 +316,25 @@ class AWSChatClient extends ChatClient {
       });
   }
 
+  getAttachmentURL(connectionToken, attachmentId) {
+    let self = this;
+    const params = {
+      AttachmentId: attachmentId,
+      ConnectionToken: connectionToken
+    };
+    const logContent = { attachmentId };
+    const command = new GetAttachmentCommand(params);
+    return self._sendRequest(command)
+        .then(response => {
+          this.logger.debug("Successfully get attachment URL", logContent);
+          return response.data.Url;
+        })
+        .catch(err => {
+          this.logger.error("Get attachment URL error", err, logContent);
+          return Promise.reject(err);
+        });
+  }
+
   _downloadUrl(url) {
     return fetch(url)
       .then(t => t.blob())
