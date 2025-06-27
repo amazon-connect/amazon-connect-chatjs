@@ -35,6 +35,7 @@ export const ACPS_METHODS = {
     SEND_MESSAGE: "SendMessage",
     SEND_ATTACHMENT: "SendAttachment",
     DOWNLOAD_ATTACHMENT: "DownloadAttachment",
+    GET_ATTACHMENT_URL: "GetAttachmentURL",
     SEND_EVENT: "SendEvent",
     GET_TRANSCRIPT: "GetTranscript",
     DISCONNECT_PARTICIPANT: "DisconnectParticipant",

@@ -2,6 +2,9 @@ import { ChatClientFactory } from "./client";
 import { CONTENT_TYPE } from "../constants";
 import { GlobalConfig } from "../globalConfig";
 import packageJson from '../../package.json';
+import {
+  GetAttachmentCommand,
+} from "./aws-sdk-connectparticipant";
   
 jest.mock('../globalConfig', () => {
   return {
@@ -245,6 +248,79 @@ describe("client test cases", () => {
         const testClient = ChatClientFactory._createAwsClient(options, logMetaData);
         expect(testClient.chatClient.config.customUserAgent.length).toEqual(1);
         expect(testClient.chatClient.config.customUserAgent[0][0]).toEqual(`AmazonConnect-ChatJS/${packageJson.version} Test/1.0.0`);
+      });
+    });
+
+    describe("getAttachmentURL", () => {
+      test("Successfully gets attachment URL", async () => {
+        const mockResponse = {
+          data: {
+            Url: "https://example.com/attachment"
+          }
+        };
+        jest.spyOn(chatClient, "_sendRequest").mockResolvedValueOnce(mockResponse);
+
+        const result = await chatClient.getAttachmentURL("connectionToken", "attachmentId");
+
+        expect(result).toBe("https://example.com/attachment");
+        expect(chatClient._sendRequest).toHaveBeenCalledWith(
+            expect.any(GetAttachmentCommand)
+        );
+
+        const commandCall = chatClient._sendRequest.mock.calls[0][0];
+        expect(commandCall.input).toEqual({
+          AttachmentId: "attachmentId",
+          ConnectionToken: "connectionToken"
+        });
+      });
+
+      test("Handles error when getting attachment URL", async () => {
+        const mockError = new Error("Failed to get URL");
+        jest.spyOn(chatClient, "_sendRequest").mockRejectedValueOnce(mockError);
+
+        await expect(
+            chatClient.getAttachmentURL("connectionToken", "attachmentId")
+        ).rejects.toEqual(mockError);
+
+        expect(chatClient._sendRequest).toHaveBeenCalledWith(
+            expect.any(GetAttachmentCommand)
+        );
+
+        const commandCall = chatClient._sendRequest.mock.calls[0][0];
+        expect(commandCall.input).toEqual({
+          AttachmentId: "attachmentId",
+          ConnectionToken: "connectionToken"
+        });
+      });
+
+      test("Logs success and error messages appropriately", async () => {
+        const mockResponse = {
+          data: {
+            Url: "https://example.com/attachment"
+          }
+        };
+
+        const debugSpy = jest.spyOn(chatClient.logger, "debug");
+        const errorSpy = jest.spyOn(chatClient.logger, "error");
+
+        jest.spyOn(chatClient, "_sendRequest").mockResolvedValueOnce(mockResponse);
+        await chatClient.getAttachmentURL("connectionToken", "attachmentId");
+        expect(debugSpy).toHaveBeenCalledWith(
+            "Successfully get attachment URL",
+            { attachmentId: "attachmentId" }
+        );
+
+        const mockError = new Error("Failed to get URL");
+        jest.spyOn(chatClient, "_sendRequest").mockRejectedValueOnce(mockError);
+        try {
+          await chatClient.getAttachmentURL("connectionToken", "attachmentId");
+        } catch (err) {
+          expect(errorSpy).toHaveBeenCalledWith(
+              "Get attachment URL error",
+              mockError,
+              { attachmentId: "attachmentId" }
+          );
+        }
       });
     });
   });

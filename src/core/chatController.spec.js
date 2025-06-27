@@ -1070,4 +1070,88 @@ describe("ChatController", () => {
             expect.anything()
         );
     });
+
+    describe('ChatController - getAttachmentURL', () => {
+        beforeEach(() => {
+            jest.clearAllMocks();
+            // Mock the getAttachmentURL method
+            chatClient.getAttachmentURL = jest.fn();
+            csmService.addCountAndErrorMetric = jest.fn();
+            csmService.addLatencyMetricWithStartTime = jest.fn();
+        });
+
+        test("getAttachmentURL works as expected", async () => {
+            const args = {
+                metadata: "metadata",
+                attachmentId: "attachmentId",
+            };
+            const chatController = getChatController();
+            await chatController.connect();
+
+            const mockUrl = "https://example.com/attachment";
+            chatClient.getAttachmentURL.mockResolvedValueOnce(mockUrl);
+
+            const response = await chatController.getAttachmentURL(args);
+
+            // Verify getAttachmentURL was called with correct parameters
+            expect(chatClient.getAttachmentURL).toHaveBeenCalledWith("token", "attachmentId");
+            expect(response).toBe(mockUrl);
+
+            // Verify metrics
+            expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(
+                ACPS_METHODS.GET_ATTACHMENT_URL,
+                CSM_CATEGORY.API,
+                false,
+                []
+            );
+            expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(
+                ACPS_METHODS.GET_ATTACHMENT_URL,
+                expect.any(Number),
+                CSM_CATEGORY.API,
+                []
+            );
+        });
+
+        test("getAttachmentURL throws an error", async () => {
+            const args = {
+                metadata: "metadata",
+                attachmentId: "attachmentId",
+            };
+            const chatController = getChatController();
+            await chatController.connect();
+
+            const error = new Error('Failed to get URL');
+            chatClient.getAttachmentURL.mockRejectedValueOnce(error);
+
+            await expect(chatController.getAttachmentURL(args))
+                .rejects
+                .toMatchObject({ metadata: "metadata" });
+
+            // Verify error metrics
+            expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(
+                ACPS_METHODS.GET_ATTACHMENT_URL,
+                CSM_CATEGORY.API,
+                true,
+                []
+            );
+            expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(
+                ACPS_METHODS.GET_ATTACHMENT_URL,
+                expect.any(Number),
+                CSM_CATEGORY.API,
+                []
+            );
+        });
+
+        test("getAttachmentURL fails when not connected", async () => {
+            const args = {
+                metadata: "metadata",
+                attachmentId: "attachmentId",
+            };
+            const chatController = getChatController();
+
+            await expect(chatController.getAttachmentURL(args))
+                .rejects
+                .toBe('Failed to call getAttachmentURL, No active connection');
+        });
+    });
 });
