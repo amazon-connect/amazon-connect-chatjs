@@ -76,7 +76,10 @@ class ChatController {
                 : [];
             csmService.addLatencyMetricWithStartTime(method, startTime, CSM_CATEGORY.API, contentTypeDimension);
             csmService.addCountAndErrorMetric(method, CSM_CATEGORY.API, false, contentTypeDimension);
-            response.metadata = metadata;
+            // Only add metadata if method is not GetAttachementURL
+            if (method !== ACPS_METHODS.GET_ATTACHMENT_URL) {
+                response.metadata = metadata;
+            }
             return response;
         };
     }
@@ -137,6 +140,19 @@ class ChatController {
             .downloadAttachment(connectionToken, args.attachmentId)
             .then(this.handleRequestSuccess(metadata, ACPS_METHODS.DOWNLOAD_ATTACHMENT, startTime))
             .catch(this.handleRequestFailure(metadata, ACPS_METHODS.DOWNLOAD_ATTACHMENT, startTime));
+    }
+
+    getAttachmentURL(args){
+        if (!this._validateConnectionStatus('getAttachementURL')) {
+            return Promise.reject(`Failed to call getAttachmentURL, No active connection`);
+        }
+        const startTime = new Date().getTime();
+        const metadata = args.metadata || null;
+        const connectionToken = this.connectionHelper.getConnectionToken();
+        return this.chatClient
+            .getAttachmentURL(connectionToken, args.attachmentId)
+            .then(this.handleRequestSuccess(metadata, ACPS_METHODS.GET_ATTACHMENT_URL, startTime))
+            .catch(this.handleRequestFailure(metadata, ACPS_METHODS.GET_ATTACHMENT_URL, startTime));
     }
 
     sendEventIfChatHasNotEnded(...args) {

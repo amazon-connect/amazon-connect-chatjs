@@ -505,6 +505,21 @@ The arguments are based on the [API request body](https://docs.aws.amazon.com/co
 The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html#API_GetAttachment_ResponseSyntax).
 `chatSession.downloadAttachment()` invokes the GetAttachment using the AttachmentId as a request parameter and fetches the Attachment from the S3 bucket using the pre-signed URL received in the GetAttachment API response.
 
+##### `chatSession.getAttachmentURL()`
+
+```js
+const s3Url = await chatSession.getAttachmentURL({
+  attachmentId: "string"
+});
+```
+
+Wraps the [GetAttachment](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html) API.
+The arguments are based on the [API request body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html#API_GetAttachment_RequestSyntax) with the following differences:
+
+- Fields are in `camelCase`.
+  The response is a url string.
+  `chatSession.getAttachmentURL()` invokes the GetAttachment using the AttachmentId as a request parameter and directly returns pre-signed URL received in the GetAttachment API response.
+
 ##### `customerChatSession.disconnectParticipant()`
 
 ```js

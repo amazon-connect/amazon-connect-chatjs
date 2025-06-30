@@ -186,6 +186,10 @@ export class ChatSession {
         return this.controller.downloadAttachment(args);
     }
 
+    getAttachmentURL(args){
+        return this.controller.getAttachmentURL(args);
+    }
+
     connect(args) {
         return this.controller.connect(args);
     }
