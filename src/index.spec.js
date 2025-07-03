@@ -33,15 +33,4 @@ describe("Chat JS index file", () => {
         expect(global.connect.ChatJS.version).toBe(process.env.npm_package_version); // "3.x.x"
         expect(global.connect.ChatJS.version).toBe(pkg.version); // "3.x.x"
     });
-
-    test('should not allow modification of ChatJS.version', () => {
-        const originalValue = global.connect.ChatJS.version;
-
-        expect(() => {
-            global.connect.ChatJS.version = 'MODIFIED VERSION';
-        }).toThrow(TypeError);
-
-        expect(global.connect.ChatJS.version).toBe(originalValue);
-        expect(global.connect.ChatJS.version).not.toBe('MODIFIED VERSION');
-    });
 });

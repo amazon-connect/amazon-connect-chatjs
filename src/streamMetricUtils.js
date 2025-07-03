@@ -70,4 +70,28 @@ StreamMetricUtils.publishError = function (metricName, errorType) {
 
 };
 
+/**
+ * Method to publish the StreamJS Event metric
+ * Based on the logic of the publishNativeCustomCCPMetrics function in AmazonConnectCCPUI package,
+ * for event related metrics, the metric type should be EventMetric with the data.count = 1
+ * @param metricName Event Metric name
+ */
+StreamMetricUtils.publishEvent = function (metricName) {
+    let eventMetric = {
+        name: `${CUSTOM_CCP_NAME}${STREAM_METRIC_TYPES.EVENT_METRIC}`,
+        data: {
+            count: 1
+        },
+        dimensions: {
+            category: metricName,
+            streamsJSVersion: window.connect.version,
+            chatJSVersion: window.connect.ChatJS.version,
+        }
+    };
+    StreamMetricUtils.publishMetric(eventMetric);
+
+    logger.info("publishEventMetric - The Event Metric is", eventMetric);
+
+};
+
 export default StreamMetricUtils;
