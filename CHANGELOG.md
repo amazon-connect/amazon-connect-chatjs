@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.2]
+### Added
+- Add StreamsJS event metric when createChatController is success (#279)
+- Expose new session function that returns the S3 Url of the attachment instead of content (#281)
+- create sample files for local e2e testing (#265)
+- add polyfill code snippet for react native support (#280)
+
 ## [3.1.1]
 ### Added
 - Add client-side idempotency to chatSession.sendMessage() and .sendEvent() (#275)
