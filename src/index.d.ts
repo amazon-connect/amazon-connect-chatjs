@@ -839,6 +839,9 @@ declare namespace connect {
 
     /** The message content type. */
     contentType: ChatMessageContentType;
+
+    /* (Optional) Idempotency token */
+    clientToken?: string;
   }
 
   /**
@@ -870,6 +873,9 @@ declare namespace connect {
 
     /** The content type of the request. */
     contentType: ChatEventContentType;
+
+    /** (Optional) Idempotency token */
+    clientToken?: string;
   }
 
   /**
