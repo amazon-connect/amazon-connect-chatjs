@@ -1,7 +1,7 @@
 # Amazon Connect ChatJS
 
 [![npm](https://img.shields.io/npm/v/amazon-connect-chatjs.svg?color=orange)](https://www.npmjs.com/package/amazon-connect-chatjs) ![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg) [![Apache License](https://img.shields.io/badge/License-Apache%202.0-yellow.svg)](https://opensource.org/licenses/Apache-2.0) ![package size](https://img.shields.io/bundlephobia/minzip/amazon-connect-chatjs)
-R
+
 A browser-based JavaScript library to build custom chat interfaces for [Amazon Connect](https://docs.aws.amazon.com/connect/latest/adminguide/what-is-amazon-connect.html). Includes TypeScript support, fully managed WebSocket connections, and simplified API calls with internal AWS SDK integration. The Amazon Connect Chat javascript library (ChatJS) gives you the power to customize your chat experience and build your own chat widget or agent chat UI.
 
 This stand-alone library supports customer chat sessions by default. For agent chat sessions and **Custom Contact Control Panel (CCP)**, please integrate with the [Amazon Connect Streams](https://github.com/aws/amazon-connect-streams) library.
@@ -56,8 +56,8 @@ This stand-alone library supports customer chat sessions by default. For agent c
 
 - AWS Account
 - [Amazon Connect instance](https://docs.aws.amazon.com/connect/latest/adminguide/amazon-connect-instances.html)
-- Contact Flow ready to receive chat contacts
-- IAM permissions for `connect:StartChatContact`
+- Contact Flow ready to receive chat contacts (recommended: ["Sample inbound flow"](https://docs.aws.amazon.com/connect/latest/adminguide/sample-inbound-flow.html))
+- Deploy a [startChatContactAPI](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/cloudformationTemplates/startChatContactAPI) CloudFormation stack
 
 ### Installation
 
@@ -164,6 +164,7 @@ import "amazon-connect-chatjs"; // imports the "window.connect"
 connect.ChatSession.setGlobalConfig({ region: "us-west-2" });
 
 // Step 1: Get chat details from your backend
+// Boilerplate endpoint: https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/cloudformationTemplates/startChatContactAPI
 const response = await fetch("<url-to-personal-chat-backend>", { method: "POST" });
 const chatDetails = await response.json();
 
@@ -1196,6 +1197,18 @@ The arguments are based on the [API request body](https://docs.aws.amazon.com/co
 The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html#API_GetAttachment_ResponseSyntax).
 `chatSession.downloadAttachment()` invokes the GetAttachment using the AttachmentId as a request parameter and fetches the Attachment from the S3 bucket using the pre-signed URL received in the GetAttachment API response.
 
+##### `chatSession.getAttachmentURL()`
+```js
+const s3Url = await chatSession.getAttachmentURL({
+  attachmentId: "string"
+});
+```
+Wraps the [GetAttachment](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html) API.
+The arguments are based on the [API request body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html#API_GetAttachment_RequestSyntax) with the following differences:
+- Fields are in `camelCase`.
+  The response is a url string.
+  `chatSession.getAttachmentURL()` invokes the GetAttachment using the AttachmentId as a request parameter and directly returns pre-signed URL received in the GetAttachment API response.
+
 #### `chatSession.getChatDetails()`
 
 ```js
@@ -1829,9 +1842,11 @@ npm install
 ```
 
 ```sh
+# Generate a bundle file
 npm run release
-# generates bundle file: dist/amazon-connect-chat.js
+# output: dist/amazon-connect-chat.js
 
+# Run unit tests
 npm test
 ```
 
@@ -1994,11 +2009,11 @@ connect.ChatSession.create({
 
 ### React Native Support
 
-> 📌 Important: ensure you are using `amazon-connect-chatjs >= v1.5.0` (`>=1.5.0 <=3.0.2`)
+> 📌 Important: ensure you are using `amazon-connect-chatjs >= v1.5.0`
 
-ChatJS is officially supported in React Native environments, but requires additional configuration. You'll need to pass in a custom network status hook, since the browser-based `window.navigator.onLine` isn't available.
+ChatJS is supported in React Native environments but requires additional configuration. You'll need to pass in a network status listener, since the browser-based `window.navigator.onLine` isn't available.
 
-To configure ChatJS WebSocketManager for React Native environments, it's recommended to use the [react-native-netinfo](https://github.com/react-native-netinfo/react-native-netinfo) library, and pass this to ChatJS `webSocketManagerConfig` input.
+To configure ChatJS WebSocketManager for React Native environments, it's recommended to use the [react-native-netinfo](https://github.com/react-native-netinfo/react-native-netinfo) library.
 
 For a boilerplate React Native demo application, check out the [Amazon Connect React Native ChatJS Example](https://github.com/amazon-connect/amazon-connect-chat-ui-examples/tree/master/mobileChatExamples/connectReactNativeChat).
 
