@@ -1439,7 +1439,7 @@ chatSession.onConnectionEstablished(event => {
 
 ```js
 /**
- * Subscribes an event handler that triggers when the WebSocket connection is lost due to network issues.
+ * Subscribes an event handler that triggers when the WebSocket connection is lost due to network issues or server errors. This includes abnormal closures and unexpected server conditions that terminate the chat connection. The method monitors for connection failures, allowing applications to handle reconnection logic or notify users of connectivity issues.
  * @param {
     chatDetails: Object,
     data: {
@@ -1458,7 +1458,7 @@ chatSession.onConnectionLost(event => {
 
 ```js
 /**
- * Subscribes an event handler that triggers when the WebSocket connection is broken or terminated.
+ * Subscribes an event handler that triggers when the WebSocket connection fails to initialize or encounters permanent failures such as invalid configuration or authorization errors. This is primarily used for internal ChatJS logic and indicates a terminal state where no further connection retries will be attempted.
  * @param {
     chatDetails: Object,
     data: {
