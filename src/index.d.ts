@@ -222,6 +222,7 @@ declare namespace connect {
     sendMessage(args: SendMessageArgs): Promise<ParticipantServiceResponse<SendMessageResult>>;
     sendAttachment(args: SendAttachmentArgs): Promise<ParticipantServiceResponse<SendAttachmentResult>>;
     downloadAttachment(args: DownloadAttachmentArgs): Promise<Blob>;
+    getAttachmentURL(args: GetAttachmentURLArgs): Promise<string>;
     sendEvent(args: SendEventArgs): Promise<ParticipantServiceResponse<SendEventResult>>;
     getTranscript(args: GetTranscriptArgs): Promise<ParticipantServiceResponse<GetTranscriptResult>>;
     connect(args?: ConnectArgs): Promise<ConnectChatResult>;
@@ -335,6 +336,16 @@ declare namespace connect {
     downloadAttachment<T>(
       args: WithMetadata<DownloadAttachmentArgs, T>
     ): Promise<WithMetadata<Blob, T>>;
+
+    /**
+     * Gets the URL for an attachment
+     * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html
+     * @param args The arguments of the operation.
+     */
+    getAttachmentURL(args: GetAttachmentURLArgs): Promise<string>;
+    getAttachmentURL<T>(
+      args: WithMetadata<GetAttachmentURLArgs, T>
+    ): Promise<WithMetadata<string, T>>;
 
     /**
      * Sends a message as the current session's participant.
@@ -899,6 +910,14 @@ declare namespace connect {
   }
 
   /**
+   * An object that is transformed to a request of the Amazon Connect Participant Service `GetAttachment` API for URL retrieval.
+   * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html
+   */
+  interface GetAttachmentURLArgs {
+    attachmentId: string;
+  }
+
+  /**
    * Represents the response of the Amazon Connect Participant Service `SendEvent` API.
    * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html#API_SendEvent_ResponseSyntax
    */
@@ -919,6 +938,15 @@ declare namespace connect {
  * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CompleteAttachmentUpload.html
  */
   interface SendAttachmentResult {
+  }
+
+  /**
+   * Represents the response of the Amazon Connect Participant Service `GetAttachment` API for URL retrieval.
+   * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_GetAttachment.html
+   */
+  interface GetAttachmentURLResult {
+    /** The pre-signed URL for the attachment. */
+    readonly Url: string;
   }
 
   /**
