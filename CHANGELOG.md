@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.1.5]
 ### Changed
-- Remove verbose websocket incoming message logging from LpcConnectionHelper to improve performance and reduce log noise
+- Remove verbose websocket incoming message logging from LpcConnectionHelper
 
 ## [3.1.4]
 ### Added
