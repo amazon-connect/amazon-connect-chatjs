@@ -281,7 +281,6 @@ class LpcConnectionHelperBase {
             parsedMessage = JSON.parse(message.content);
             this.eventBus.trigger(ConnectionHelperEvents.IncomingMessage, parsedMessage);
             csmService.addCountMetric(WEBSOCKET_EVENTS.IncomingMessage, CSM_CATEGORY.API);
-            this.logger.info("this.eventBus trigger Websocket incoming message", ConnectionHelperEvents.IncomingMessage, parsedMessage);
         } catch (e) {
             this._sendInternalLogToServer(this.logger.error("Wrong message format"));
         }
