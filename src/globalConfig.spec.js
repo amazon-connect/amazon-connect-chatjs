@@ -29,7 +29,8 @@ const configInput = {
     ...stageRegionCell,
     endpoint: "test-endpoint",
     regionOverride: "test-regionOverride",
-    customUserAgentSuffix: "test-customUserAgentOverride"
+    customUserAgentSuffix: "test-customUserAgentOverride",
+    useDualStack: true
 };
 const logMetaData = {contactId: "abc"};
 const defaultMessageReceiptsError = "WARN [2022-04-12T23:12:36.677Z] ChatJS-GlobalConfig: enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false ";
@@ -54,6 +55,7 @@ describe("globalConfig", () => {
             expect(GlobalConfig.region).toEqual("us-west-2");
             expect(GlobalConfig.stage).toEqual("prod");
             expect(GlobalConfig.reconnect).toBe(true);
+            expect(GlobalConfig.useDualStack).toBe(false);
         });
         it("should update all and fetch correct config", () => {
             GlobalConfig.update(configInput);
@@ -65,6 +67,11 @@ describe("globalConfig", () => {
             expect(GlobalConfig.getEndpointOverride()).toEqual(configInput.endpoint);
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(true);
             expect(GlobalConfig.getCustomUserAgentSuffix()).toEqual(configInput.customUserAgentSuffix);
+            expect(GlobalConfig.getDualStackFlag()).toEqual(configInput.useDualStack);
+
+            // Test disabling useDualStack after enabling it
+            GlobalConfig.update({useDualStack: false});
+            expect(GlobalConfig.getDualStackFlag()).toEqual(false);
         });
         it("should update stage, region and cell and fetch correct config", () => {
             GlobalConfig.updateStageRegionCell(stageRegionCell);
