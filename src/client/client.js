@@ -38,14 +38,16 @@ class ChatClientFactoryImpl {
     if (this.clientCache[region]) {
       return this.clientCache[region];
     }
-    let client = this._createAwsClient(region, logMetaData);
+    let client = this._createAwsClient(region, logMetaData, GlobalConfig.getDualStackFlag());
     this.clientCache[region] = client;
     return client;
   }
 
-  _createAwsClient(region, logMetaData) {
+  _createAwsClient(region, logMetaData, useDualStack) {
     let endpointOverride = GlobalConfig.getEndpointOverride();
-    let endpointUrl = `https://participant.connect.${region}.amazonaws.com`;
+    let ipv4EndpointUrl = `https://participant.connect.${region}.amazonaws.com`;
+    let dualStackEndpointUrl = `https://participant.connect.${region}.api.aws`;
+    let endpointUrl = useDualStack ? dualStackEndpointUrl: ipv4EndpointUrl;
     if (endpointOverride) {
       endpointUrl = endpointOverride;
     }

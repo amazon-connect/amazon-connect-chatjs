@@ -1,4 +1,4 @@
-import { FEATURES, DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS } from "./constants";
+import { FEATURES, DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS, USE_DUAL_STACK_DEFAULT_VALUE } from "./constants";
 import { LogManager } from "./log";
 
 class GlobalConfigImpl {
@@ -38,6 +38,7 @@ class GlobalConfigImpl {
         this.messageReceiptThrottleTime = DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS;
         this.featureChangeListeners = [];
         this.customUserAgentSuffix = "";
+        this.useDualStack = USE_DUAL_STACK_DEFAULT_VALUE;
     }
     update(configInput) {
         var config = configInput || {};
@@ -51,6 +52,7 @@ class GlobalConfigImpl {
         const features = Array.isArray(config.features) ? config.features : this.features.values;
         this.features["values"] = Array.isArray(features) ? [...features] : new Array();
         this.customUserAgentSuffix = config.customUserAgentSuffix || this.customUserAgentSuffix;
+        this.useDualStack = config.useDualStack ?? this.useDualStack;
     }
 
     updateStageRegionCell(config) {
@@ -111,6 +113,10 @@ class GlobalConfigImpl {
         }
         const featureValues = Array.isArray(this.features["values"]) ? this.features["values"] : [];
         this.features["values"] = [...featureValues, feature];
+    }
+
+    getDualStackFlag() {
+        return this.useDualStack;
     }
 
     //private method
