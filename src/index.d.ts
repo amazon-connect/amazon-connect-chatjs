@@ -172,12 +172,6 @@ declare namespace connect {
     readonly webSocketManagerConfig?: {
       isNetworkOnline: () => boolean;
     }
-
-    /**
-     * Whether to use dual-stack endpoints for network connectivity.
-     * @default false
-     */
-    readonly useDualStack?: boolean;
   }
 
   interface ChatLogger {

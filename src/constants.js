@@ -223,5 +223,3 @@ export const STREAM_METRIC_TYPES = {
 export const STREAM_METRIC_ERROR_TYPES = {
     INTERNAL_SERVER_ERROR: "InternalServerError",
 };
-
-export const USE_DUAL_STACK_DEFAULT_VALUE = false;

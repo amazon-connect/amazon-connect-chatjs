@@ -13,7 +13,6 @@ jest.mock('../globalConfig', () => {
       getRegion: jest.fn(),
       getEndpointOverride: jest.fn(),
       getCustomUserAgentSuffix: jest.fn(),
-      getDualStackFlag: jest.fn(),
     }
   }
 });
