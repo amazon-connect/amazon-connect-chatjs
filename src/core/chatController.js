@@ -347,6 +347,9 @@ class ChatController {
                 this._forwardChatEvent(CHAT_EVENTS.CHAT_ENDED, {
                     data: null,
                     chatDetails: this.getChatDetails()
+                }, () => {
+                    this._participantDisconnected = true;
+                    this.cleanUpOnParticipantDisconnect();    
                 });
                 this.breakConnection();
             }
@@ -365,8 +368,8 @@ class ChatController {
         }
     }
 
-    _forwardChatEvent(eventName, eventData) {
-        this.pubsub.triggerAsync(eventName, eventData);
+    _forwardChatEvent(eventName, eventData, callback) {
+        this.pubsub.triggerAsync(eventName, eventData, callback);
     }
 
     _onConnectSuccess(response, connectionDetailsProvider) {
@@ -442,9 +445,6 @@ class ChatController {
             .then(response => {
                 this._sendInternalLogToServer(this.logger.info("Disconnect participant successfully"));
 
-                this._participantDisconnected = true;
-                this.cleanUpOnParticipantDisconnect();
-                this.breakConnection();
                 csmService.addLatencyMetricWithStartTime(ACPS_METHODS.DISCONNECT_PARTICIPANT, startTime, CSM_CATEGORY.API);
                 csmService.addCountAndErrorMetric(ACPS_METHODS.DISCONNECT_PARTICIPANT, CSM_CATEGORY.API, false);
                 response = {...(response || {})};

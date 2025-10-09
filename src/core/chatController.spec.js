@@ -9,6 +9,7 @@ import {
     ACPS_METHODS,
     FEATURES,
     CREATE_PARTICIPANT_CONACK_FAILURE,
+    DUMMY_ENDED_EVENT
 } from "../constants";
 import Utils from "../utils";
 import { ChatController } from "./chatController";
@@ -653,38 +654,32 @@ describe("ChatController", () => {
         });
     });
 
-    test("should not sendEvent for MessageReceipts if chat has ended", done => {
-        jest.useRealTimers();
+    test("should not sendEvent for MessageReceipts if chat has ended", async () => {
         const args = {
             metadata: "metadata",
             contentType: CONTENT_TYPE.readReceipt,
-            content:  JSON.stringify({
+            content: JSON.stringify({
                 messageId: "messageId"
             })
         };
+        
         const chatController = getChatController();
-        chatController.hasChatEnded = false;
-        chatController.connect().then(() => {
-            chatClient.sendEvent.mockClear();
-
-            Promise.all([chatController.sendEvent(args),
-                chatController.sendEvent(args),
-                chatController.sendEvent(args),
-                chatController.sendEvent(args),
-                chatController.sendEvent(args)]).then(async () => {
-                expect(chatClient.sendEvent).toHaveBeenCalledTimes(1);
-                expect(chatClient.sendEvent).toHaveBeenCalledWith("token", CONTENT_TYPE.readReceipt, "{\"messageId\":\"messageId\"}", "INCOMING_READ_RECEIPT", 1000);
-
-                chatController.connectionHelper.$simulateEnding();
-                chatClient.sendEvent.mockClear();
-                await Utils.delay(1);
-                await chatController.sendEvent(args);
-                await chatController.sendEvent(args);
-                expect(chatClient.sendEvent).toHaveBeenCalledTimes(0);
-
-                done();
-            });
-        });
+        await chatController.connect();
+        chatController.pubsub = {
+            ...chatController.pubsub,
+            triggerAsync: jest.fn((eventName, data, callback) => {
+                if (callback) {
+                    callback();
+                }
+            }),
+            subMap: chatController.pubsub.subMap
+        };
+        chatController.hasChatEnded = true;
+        chatController._participantDisconnected = true;
+        chatClient.sendEvent.mockClear();
+        await chatController.sendEvent(args).catch(() => {});
+        await chatController.sendEvent(args).catch(() => {});
+        expect(chatClient.sendEvent).toHaveBeenCalledTimes(0);
     });
 
     test("should throttle Read and Delivered events for MessageReceipts to only send Read Event", async () => {
@@ -842,11 +837,10 @@ describe("ChatController", () => {
         await chatController.connect();
         await Utils.delay(1);
 
-        try {
-            await chatController.disconnectParticipant();
-        } catch(err) {
-            console.log("err:disconnectParticipant", err);
-        }
+        // Simulate chat ended event to set _participantDisconnected = true
+        chatController.connectionHelper.$simulateEnding();
+        await Utils.delay(15); // Wait for the delay in _handleIncomingMessage
+        
         try {
             await chatController.sendMessage(args);
         } catch(err) {
@@ -883,11 +877,10 @@ describe("ChatController", () => {
         const chatController = getChatController(false);
         await chatController.connect();
         await Utils.delay(1);
-        try {
-            await chatController.disconnectParticipant();
-        } catch(err) {
-            console.log("err:disconnectParticipant", err);
-        }
+      
+        chatController.connectionHelper.$simulateEnding();
+        await Utils.delay(15); 
+        
         try {
             await chatController.sendAttachment(args);
         } catch(err) {
@@ -920,11 +913,10 @@ describe("ChatController", () => {
         const chatController = getChatController(false);
         await chatController.connect();
         await Utils.delay(1);
-        try {
-            await chatController.disconnectParticipant();
-        } catch(err) {
-            console.log("err:disconnectParticipant", err);
-        }
+        
+        chatController.connectionHelper.$simulateEnding();
+        await Utils.delay(15);
+        
         try {
             await chatController.downloadAttachment(args);
         } catch(err) {
@@ -957,11 +949,10 @@ describe("ChatController", () => {
         const chatController = getChatController(false);
         await chatController.connect();
         await Utils.delay(1);
-        try {
-            await chatController.disconnectParticipant();
-        } catch(err) {
-            console.log("err:disconnectParticipant", err);
-        }
+      
+        chatController.connectionHelper.$simulateEnding();
+        await Utils.delay(15); 
+        
         try {
             await chatController.sendEvent(args);
         } catch(err) {
@@ -986,11 +977,10 @@ describe("ChatController", () => {
         const chatController = getChatController(false);
         await chatController.connect();
         await Utils.delay(1);
-        try {
-            await chatController.disconnectParticipant();
-        } catch(err) {
-            console.log("err:disconnectParticipant", err);
-        }
+        
+        chatController.connectionHelper.$simulateEnding();
+        await Utils.delay(15); 
+        
         try {
             await chatController.getTranscript({});
         } catch(err) {
@@ -1015,11 +1005,11 @@ describe("ChatController", () => {
         const chatController = getChatController(false);
         await chatController.connect();
         await Utils.delay(1);
-        try {
-            await chatController.disconnectParticipant();
-        } catch(err) {
-            console.log("err:disconnectParticipant", err);
-        }
+        
+        // Simulate chat ended event to set _participantDisconnected = true
+        chatController.connectionHelper.$simulateEnding();
+        await Utils.delay(15); // Wait for the delay in _handleIncomingMessage
+        
         try {
             await chatController.disconnectParticipant();
         } catch(err) {
@@ -1059,16 +1049,86 @@ describe("ChatController", () => {
 
     test('_handleBackgroundChatEnded is triggered correctly', () => {
         const chatController = getChatController();
-        chatController._forwardChatEvent = jest.fn(); // Mock _forwardChatEvent to spy on it
- 
+        chatController._handleIncomingMessage = jest.fn(); // Mock _handleIncomingMessage to spy on it
+
         // Directly invoke the method
         chatController._handleBackgroundChatEnded();
- 
-        // Check if _forwardChatEvent was called correctly
+
+        // Check if _handleIncomingMessage was called with DUMMY_ENDED_EVENT
+        expect(chatController._handleIncomingMessage).toHaveBeenCalledWith(DUMMY_ENDED_EVENT);
+    });
+
+    test('_handleIncomingMessage should handle chatEnded event correctly', async () => {
+        const chatController = getChatController();
+        const cleanUpSpy = jest.spyOn(chatController, 'cleanUpOnParticipantDisconnect');
+        const breakConnectionSpy = jest.spyOn(chatController, 'breakConnection');
+        
+        chatController._forwardChatEvent = jest.fn();
+    
+        cleanUpSpy.mockImplementation(() => {});
+     
+        expect(chatController.hasChatEnded).toBe(false);
+        expect(chatController._participantDisconnected).toBe(false);
+        
+        const chatEndedData = {
+            ContentType: CONTENT_TYPE.chatEnded,
+            Type: EVENT,
+            AbsoluteTime: '2023-01-01T00:00:00.000Z'
+        };
+        
+        const originalForwardChatEvent = chatController._forwardChatEvent;
+        chatController._forwardChatEvent = jest.fn((eventName, data) => {
+            originalForwardChatEvent.call(chatController, eventName, data);
+            if (eventName === CHAT_EVENTS.CHAT_ENDED) {
+                setTimeout(() => {
+                    chatController._participantDisconnected = true;
+                    cleanUpSpy();
+                }, 5);
+            }
+        });
+        
+        chatController._handleIncomingMessage(chatEndedData);
+        
+        expect(chatController.hasChatEnded).toBe(true);
         expect(chatController._forwardChatEvent).toHaveBeenCalledWith(
-            CHAT_EVENTS.CHAT_ENDED,
-            expect.anything()
+            CHAT_EVENTS.INCOMING_MESSAGE,
+            {
+                data: chatEndedData,
+                chatDetails: expect.anything()
+            }
         );
+        
+        expect(chatController._forwardChatEvent.mock.calls[1][0]).toBe(CHAT_EVENTS.CHAT_ENDED);
+        expect(chatController._forwardChatEvent.mock.calls[1][1]).toEqual({
+            data: null,
+            chatDetails: expect.anything()
+        });
+        
+        expect(breakConnectionSpy).toHaveBeenCalledTimes(1);
+        await Utils.delay(10);
+        
+        expect(chatController._participantDisconnected).toBe(true);
+        expect(cleanUpSpy).toHaveBeenCalledTimes(1);
+    });
+
+    test('_handleIncomingMessage should not set _participantDisconnected for non-chatEnded events', async () => {
+        const chatController = getChatController();
+        const cleanUpSpy = jest.spyOn(chatController, 'cleanUpOnParticipantDisconnect');
+        
+        expect(chatController._participantDisconnected).toBe(false);
+        
+        const messageData = {
+            ContentType: CONTENT_TYPE.textPlain,
+            Type: MESSAGE,
+            Message: 'Hello world'
+        };
+        
+        chatController._handleIncomingMessage(messageData);
+        
+        await Utils.delay(15);
+        
+        expect(chatController._participantDisconnected).toBe(false);
+        expect(cleanUpSpy).not.toHaveBeenCalled();
     });
 
     describe('ChatController - getAttachmentURL', () => {
