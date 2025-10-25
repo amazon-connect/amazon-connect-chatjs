@@ -497,6 +497,14 @@ class ChatController {
             .catch(this.handleRequestFailure(metadata, ACPS_METHODS.CANCEL_AUTHENTICATION, startTime));
     }
 
+    /**
+     * Returns whether the participant has been disconnected from the chat.
+     * @returns {boolean} True if participant is disconnected, false otherwise
+     */
+    isParticipantDisconnected() {
+        return this._participantDisconnected;
+    }
+
 
     _convertConnectionHelperStatus(connectionHelperStatus) {
         switch (connectionHelperStatus) {

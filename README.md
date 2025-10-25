@@ -1277,6 +1277,17 @@ The response `data` is the same as the [API response body](https://docs.aws.amaz
 
 **Important note:** The session id is only available from the authentication.initiated event which is only emitted when the authenticate customer contact flow block is used. The session id is a 1 time use code.
 
+##### `chatSession.isParticipantDisconnected()`
+
+Returns a boolean indicating whether the participant has been disconnected from the chat. This is useful for checking if the chat session has ended before attempting other operations like `disconnectParticipant()`.
+
+```js
+if (!chatSession.isParticipantDisconnected()) {
+  // Safe to call disconnect or other operations
+  await chatSession.disconnectParticipant();
+}
+```
+
 #### `customerChatSession.disconnectParticipant()`
 
 ```js
