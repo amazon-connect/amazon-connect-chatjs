@@ -1154,4 +1154,25 @@ describe("ChatController", () => {
                 .toBe('Failed to call getAttachmentURL, No active connection');
         });
     });
+
+    describe('ChatController - isParticipantDisconnected', () => {
+        test('isParticipantDisconnected should return false initially', () => {
+            const chatController = getChatController();
+
+            expect(chatController.isParticipantDisconnected()).toBe(false);
+        });
+
+        test('isParticipantDisconnected should return true after chat ended event', async () => {
+            const chatController = getChatController();
+            await chatController.connect();
+            const mockCallback = jest.fn();
+            chatController.subscribe(CHAT_EVENTS.CHAT_ENDED, mockCallback);
+
+            // Simulate chat ended event which sets _participantDisconnected to true
+            chatController.connectionHelper.$simulateEnding();
+            await Utils.delay(15);
+
+            expect(chatController.isParticipantDisconnected()).toBe(true);
+        });
+    });
 });

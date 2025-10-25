@@ -2618,6 +2618,17 @@ Function in this section:
 - Can be called multiple times (i.e. register multiple event handlers).
 - Receive an `event` object that contains a `chatDetails` field. See `chatSession.getChatDetails()` for more info.
 
+##### `chatSession.isParticipantDisconnected()`
+
+Returns a boolean indicating whether the participant has been disconnected from the chat. This is useful for checking if the chat session has ended before attempting other operations like `disconnectParticipant()`.
+
+```js
+if (!chatSession.isParticipantDisconnected()) {
+  // Safe to call disconnect or other operations
+  await chatSession.disconnectParticipant();
+}
+```
+
 ##### `chatSession.onConnectionBroken()`
 
 ```js

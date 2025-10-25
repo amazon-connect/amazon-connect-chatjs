@@ -349,6 +349,11 @@ class ChatController {
                     chatDetails: this.getChatDetails()
                 });
                 this.breakConnection();
+                // Set participant disconnected after a delay to allow for cleanup
+                setTimeout(() => {
+                    this._participantDisconnected = true;
+                    this.cleanUpOnParticipantDisconnect();
+                }, 10);
             }
             if (incomingData.ContentType === CONTENT_TYPE.transferSucceeded && this.sessionType !== SESSION_TYPES.CUSTOMER) {
                 // calls LpcConnectionHelper to remove message subscriptions for agent and supervisor sessions in Agent transfer use case
@@ -544,6 +549,14 @@ class ChatController {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Returns whether the participant has been disconnected from the chat.
+     * @returns {boolean} True if participant is disconnected, false otherwise
+     */
+    isParticipantDisconnected() {
+        return this._participantDisconnected;
     }
 }
 
