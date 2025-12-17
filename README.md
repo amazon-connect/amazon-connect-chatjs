@@ -1041,7 +1041,7 @@ const awsSdkResponse = await chatSession.sendMessage({
   message: "Hello World!",
   metadata: { foo: "bar" }, // optional
 });
-const { AbsoluteTime, Id } = awsSdkResponse.data;
+const { AbsoluteTime, Id, MessageMetadata } = awsSdkResponse.data;
 const metadata = awsSdkResponse.metadata;
 ```
 
