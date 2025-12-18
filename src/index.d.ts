@@ -62,6 +62,13 @@ declare namespace connect {
     readonly CUSTOMER: "CUSTOMER";
   }
 
+  /** Enumerates the message processing status values. */
+  interface MessageProcessingStatus {
+    readonly PROCESSING: "PROCESSING";
+    readonly FAILED: "FAILED";
+    readonly REJECTED: "REJECTED";
+  }
+
   interface ChatDetailsInput {
     readonly contactId: string;
     readonly participantId: string;
@@ -869,6 +876,17 @@ declare namespace connect {
 
     /** The ID of the message. */
     readonly Id: string;
+
+    /** Message metadata including processing status */
+    readonly MessageMetadata?: {
+      readonly MessageId?: string;
+      readonly Status?: "SENDING" | "SENT" | "DELIVERED" | "READ" | "FAILED" | "UNKNOWN";
+      readonly MessageProcessingStatus?: MessageProcessingStatus[keyof MessageProcessingStatus];
+      readonly Receipts?: Array<{
+        readonly DeliveredTimestamp?: string;
+        readonly ReadTimestamp?: string;
+      }>;
+    };
   }
 
   /**
