@@ -219,6 +219,14 @@ export class ChatSession {
     cancelParticipantAuthentication(args) {
         return this.controller.cancelParticipantAuthentication(args);
     }
+
+    /**
+     * Returns whether the participant has been disconnected from the chat.
+     * @returns {boolean} True if participant is disconnected, false otherwise
+     */
+    isParticipantDisconnected() {
+        return this.controller.isParticipantDisconnected();
+    }
 }
 
 class AgentChatSession extends ChatSession {

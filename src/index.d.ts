@@ -521,6 +521,12 @@ declare namespace connect {
      * @param handler The event handler.
      */
     onChatRehydrated(handler: (event: ChatMessageEvent) => void): void;
+
+    /**
+     * Returns whether the participant has been disconnected from the chat.
+     * @returns True if participant is disconnected, false otherwise
+     */
+    isParticipantDisconnected(): boolean;
   }
 
   interface AgentChatSession extends ChatSessionInterface {

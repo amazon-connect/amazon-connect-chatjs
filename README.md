@@ -1298,6 +1298,17 @@ Cleans up all event handlers when chat has been ended.
 
 Applies only to `AgentChatSession`. See connect.ChatSession.create() for more info.
 
+#### `chatSession.isParticipantDisconnected()`
+
+Returns a boolean indicating whether the participant has been disconnected from the chat. This is useful for checking if the chat session has ended before attempting other operations like `disconnectParticipant()`.
+
+```js
+if (!chatSession.isParticipantDisconnected()) {
+  // Safe to call disconnect or other operations
+  await chatSession.disconnectParticipant();
+}
+```
+
 ### `chatSession` Events
 
 #### `chatSession.onMessage()`

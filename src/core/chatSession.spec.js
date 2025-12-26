@@ -187,6 +187,7 @@ describe("chatSession", () => {
         jest.spyOn(controller, 'getTranscript').mockImplementation(() => {});
         jest.spyOn(controller, 'getChatDetails').mockImplementation(() => {});
         jest.spyOn(controller, 'cancelParticipantAuthentication').mockImplementation(() => {});
+        jest.spyOn(controller, 'isParticipantDisconnected').mockImplementation(() => {});
         jest.spyOn(controller, 'getAttachmentURL').mockImplementation(() => {});
 
         session.sendMessage(args);
@@ -207,6 +208,24 @@ describe("chatSession", () => {
         expect(controller.cancelParticipantAuthentication).toHaveBeenCalled();
         session.getAttachmentURL(args);
         expect(controller.getAttachmentURL).toHaveBeenCalled();
+        session.isParticipantDisconnected();
+        expect(controller.isParticipantDisconnected).toHaveBeenCalled();
+    });
+
+    test('isParticipantDisconnected returns controller value', () => {
+        // Test when participant is not disconnected
+        jest.spyOn(controller, 'isParticipantDisconnected').mockReturnValue(false);
+        expect(session.isParticipantDisconnected()).toBe(false);
+        expect(controller.isParticipantDisconnected).toHaveBeenCalled();
+
+        // Reset mock and test when participant is disconnected
+        controller.isParticipantDisconnected.mockClear();
+        controller.isParticipantDisconnected.mockReturnValue(true);
+        expect(session.isParticipantDisconnected()).toBe(true);
+        expect(controller.isParticipantDisconnected).toHaveBeenCalled();
+
+        // Clean up
+        controller.isParticipantDisconnected.mockRestore();
     });
 });
 

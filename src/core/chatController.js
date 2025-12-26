@@ -545,6 +545,14 @@ class ChatController {
         }
         return true;
     }
+
+    /**
+     * Returns whether the participant has been disconnected from the chat.
+     * @returns {boolean} True if participant is disconnected, false otherwise
+     */
+    isParticipantDisconnected() {
+        return this._participantDisconnected;
+    }
 }
 
 export const getEventTypeFromContentType = (contentType) => {
