@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0]
+### Changed
+- Enhanced End Chat flow to support disconnect flow experiences
+- Modified `disconnectParticipant()` to defer connection termination until server sends `chatEnded` event
+- Moved cleanup operations from `disconnectParticipant()` to `_handleIncomingMessage()` for server-driven termination
+- Added callback pattern in `_forwardChatEvent()` to ensure proper event ordering during chat termination
+- Enables post-disconnect messaging (surveys, confirmations) while ensuring proper cleanup
+
 ## [3.1.5]
 ### Changed
 - Remove verbose websocket incoming message logging from LpcConnectionHelper

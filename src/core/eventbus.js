@@ -152,8 +152,13 @@ EventBus.prototype.trigger = function(eventName, data) {
  * to this event will be called and are provided with the given arbitrary
  * data object and the name of the event, in that order.
  */
-EventBus.prototype.triggerAsync = function(eventName, data) {
-    setTimeout(() => this.trigger(eventName, data), 0);
+EventBus.prototype.triggerAsync = function(eventName, data, callback) {
+    setTimeout(() => {
+        this.trigger(eventName, data);
+        if (callback) {
+            callback();
+        }
+    }, 0);
 };
 
 /**
