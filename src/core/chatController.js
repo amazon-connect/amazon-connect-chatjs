@@ -24,6 +24,7 @@ import MessageReceiptsUtil from './MessageReceiptsUtil';
 import { csmService } from "../service/csmService";
 import { GlobalConfig } from "../globalConfig";
 import StreamMetricUtils from "../streamMetricUtils";
+import PartialMessageUtil from "./PartialMessageUtil";
 
 var NetworkLinkStatus = {
     NeverEstablished: "NeverEstablished",
@@ -57,6 +58,7 @@ class ChatController {
         this.messageReceiptUtil = new MessageReceiptsUtil(args.logMetaData);
         this.hasChatEnded = false;
         this.logger.info("Browser info:", window.navigator.userAgent);
+        this.partialMessageUtil = new PartialMessageUtil();
     }
 
     subscribe(eventName, callback) {
@@ -226,6 +228,9 @@ class ChatController {
         return this.chatClient
             .getTranscript(connectionToken, args)
             .then(
+                this.partialMessageUtil.rehydratePartialMessageMap()
+            )
+            .then(
                 this.messageReceiptUtil.rehydrateReceiptMappers(
                     this.handleRequestSuccess(metadata, ACPS_METHODS.GET_TRANSCRIPT, startTime), 
                     GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)
@@ -338,10 +343,21 @@ class ChatController {
                 }
             }
 
-            this._forwardChatEvent(eventType, {
-                data: incomingData,
-                chatDetails: this.getChatDetails()
-            });
+            if (this.partialMessageUtil.isPartialMessage(incomingData)) {
+                const stitchedMessage = this.partialMessageUtil.handleBotPartialMessage(incomingData);
+                if (stitchedMessage) {
+                    this._forwardChatEvent(eventType, {
+                        data: stitchedMessage,
+                        chatDetails: this.getChatDetails()
+                    });
+                }
+            } else {
+                this._forwardChatEvent(eventType, {
+                    data: incomingData,
+                    chatDetails: this.getChatDetails()
+                });
+            }
+
             if (incomingData.ContentType === CONTENT_TYPE.chatEnded) {
                 this.hasChatEnded = true;
                 this._forwardChatEvent(CHAT_EVENTS.CHAT_ENDED, {
