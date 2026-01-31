@@ -122,7 +122,8 @@ export const CONTENT_TYPE = {
     participantReturned: "application/vnd.amazonaws.connect.event.participant.returned",
     participantInvited: "application/vnd.amazonaws.connect.event.participant.invited",
     autoDisconnection: "application/vnd.amazonaws.connect.event.participant.autodisconnection",
-    chatRehydrated: "application/vnd.amazonaws.connect.event.chat.rehydrated"
+    chatRehydrated: "application/vnd.amazonaws.connect.event.chat.rehydrated",
+    workflowCanceled: "application/vnd.amazonaws.connect.event.workflow.cancelled"
 };
 
 export const CHAT_EVENT_TYPE_MAPPING = {
