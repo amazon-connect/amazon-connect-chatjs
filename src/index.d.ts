@@ -831,6 +831,7 @@ declare namespace connect {
     readonly MessageMetadata?: {
       readonly MessageId?: string;
       readonly Status?: "SENDING" | "SENT" | "DELIVERED" | "READ" | "FAILED" | "UNKNOWN";
+      readonly MessageProcessingStatus?: MessageProcessingStatus[keyof MessageProcessingStatus];
       readonly Receipts?: Array<{
         readonly DeliveredTimestamp?: string;
         readonly ReadTimestamp?: string;
