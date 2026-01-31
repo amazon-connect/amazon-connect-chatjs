@@ -88,7 +88,7 @@ export default class ConnectionDetailsProvider {
                 }
             })
             .catch( error => {
-                if (this._isAgentSession()) {
+                if (this._isAgentSession() && !error?.statusCode?.toString().startsWith("4")) {
                     csmService.addAgentCountMetric(
                         AGENT_CREATE_PARTICIPANT_ERROR_RATE,
                         1
