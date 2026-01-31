@@ -835,6 +835,8 @@ declare namespace connect {
         readonly DeliveredTimestamp?: string;
         readonly ReadTimestamp?: string;
       }>;
+      readonly MessageCompleted?: boolean;
+      readonly ChunkNumber?: number;
     };
 
     /**

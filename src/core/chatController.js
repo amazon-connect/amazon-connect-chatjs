@@ -367,8 +367,6 @@ class ChatController {
                 }
             }
 
-            this._updateTranscript(TRANSCRIPT_ACTIONS.INCOMING_MESSAGE, incomingData);
-
             if (this.partialMessageUtil.isPartialMessage(incomingData)) {
                 const stitchedMessage = this.partialMessageUtil.handleBotPartialMessage(incomingData);
                 if (stitchedMessage) {
@@ -376,12 +374,14 @@ class ChatController {
                         data: stitchedMessage,
                         chatDetails: this.getChatDetails()
                     });
+                    this._updateTranscript(TRANSCRIPT_ACTIONS.INCOMING_MESSAGE, stitchedMessage);
                 }
             } else {
                 this._forwardChatEvent(eventType, {
                     data: incomingData,
                     chatDetails: this.getChatDetails()
                 });
+                this._updateTranscript(TRANSCRIPT_ACTIONS.INCOMING_MESSAGE, incomingData);
             }
 
             if (incomingData.ContentType === CONTENT_TYPE.chatEnded) {
