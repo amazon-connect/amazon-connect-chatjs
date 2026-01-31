@@ -176,6 +176,10 @@ export class ChatSession {
         this.controller.subscribe(CHAT_EVENTS.CHAT_REHYDRATED, callback);
     }
 
+    onTranscriptUpdated(callback) {
+        this.controller.subscribe(CHAT_EVENTS.TRANSCRIPT_UPDATED, callback);
+    }
+
     sendMessage(args) {
         return this.controller.sendMessage(args);
     }

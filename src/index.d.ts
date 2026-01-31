@@ -521,6 +521,12 @@ declare namespace connect {
      * @param handler The event handler.
      */
     onChatRehydrated(handler: (event: ChatMessageEvent) => void): void;
+
+    /**
+     * Subscribes an event handler that triggers when the transcript is updated.
+     * @param handler The event handler.
+     */
+    onTranscriptUpdated(handler: (event: ChatTranscriptUpdatedEvent) => void): void;
   }
 
   interface AgentChatSession extends ChatSessionInterface {
@@ -818,6 +824,23 @@ declare namespace connect {
      * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_Item.html#connectparticipant-Type-Item-Type
      */
     readonly Type: "MESSAGE" | "EVENT" | "ATTACHMENT" | "CONNECTION_ACK";
+
+    /**
+     * Message metadata including status and receipts.
+     */
+    readonly MessageMetadata?: {
+      readonly MessageId?: string;
+      readonly Status?: "SENDING" | "SENT" | "DELIVERED" | "READ" | "FAILED" | "UNKNOWN";
+      readonly Receipts?: Array<{
+        readonly DeliveredTimestamp?: string;
+        readonly ReadTimestamp?: string;
+      }>;
+    };
+
+    /**
+     * Serialized content of the original item for debugging.
+     */
+    readonly serializedContent?: string;
   }
 
   /**
@@ -1038,6 +1061,14 @@ declare namespace connect {
         ChatContentType,
         "application/vnd.amazonaws.connect.event.typing"
       >;
+    };
+  }
+
+  interface ChatTranscriptUpdatedEvent {
+    readonly chatDetails: ChatDetails;
+    readonly data: {
+      readonly transcript: ChatTranscriptItem[];
+      readonly previousTranscriptNextToken?: string;
     };
   }
 
