@@ -77,7 +77,8 @@ export const CHAT_EVENTS = {
     AUTHENTICATION_EXPIRED: "AUTHENTICATION_EXPIRED",
     AUTHENTICATION_CANCELED: "AUTHENTICATION_CANCELED",
     PARTICIPANT_DISPLAY_NAME_UPDATED: "PARTICIPANT_DISPLAY_NAME_UPDATED",
-    CHAT_REHYDRATED: "CHAT_REHYDRATED"
+    CHAT_REHYDRATED: "CHAT_REHYDRATED",
+    TRANSCRIPT_UPDATED: "TRANSCRIPT_UPDATED"
 };
 
 export const CONTENT_TYPE = {
@@ -121,7 +122,8 @@ export const CONTENT_TYPE = {
     participantReturned: "application/vnd.amazonaws.connect.event.participant.returned",
     participantInvited: "application/vnd.amazonaws.connect.event.participant.invited",
     autoDisconnection: "application/vnd.amazonaws.connect.event.participant.autodisconnection",
-    chatRehydrated: "application/vnd.amazonaws.connect.event.chat.rehydrated"
+    chatRehydrated: "application/vnd.amazonaws.connect.event.chat.rehydrated",
+    workflowCanceled: "application/vnd.amazonaws.connect.event.workflow.cancelled"
 };
 
 export const CHAT_EVENT_TYPE_MAPPING = {
@@ -191,6 +193,25 @@ export const SEND_EVENT_CONACK_THROTTLED = "SEND_EVENT_CONACK_THROTTLED";
 export const CREATE_PARTICIPANT_CONACK_FAILURE = "CREATE_PARTICIPANT_CONACK_FAILURE";
 export const SEND_EVENT_CONACK_FAILURE = "SEND_EVENT_CONACK_FAILURE";
 export const CREATE_PARTICIPANT_CONACK_API_CALL_COUNT = "CREATE_PARTICIPANT_CONACK_CALL_COUNT";
+export const AGENT_CREATE_PARTICIPANT_ERROR_RATE = "AGENT_CREATE_PARTICIPANT_ERROR_RATE";
+export const AGENT_GET_CONNECTION_TOKEN_ERROR_RATE = "AGENT_GET_CONNECTION_TOKEN_ERROR_RATE";
+
+export const MESSAGE_STATUS = {
+    SENDING: "SENDING",
+    SENT: "SENT",
+    FAILED: "FAILED",
+    DELIVERED: "DELIVERED",
+    READ: "READ",
+    UNKNOWN: "UNKNOWN"
+};
+
+export const TRANSCRIPT_ACTIONS = {
+    SEND_MESSAGE: "sendMessage",
+    SEND_MESSAGE_SUCCESS: "sendMessageSuccess",
+    SEND_MESSAGE_FAILURE: "sendMessageFailure",
+    GET_TRANSCRIPT: "getTranscript",
+    INCOMING_MESSAGE: "incomingMessage"
+};
 
 export const TYPING_VALIDITY_TIME = 10000;
 

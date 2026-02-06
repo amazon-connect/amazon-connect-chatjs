@@ -1403,6 +1403,26 @@ chatSession.onDeliveredReceipt(event => {
 });
 ```
 
+#### `chatSession.onTranscriptUpdated()`
+
+```js
+/**
+ * Subscribes an event handler that triggers when the transcript is updated.
+ * This includes new messages, message chunk stitching (Lex streaming), and transcript rehydration.
+ * @param {
+    chatDetails: Object,
+    data: {
+      transcript: Array<TranscriptItem>,
+      action: "sendMessage" | "sendMessageSuccess" | "sendMessageFailure" | "getTranscript" | "incomingMessage"
+    }
+ } event
+ */
+chatSession.onTranscriptUpdated(event => {
+  const { chatDetails, data } = event;
+  // Handle transcript update
+});
+```
+
 #### `chatSession.onConnectionEstablished()`
 
 ```js

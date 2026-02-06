@@ -13,7 +13,8 @@ import {
     CREATE_PARTICIPANT_CONACK_API_CALL_COUNT,
     STREAM_JS,
     CHAT_SESSION_ERROR_TYPES,
-    STREAM_METRIC_ERROR_TYPES
+    STREAM_METRIC_ERROR_TYPES,
+    TRANSCRIPT_ACTIONS
 } from "../constants";
 import { LogManager } from "../log";
 import { EventBus } from "./eventbus";
@@ -24,6 +25,8 @@ import MessageReceiptsUtil from './MessageReceiptsUtil';
 import { csmService } from "../service/csmService";
 import { GlobalConfig } from "../globalConfig";
 import StreamMetricUtils from "../streamMetricUtils";
+import PartialMessageUtil from "./PartialMessageUtil";
+import InternalTranscriptUtils from "./internalTranscriptUtils";
 
 var NetworkLinkStatus = {
     NeverEstablished: "NeverEstablished",
@@ -57,10 +60,16 @@ class ChatController {
         this.messageReceiptUtil = new MessageReceiptsUtil(args.logMetaData);
         this.hasChatEnded = false;
         this.logger.info("Browser info:", window.navigator.userAgent);
+        this.partialMessageUtil = new PartialMessageUtil();
+        this.internalTranscriptUtils = new InternalTranscriptUtils(this.logger);
+        this.transcriptUpdateEnabled = false;
     }
 
     subscribe(eventName, callback) {
         this.pubsub.subscribe(eventName, callback);
+        if (eventName === CHAT_EVENTS.TRANSCRIPT_UPDATED) {
+            this.transcriptUpdateEnabled = true;
+        }
         this._sendInternalLogToServer(this.logger.info("Subscribed successfully to event:", eventName));
     }
 
@@ -108,11 +117,18 @@ class ChatController {
         const startTime = new Date().getTime();
         const metadata = args.metadata || null;
         this.argsValidator.validateSendMessage(args);
+        const tempId = this._updateTranscript(TRANSCRIPT_ACTIONS.SEND_MESSAGE, args);
         const connectionToken = this.connectionHelper.getConnectionToken();
         return this.chatClient
             .sendMessage(connectionToken, args.message, args.contentType, args.clientToken)
-            .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_MESSAGE, startTime, args.contentType))
-            .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_MESSAGE, startTime, args.contentType));
+            .then(response => {
+                this._updateTranscript(TRANSCRIPT_ACTIONS.SEND_MESSAGE_SUCCESS, { tempId, realId: response?.data?.Id });
+                return this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_MESSAGE, startTime, args.contentType)(response);
+            })
+            .catch(error => {
+                this._updateTranscript(TRANSCRIPT_ACTIONS.SEND_MESSAGE_FAILURE, { tempId });
+                return this.handleRequestFailure(metadata, ACPS_METHODS.SEND_MESSAGE, startTime, args.contentType)(error);
+            });
     }
 
     sendAttachment(args){
@@ -226,6 +242,13 @@ class ChatController {
         return this.chatClient
             .getTranscript(connectionToken, args)
             .then(
+                this.partialMessageUtil.rehydratePartialMessageMap()
+            )
+            .then(response => {
+                this._updateTranscript(TRANSCRIPT_ACTIONS.GET_TRANSCRIPT, { response, scanDirection: args.scanDirection });
+                return response;
+            })
+            .then(
                 this.messageReceiptUtil.rehydrateReceiptMappers(
                     this.handleRequestSuccess(metadata, ACPS_METHODS.GET_TRANSCRIPT, startTime), 
                     GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)
@@ -304,6 +327,12 @@ class ChatController {
             data: eventData,
             chatDetails: this.getChatDetails()
         });
+
+        if (this.transcriptUpdateEnabled) {
+            this.getTranscript({ maxResults: 100 }).catch(err => {
+                this.logger.warn("Failed to auto-fetch transcript on connection:", err);
+            });
+        }
     }
 
     _handleDeepHeartbeatSuccess(eventData) {
@@ -338,10 +367,23 @@ class ChatController {
                 }
             }
 
-            this._forwardChatEvent(eventType, {
-                data: incomingData,
-                chatDetails: this.getChatDetails()
-            });
+            if (this.partialMessageUtil.isPartialMessage(incomingData)) {
+                const stitchedMessage = this.partialMessageUtil.handleBotPartialMessage(incomingData);
+                if (stitchedMessage) {
+                    this._forwardChatEvent(eventType, {
+                        data: stitchedMessage,
+                        chatDetails: this.getChatDetails()
+                    });
+                    this._updateTranscript(TRANSCRIPT_ACTIONS.INCOMING_MESSAGE, stitchedMessage);
+                }
+            } else {
+                this._forwardChatEvent(eventType, {
+                    data: incomingData,
+                    chatDetails: this.getChatDetails()
+                });
+                this._updateTranscript(TRANSCRIPT_ACTIONS.INCOMING_MESSAGE, incomingData);
+            }
+
             if (incomingData.ContentType === CONTENT_TYPE.chatEnded) {
                 this.hasChatEnded = true;
                 this._forwardChatEvent(CHAT_EVENTS.CHAT_ENDED, {
@@ -544,6 +586,49 @@ class ChatController {
             return false;
         }
         return true;
+    }
+
+    _updateTranscript(action, data) {
+        if (!this.transcriptUpdateEnabled) return null;
+        
+        try {
+            let result = null;
+            switch (action) {
+            case TRANSCRIPT_ACTIONS.SEND_MESSAGE:
+                result = this.internalTranscriptUtils.handleSendMessage(data);
+                break;
+            case TRANSCRIPT_ACTIONS.SEND_MESSAGE_SUCCESS:
+                if (data.tempId && data.realId) {
+                    this.internalTranscriptUtils.handleSendMessageSuccess(data.tempId, data.realId);
+                }
+                break;
+            case TRANSCRIPT_ACTIONS.SEND_MESSAGE_FAILURE:
+                if (data.tempId) {
+                    this.internalTranscriptUtils.handleSendMessageFailure(data.tempId);
+                }
+                break;
+            case TRANSCRIPT_ACTIONS.GET_TRANSCRIPT:
+                this.internalTranscriptUtils.handleGetTranscriptResponse(
+                    data.response?.data?.Transcript,
+                    data.response?.data?.NextToken,
+                    data.scanDirection
+                );
+                break;
+            case TRANSCRIPT_ACTIONS.INCOMING_MESSAGE:
+                this.internalTranscriptUtils.handleIncomingItem(data);
+                break;
+            }
+            
+            this._forwardChatEvent(CHAT_EVENTS.TRANSCRIPT_UPDATED, {
+                data: this.internalTranscriptUtils.getTranscriptData(),
+                chatDetails: this.getChatDetails()
+            });
+            
+            return result;
+        } catch (e) {
+            this.logger.warn("Error updating transcript:", e);
+            return null;
+        }
     }
 }
 

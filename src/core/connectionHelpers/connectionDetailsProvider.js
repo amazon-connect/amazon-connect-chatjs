@@ -1,6 +1,14 @@
 import { IllegalArgumentException } from "../exceptions";
 import { ConnectionInfoType } from "./baseConnectionHelper";
-import { ACPS_METHODS, CSM_CATEGORY, SESSION_TYPES, TRANSPORT_LIFETIME_IN_SECONDS, CONN_ACK_FAILED } from "../../constants";
+import {
+    ACPS_METHODS,
+    CSM_CATEGORY,
+    SESSION_TYPES,
+    TRANSPORT_LIFETIME_IN_SECONDS,
+    CONN_ACK_FAILED,
+    AGENT_GET_CONNECTION_TOKEN_ERROR_RATE,
+    AGENT_CREATE_PARTICIPANT_ERROR_RATE
+} from "../../constants";
 import { csmService } from "../../service/csmService";
 
 export default class ConnectionDetailsProvider {
@@ -59,17 +67,33 @@ export default class ConnectionDetailsProvider {
         return Promise.resolve(this.connectionDetails);
     }
 
+    _isAgentSession() {
+        return this.sessionType === SESSION_TYPES.AGENT;
+    }
+
     callCreateParticipantConnection({ Type = true, ConnectParticipant = false } = {}){
         const startTime = new Date().getTime();
         return this.chatClient
             .createParticipantConnection(this.participantToken, Type ? [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS] : null, ConnectParticipant ? ConnectParticipant : null)
             .then((response) => {
+                if (this._isAgentSession()) {
+                    csmService.addAgentCountMetric(
+                        AGENT_CREATE_PARTICIPANT_ERROR_RATE,
+                        0
+                    );
+                }
                 if (Type) {
                     this._addParticipantConnectionMetric(startTime);
                     return this._handleCreateParticipantConnectionResponse(response.data, ConnectParticipant);
                 }
             })
             .catch( error => {
+                if (this._isAgentSession() && !error?.statusCode?.toString().startsWith("4")) {
+                    csmService.addAgentCountMetric(
+                        AGENT_CREATE_PARTICIPANT_ERROR_RATE,
+                        1
+                    );
+                }
                 if (Type) {
                     this._addParticipantConnectionMetric(startTime, true);
                 }
@@ -96,9 +120,21 @@ export default class ConnectionDetailsProvider {
         else if (this.sessionType === SESSION_TYPES.AGENT){
             return this.getConnectionToken()
                 .then((response) => {
+                    if (this._isAgentSession()) {
+                        csmService.addAgentCountMetric(
+                            AGENT_GET_CONNECTION_TOKEN_ERROR_RATE,
+                            0
+                        );
+                    }
                     return this._handleGetConnectionTokenResponse(response.chatTokenTransport);
                 })
                 .catch(() => {
+                    if (this._isAgentSession()) {
+                        csmService.addAgentCountMetric(
+                            AGENT_GET_CONNECTION_TOKEN_ERROR_RATE,
+                            1
+                        );
+                    }
                     return this.callCreateParticipantConnection({
                         Type: true,
                         ConnectParticipant: true
