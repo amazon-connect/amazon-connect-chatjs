@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.1]
+### Added
+- Lex streaming support with partial message stitching for bot responses
+- `transcriptUpdated` event for real-time transcript tracking
+- `onTranscriptUpdated` callback in chatSession
+- Auto-fetch transcript on connection when `transcriptUpdateEnabled` is set
+- Agent metrics for `getConnectionToken` and `createParticipantConnection` errors
+- `MessageProcessingStatus` TypeScript type (PROCESSING, FAILED, REJECTED)
+- `workflowCanceled` content type for handling workflow cancellation events
+
 ## [4.0.0]
 ### Changed
 - Enhanced End Chat flow to support disconnect flow experiences
