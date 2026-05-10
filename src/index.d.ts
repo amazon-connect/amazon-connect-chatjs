@@ -231,6 +231,7 @@ declare namespace connect {
     downloadAttachment(args: DownloadAttachmentArgs): Promise<Blob>;
     getAttachmentURL(args: GetAttachmentURLArgs): Promise<string>;
     sendEvent(args: SendEventArgs): Promise<ParticipantServiceResponse<SendEventResult>>;
+    sendMessageReceipt(args: SendMessageReceiptArgs): Promise<ParticipantServiceResponse<SendEventResult>>;
     getTranscript(args: GetTranscriptArgs): Promise<ParticipantServiceResponse<GetTranscriptResult>>;
     connect(args?: ConnectArgs): Promise<ConnectChatResult>;
     getChatDetails(): ChatDetails;
@@ -321,6 +322,19 @@ declare namespace connect {
     ): Promise<ParticipantServiceResponse<SendEventResult>>;
     sendEvent<T>(
       args: WithMetadata<SendEventArgs, T>
+    ): Promise<WithMetadata<ParticipantServiceResponse<SendEventResult>, T>>;
+
+    /**
+     * Sends a message receipt (Read or Delivered) directly, bypassing the
+     * automatic receipt gate and throttle. Use this when automatic receipts
+     * are disabled but you still need to emit manual receipts from a custom UI.
+     * @param args The arguments of the operation.
+     */
+    sendMessageReceipt(
+      args: SendMessageReceiptArgs
+    ): Promise<ParticipantServiceResponse<SendEventResult>>;
+    sendMessageReceipt<T>(
+      args: WithMetadata<SendMessageReceiptArgs, T>
     ): Promise<WithMetadata<ParticipantServiceResponse<SendEventResult>, T>>;
 
     /**
@@ -930,6 +944,25 @@ declare namespace connect {
     contentType: ChatEventContentType;
 
     /** (Optional) Idempotency token */
+    clientToken?: string;
+  }
+
+  /**
+   * Arguments for `chatSession.sendMessageReceipt()`.
+   * Sends a Read or Delivered receipt directly, bypassing the automatic
+   * receipt gate and throttle.
+   */
+  interface SendMessageReceiptArgs {
+    /** The receipt type: "delivered" or "read". */
+    event: "delivered" | "read";
+
+    /** The ID of the incoming message to acknowledge. */
+    messageId?: string;
+
+    /** A ChatTranscriptItem from getTranscript or onMessage — its Id will be used. */
+    message?: ChatTranscriptItem;
+
+    /** (Optional) Idempotency token. */
     clientToken?: string;
   }
 

@@ -133,14 +133,19 @@ describe("globalConfig", () => {
             setConfig(LogLevel.WARN);
             var logger = LogManager.getLogger({ prefix: "prefix " });
             logger.warn("warn", 3);
-            expect(messages[0]).toEqual([defaultMessageReceiptsError]);
-            expect(messages[1]).toEqual(["WARN [2022-04-12T23:12:36.677Z] prefix : warn 3 "]);
+            // setGlobalConfig without `features` no longer emits the receipts warn.
+            // The beforeEach's receipts warn fires BEFORE `console.warn = mockFn` is
+            // set in this test, so it lands on the real console, not in `messages`.
+            // Only this test's explicit warn is captured.
+            expect(messages[0]).toEqual(["WARN [2022-04-12T23:12:36.677Z] prefix : warn 3 "]);
         });
         it("should match log format in error level", () => {
             console.error = mockFn;
             setConfig(LogLevel.ERROR);
             var logger = LogManager.getLogger({ prefix: "prefix " });
             logger.error("error", 3);
+            // beforeEach still fires one receipts warn (it passes `features`), so this
+            // test's error log lands at messages[1].
             expect(messages[1]).toEqual(["ERROR [2022-04-12T23:12:36.677Z] prefix : error 3 "]);
         });
         it("should match log format in advanced_log level", () => {
@@ -161,21 +166,37 @@ describe("globalConfig", () => {
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ prefix: "prefix ", logMetaData });
             logger.info("info", 3);
-            expect(messages[2]).toEqual(["INFO [2022-04-12T23:12:36.677Z] prefix : info 3 {\"contactId\":\"abc\"}"]);
+            // beforeEach emits one receipts warn, so info log is at messages[1].
+            expect(messages[1]).toEqual(["INFO [2022-04-12T23:12:36.677Z] prefix : info 3 {\"contactId\":\"abc\"}"]);
         });
         it("should match log format when there is no prefix and logMetaData", () => {
             console.info = mockFn;
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ logMetaData: {contactId: "abc"}});
             logger.info("info", 3);
-            expect(messages[2]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
+            expect(messages[1]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
         });
         it("should match log format when there is no prefix, but logMetaData is included", () => {
             console.info = mockFn;
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ logMetaData });
             logger.info("info", 3);
-            expect(messages[2]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
+            expect(messages[1]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
+        });
+        it("should still emit the default-enabled warn in its legacy format when `features` is passed (existing-customer path)", () => {
+            // Mock console.warn before any setGlobalConfig call so we capture
+            // the "enabling message-receipts by default" warn. Acts as a
+            // regression anchor: the legacy warn format used by existing
+            // customers who pass `features` must stay unchanged.
+            const warnMessages = [];
+            console.warn = (...msg) => warnMessages.push([...msg]);
+
+            ChatSessionObject.setGlobalConfig({
+                features: { messageReceipts: { throttleTime: 5000 } },
+                loggerConfig: { useDefaultLogger: true, level: LogLevel.WARN }
+            });
+
+            expect(warnMessages[0]).toEqual([defaultMessageReceiptsError]);
         });
     });
   
@@ -240,7 +261,10 @@ describe("globalConfig", () => {
     
             expect(testLogger.debug.mock.calls.length).toEqual(0);
             expect(testLogger.info.mock.calls.length).toEqual(1);
-            expect(testLogger.warn.mock.calls.length).toEqual(2);
+            // setGlobalConfig without `features` no longer emits the
+            // "enabling message-receipts by default" warn, so only the explicit
+            // logger.warn("warn", 3) is recorded here (was previously 2).
+            expect(testLogger.warn.mock.calls.length).toEqual(1);
             expect(testLogger.error.mock.calls.length).toEqual(2);
         });
     
@@ -355,6 +379,41 @@ describe("globalConfig", () => {
             GlobalConfig.setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
             expect(handler).toHaveBeenCalledTimes(3);
             expect(handler2).toHaveBeenCalledTimes(1);
+        });
+
+        // --- preserve-on-omit merge semantics for setGlobalConfig ---
+        it("should preserve messageReceipts feature flag when setGlobalConfig is called without `features`", () => {
+            // 1) Customer explicitly disables auto receipts.
+            ChatSessionObject.setGlobalConfig({
+                features: { messageReceipts: { shouldSendMessageReceipts: false } }
+            });
+            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
+
+            // 2) A subsequent call that omits `features` (for example a wrapping
+            // library that only updates unrelated config fields).
+            ChatSessionObject.setGlobalConfig({
+                loggerConfig: {},
+                region: "us-east-1"
+            });
+
+            // The previously-disabled setting must survive.
+            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
+        });
+
+        it("should preserve messageReceiptThrottleTime when setGlobalConfig is called without throttleTime", () => {
+            // 1) Customer sets a custom throttle.
+            ChatSessionObject.setGlobalConfig({
+                features: { messageReceipts: { throttleTime: 7500 } }
+            });
+            expect(GlobalConfig.getMessageReceiptsThrottleTime()).toEqual(7500);
+
+            // 2) A subsequent setGlobalConfig without throttleTime must not reset it
+            // to the 5000ms default.
+            ChatSessionObject.setGlobalConfig({
+                loggerConfig: {},
+                region: "us-east-1"
+            });
+            expect(GlobalConfig.getMessageReceiptsThrottleTime()).toEqual(7500);
         });
     });
 

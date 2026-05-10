@@ -204,6 +204,10 @@ export class ChatSession {
         return this.controller.sendEvent(args);
     }
 
+    sendMessageReceipt(args) {
+        return this.controller.sendMessageReceipt(args);
+    }
+
     getTranscript(args) {
         return this.controller.getTranscript(args);
     }
@@ -270,19 +274,27 @@ var setGlobalConfig = config => {
      * Handle setting message receipts feature in Global Config. If no values are given will default to:
      *   - Message receipts enabled
      *   - Throttle = 5000 ms
+     *
+     * The receipts feature flag and throttle are re-evaluated only when `config.features`
+     * is present. When omitted, the previously configured values are preserved so a
+     * subsequent setGlobalConfig call that updates unrelated fields does not unintentionally
+     * reset them.
      */
-    logger.warn("enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false");
-    GlobalConfig.updateThrottleTime(config.features?.messageReceipts?.throttleTime);
-    if (config.features?.messageReceipts?.shouldSendMessageReceipts === false) {
-        GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
-    } else {
-        /**
-         * Note: if update config is called with `config.features` array, it replaces default config
-         * this ensure `message-receipts` feature is always enabled.
-         * Only way to disable message receipts is by setting config.features.messageReceipts.shouldSendMessageReceipts == false
-         * */
-        setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+    if (config.features !== undefined) {
+        logger.warn("enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false");
+        GlobalConfig.updateThrottleTime(config.features?.messageReceipts?.throttleTime);
+        if (config.features?.messageReceipts?.shouldSendMessageReceipts === false) {
+            GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+        } else {
+            /**
+             * Note: if update config is called with `config.features` array, it replaces default config
+             * this ensure `message-receipts` feature is always enabled.
+             * Only way to disable message receipts is by setting config.features.messageReceipts.shouldSendMessageReceipts == false
+             * */
+            setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+        }
     }
+    // else: features omitted, preserve the prior caller's message-receipts configuration
 };
 
 var setFeatureFlag = feature => {

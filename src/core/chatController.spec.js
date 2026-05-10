@@ -801,6 +801,91 @@ describe("ChatController", () => {
         expect(chatClient.sendEvent).toHaveBeenCalledTimes(0);
     });
 
+    // --- sendMessageReceipt: dedicated method for manual receipts ---
+    test("sendMessageReceipt sends a delivered receipt directly bypassing the auto gate", async () => {
+        const args = {
+            event: "delivered",
+            messageId: "msg-123",
+            metadata: "metadata"
+        };
+        const chatController = getChatController(false); // auto receipts disabled
+        await chatController.connect();
+        chatClient.sendEvent.mockClear();
+
+        const response = await chatController.sendMessageReceipt(args);
+
+        expect(chatClient.sendEvent).toHaveBeenCalledTimes(1);
+        expect(chatClient.sendEvent).toHaveBeenCalledWith(
+            "token",
+            CONTENT_TYPE.deliveredReceipt,
+            JSON.stringify({ messageId: "msg-123" }),
+            undefined
+        );
+        expect(response.metadata).toBe("metadata");
+    });
+
+    test("sendMessageReceipt sends a read receipt directly", async () => {
+        const args = {
+            event: "read",
+            messageId: "msg-456",
+            metadata: "metadata"
+        };
+        const chatController = getChatController(false);
+        await chatController.connect();
+        chatClient.sendEvent.mockClear();
+
+        await chatController.sendMessageReceipt(args);
+
+        expect(chatClient.sendEvent).toHaveBeenCalledWith(
+            "token",
+            CONTENT_TYPE.readReceipt,
+            JSON.stringify({ messageId: "msg-456" }),
+            undefined
+        );
+    });
+
+    test("sendMessageReceipt rejects when messageId is missing", async () => {
+        const args = { event: "delivered" };
+        const chatController = getChatController(false);
+        await chatController.connect();
+
+        await expect(chatController.sendMessageReceipt(args)).rejects.toEqual(
+            expect.objectContaining({ errorMessage: "sendMessageReceipt: messageId or message.Id is required" })
+        );
+        expect(chatClient.sendEvent).not.toHaveBeenCalled();
+    });
+
+    test("sendMessageReceipt accepts a transcript item with Id", async () => {
+        const args = {
+            event: "delivered",
+            message: { Id: "transcript-item-id", Content: "hello" },
+            metadata: "metadata"
+        };
+        const chatController = getChatController(false);
+        await chatController.connect();
+        chatClient.sendEvent.mockClear();
+
+        await chatController.sendMessageReceipt(args);
+
+        expect(chatClient.sendEvent).toHaveBeenCalledWith(
+            "token",
+            CONTENT_TYPE.deliveredReceipt,
+            JSON.stringify({ messageId: "transcript-item-id" }),
+            undefined
+        );
+    });
+
+    test("sendMessageReceipt rejects when event type is invalid", async () => {
+        const args = { event: "sent", messageId: "msg-789" };
+        const chatController = getChatController(false);
+        await chatController.connect();
+
+        await expect(chatController.sendMessageReceipt(args)).rejects.toEqual(
+            expect.objectContaining({ errorMessage: "sendMessageReceipt: event must be 'delivered' or 'read'" })
+        );
+        expect(chatClient.sendEvent).not.toHaveBeenCalled();
+    });
+
     describe("Test ChatController induvidual methods with mock data", () => {
         test("getEventTypeFromContentType should return default INCOMING_MESSAGE type", () => {
             const chatController = getChatController();
