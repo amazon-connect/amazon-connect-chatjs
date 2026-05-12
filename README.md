@@ -974,6 +974,8 @@ connect.ChatSession.setGlobalConfig({
 ```
 Set the global configuration to use. If this method is not called, the defaults of loggerConfig and region are used. This method should be called before `connect.ChatSession.create()`.
 
+> **Note on `features`:** the `features` block (including `messageReceipts`) is only re-evaluated when you pass it explicitly. If a subsequent `setGlobalConfig` call omits `features`, the previously configured message-receipts settings (`shouldSendMessageReceipts` and `throttleTime`) are preserved. This keeps wrapping libraries that only update unrelated fields like `loggerConfig` or `region` from unintentionally re-enabling receipts.
+
 #### `connect.ChatSession.Logger`
 
 ```js
@@ -1097,6 +1099,29 @@ The arguments are based on the [API request body](https://docs.aws.amazon.com/co
   - `"application/vnd.amazonaws.connect.event.participant.invited"`
 
 The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html#API_SendEvent_ResponseSyntax).
+
+##### Manual message receipts with `sendMessageReceipt`
+
+When automatic message receipts are disabled (by setting `features.messageReceipts.shouldSendMessageReceipts` to `false` in `setGlobalConfig`), `sendEvent` calls with a Read or Delivered content type are rejected. To emit receipts manually from a custom UI, use the dedicated `sendMessageReceipt` method:
+
+```js
+await chatSession.sendMessageReceipt({
+  event: "delivered", // or "read"
+  messageId: "<INCOMING_MESSAGE_ID>"
+});
+
+// Or pass a transcript item directly:
+await chatSession.sendMessageReceipt({
+  event: "read",
+  message: transcriptItem // object with an Id property
+});
+```
+
+Notes:
+- `event` must be `"delivered"` or `"read"`.
+- Provide either `messageId` (string) or `message` (a transcript item with an `Id` field).
+- This method bypasses the automatic receipt gate and throttle entirely — the receipt is sent immediately regardless of the `shouldSendMessageReceipts` setting.
+- Aligns with the `sendMessageReceipt` API exposed by the Amazon Connect mobile SDKs.
 
 #### `chatSession.sendAttachment()`
 
@@ -2283,6 +2308,8 @@ connect.ChatSession.setGlobalConfig({
 Set the global configuration to use. If this method is not called, the defaults of `loggerConfig` and `region` are used.
 This method should be called before `connect.ChatSession.create()`.
 
+> **Note on `features`:** the `features` block is only re-evaluated when passed explicitly. A subsequent `setGlobalConfig` call that omits `features` preserves the previously configured `messageReceipts` settings (flag and `throttleTime`), so wrapping libraries that update only unrelated fields (like `loggerConfig` or `region`) won't unintentionally reset them.
+
 Customizing `loggerConfig` for ChatJS:
 
 - If you don't want to use any logger, you can skip this field.
@@ -2522,6 +2549,29 @@ The arguments are based on the [API request body](https://docs.aws.amazon.com/co
   - `"application/vnd.amazonaws.connect.event.message.read"`
 
 The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html#API_SendEvent_ResponseSyntax).
+
+The response `data` is the same as the [API response body](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html#API_SendEvent_ResponseSyntax).
+
+###### Manual message receipts with `sendMessageReceipt`
+
+When automatic message receipts are disabled in `setGlobalConfig` (`features.messageReceipts.shouldSendMessageReceipts: false`), `sendEvent` calls with Read or Delivered content types are rejected. To emit receipts manually from a custom UI, use the dedicated `sendMessageReceipt` method:
+
+```js
+await chatSession.sendMessageReceipt({
+  event: "delivered", // or "read"
+  messageId: "<INCOMING_MESSAGE_ID>"
+});
+
+// Or pass a transcript item directly:
+await chatSession.sendMessageReceipt({
+  event: "read",
+  message: transcriptItem // object with an Id property
+});
+```
+
+- `event` must be `"delivered"` or `"read"`.
+- Provide either `messageId` (string) or `message` (a transcript item with an `Id` field).
+- Bypasses the automatic receipt gate and throttle — the receipt is sent immediately.
 
 ##### `chatSession.sendMessage()`
 

@@ -11,6 +11,11 @@ export const FEATURES = {
     MESSAGE_RECEIPTS_ENABLED: "MESSAGE_RECEIPTS_ENABLED"
 };
 
+export const MESSAGE_RECEIPT_TYPE = {
+    DELIVERED: "delivered",
+    READ: "read"
+};
+
 export const RESOURCE_PATH = {
     CONNECTION_DETAILS: "/contact/chat/participant/connection-details",
     MESSAGE: "/participant/message",

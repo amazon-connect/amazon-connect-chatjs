@@ -14,7 +14,8 @@ import {
     STREAM_JS,
     CHAT_SESSION_ERROR_TYPES,
     STREAM_METRIC_ERROR_TYPES,
-    TRANSCRIPT_ACTIONS
+    TRANSCRIPT_ACTIONS,
+    MESSAGE_RECEIPT_TYPE
 } from "../constants";
 import { LogManager } from "../log";
 import { EventBus } from "./eventbus";
@@ -191,7 +192,6 @@ class ChatController {
         var eventType = getEventTypeFromContentType(args.contentType);
         var parsedContent = typeof content === "string" ? JSON.parse(content) : content;
         if (this.messageReceiptUtil.isMessageReceipt(eventType, args)) {
-            // Ignore all MessageReceipt events
             if(!GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED) || !parsedContent.messageId) {
                 this.logger.warn(`Ignoring messageReceipt: ${GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED) && "missing messageId"}`, args);
                 return Promise.reject({
@@ -218,6 +218,37 @@ class ChatController {
             )
             .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType))
             .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_EVENT, startTime, args.contentType));
+    }
+
+    sendMessageReceipt(args) {
+        if (!this._validateConnectionStatus('sendMessageReceipt')) {
+            return Promise.reject(`Failed to call sendMessageReceipt, No active connection`);
+        }
+        const startTime = new Date().getTime();
+        const metadata = args.metadata || null;
+        const eventType = args.event;
+        if (!eventType || (eventType !== MESSAGE_RECEIPT_TYPE.DELIVERED && eventType !== MESSAGE_RECEIPT_TYPE.READ)) {
+            return Promise.reject({
+                errorMessage: "sendMessageReceipt: event must be 'delivered' or 'read'",
+                data: args
+            });
+        }
+        const messageId = args.messageId || (args.message && args.message.Id);
+        if (!messageId) {
+            return Promise.reject({
+                errorMessage: "sendMessageReceipt: messageId or message.Id is required",
+                data: args
+            });
+        }
+        const contentType = eventType === MESSAGE_RECEIPT_TYPE.DELIVERED
+            ? CONTENT_TYPE.deliveredReceipt
+            : CONTENT_TYPE.readReceipt;
+        const content = JSON.stringify({ messageId: messageId });
+        const connectionToken = this.connectionHelper.getConnectionToken();
+        return this.chatClient
+            .sendEvent(connectionToken, contentType, content, args.clientToken)
+            .then(this.handleRequestSuccess(metadata, ACPS_METHODS.SEND_EVENT, startTime, contentType))
+            .catch(this.handleRequestFailure(metadata, ACPS_METHODS.SEND_EVENT, startTime, contentType));
     }
 
     getTranscript(inputArgs = {}) {
