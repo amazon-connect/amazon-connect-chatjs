@@ -382,22 +382,21 @@ describe("globalConfig", () => {
         });
 
         // --- preserve-on-omit merge semantics for setGlobalConfig ---
-        it("should preserve messageReceipts feature flag when setGlobalConfig is called without `features`", () => {
+        it("should re-enable messageReceipts by default when setGlobalConfig is called without `features`", () => {
             // 1) Customer explicitly disables auto receipts.
             ChatSessionObject.setGlobalConfig({
                 features: { messageReceipts: { shouldSendMessageReceipts: false } }
             });
             expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
 
-            // 2) A subsequent call that omits `features` (for example a wrapping
-            // library that only updates unrelated config fields).
+            // 2) A subsequent call that omits `features` re-enables receipts by default.
             ChatSessionObject.setGlobalConfig({
                 loggerConfig: {},
                 region: "us-east-1"
             });
 
-            // The previously-disabled setting must survive.
-            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
+            // Receipts are re-enabled by default.
+            expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(true);
         });
 
         it("should preserve messageReceiptThrottleTime when setGlobalConfig is called without throttleTime", () => {

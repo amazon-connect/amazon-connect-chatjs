@@ -293,8 +293,10 @@ var setGlobalConfig = config => {
              * */
             setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
         }
+    } else {
+        // features omitted: ensure receipts remain enabled by default
+        setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
     }
-    // else: features omitted, preserve the prior caller's message-receipts configuration
 };
 
 var setFeatureFlag = feature => {
