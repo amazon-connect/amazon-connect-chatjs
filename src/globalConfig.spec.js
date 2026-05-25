@@ -1,8 +1,8 @@
-import { ChatSessionObject } from "./core/chatSession";
-import { LogLevel, LogManager } from "./log";
-import { GlobalConfig } from "./globalConfig";
 import { FEATURES } from "./constants";
+import { ChatSessionObject } from "./core/chatSession";
+import { GlobalConfig } from "./globalConfig";
 import WebSocketManager from "./lib/amazon-connect-websocket-manager";
+import { LogLevel, LogManager } from "./log";
 
 const realDate = Date.now;
 const fixDate = "2022-04-12T23:12:36.677Z";
@@ -32,22 +32,21 @@ const configInput = {
     customUserAgentSuffix: "test-customUserAgentOverride"
 };
 const logMetaData = {contactId: "abc"};
-const defaultMessageReceiptsError = "WARN [2022-04-12T23:12:36.677Z] ChatJS-GlobalConfig: enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false ";
 
 describe("globalConfig", () => {
     beforeAll(() => {
         global.Date.now = jest.fn(() => new Date(fixDate).getTime());
     });
-  
+
     afterAll(() => {
         global.Date.now = realDate;
         console.info = originInfo;
         console.debug = originDebug;
         console.warn = originWarn;
         console.error = originError;
-  
+
     });
-  
+
     describe("Common globalConfig tests", () => {
         it("should already have its class variables initialized to defaults without any other method having been invoked", () => {
             expect(GlobalConfig.cell).toEqual("1");
@@ -80,7 +79,7 @@ describe("globalConfig", () => {
             expect(GlobalConfig.stage).toEqual(stageRegionCell2.stage);
         });
     });
-  
+
     describe("About using default logger", () => {
         let messages;
         let mockFn;
@@ -144,16 +143,14 @@ describe("globalConfig", () => {
             setConfig(LogLevel.ERROR);
             var logger = LogManager.getLogger({ prefix: "prefix " });
             logger.error("error", 3);
-            // beforeEach still fires one receipts warn (it passes `features`), so this
-            // test's error log lands at messages[1].
-            expect(messages[1]).toEqual(["ERROR [2022-04-12T23:12:36.677Z] prefix : error 3 "]);
+            expect(messages[0]).toEqual(["ERROR [2022-04-12T23:12:36.677Z] prefix : error 3 "]);
         });
         it("should match log format in advanced_log level", () => {
             console.error = mockFn;
             setConfig(LogLevel.ADVANCED_LOG);
             var logger = LogManager.getLogger({ prefix: "prefix " });
             logger.advancedLog("info", 3);
-            expect(messages[1]).toEqual(["ADVANCED_LOG [2022-04-12T23:12:36.677Z] prefix : info 3 "]);
+            expect(messages[0]).toEqual(["ADVANCED_LOG [2022-04-12T23:12:36.677Z] prefix : info 3 "]);
         });
         test("set region", () => {
             ChatSessionObject.setGlobalConfig({
@@ -166,28 +163,28 @@ describe("globalConfig", () => {
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ prefix: "prefix ", logMetaData });
             logger.info("info", 3);
-            // beforeEach emits one receipts warn, so info log is at messages[1].
-            expect(messages[1]).toEqual(["INFO [2022-04-12T23:12:36.677Z] prefix : info 3 {\"contactId\":\"abc\"}"]);
+            expect(messages[0]).toEqual(["INFO [2022-04-12T23:12:36.677Z] prefix : info 3 {\"contactId\":\"abc\"}"]);
         });
         it("should match log format when there is no prefix and logMetaData", () => {
             console.info = mockFn;
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ logMetaData: {contactId: "abc"}});
             logger.info("info", 3);
-            expect(messages[1]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
+            expect(messages[0]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
         });
         it("should match log format when there is no prefix, but logMetaData is included", () => {
             console.info = mockFn;
             setConfig(LogLevel.INFO);
             var logger = LogManager.getLogger({ logMetaData });
             logger.info("info", 3);
-            expect(messages[1]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
+            expect(messages[0]).toEqual(["INFO [2022-04-12T23:12:36.677Z] info 3 {\"contactId\":\"abc\"}"]);
         });
         it("should still emit the default-enabled warn in its legacy format when `features` is passed (existing-customer path)", () => {
             // Mock console.warn before any setGlobalConfig call so we capture
             // the "enabling message-receipts by default" warn. Acts as a
             // regression anchor: the legacy warn format used by existing
             // customers who pass `features` must stay unchanged.
+            const defaultMessageReceiptsError = "WARN [2022-04-12T23:12:36.677Z] ChatJS-GlobalConfig: enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false ";
             const warnMessages = [];
             console.warn = (...msg) => warnMessages.push([...msg]);
 
@@ -199,7 +196,7 @@ describe("globalConfig", () => {
             expect(warnMessages[0]).toEqual([defaultMessageReceiptsError]);
         });
     });
-  
+
     describe("About using customized logger", () => {
         beforeEach(() => {
             testLogger = {};
@@ -217,12 +214,12 @@ describe("globalConfig", () => {
                 }
             });
             var logger = LogManager.getLogger({ prefix: "prefix " });
-    
+
             logger.warn("warn", 3);
             logger.error("error", 4);
             logger.error("error", 5);
-    
-            expect(testLogger.warn.mock.calls[1][0]).toEqual("WARN [\"warn\",3] ");
+
+            expect(testLogger.warn.mock.calls[0][0]).toEqual("WARN [\"warn\",3] ");
             expect(testLogger.error.mock.calls[0][0]).toEqual("ERROR [\"error\",4] ");
             expect(testLogger.error.mock.calls[1][0]).toEqual("ERROR [\"error\",5] ");
         });
@@ -235,16 +232,16 @@ describe("globalConfig", () => {
                 }
             });
             var logger = LogManager.getLogger({ prefix: "prefix " });
-    
+
             logger.warn("warn", 3);
             logger.error("error", 4);
             logger.error("error", 5);
-    
-            expect(testLogger.warn.mock.calls[1][0]).toEqual("WARN [\"warn\",3] ");
+
+            expect(testLogger.warn.mock.calls[0][0]).toEqual("WARN [\"warn\",3] ");
             expect(testLogger.error.mock.calls[0][0]).toEqual("ERROR [\"error\",4] ");
             expect(testLogger.error.mock.calls[1][0]).toEqual("ERROR [\"error\",5] ");
         });
-  
+
         test("default log level should be INFO", () => {
             ChatSessionObject.setGlobalConfig({
                 // "level" property is not set, so it is using default log level(INFO). The DEBUG level in this test will not trigger.
@@ -258,7 +255,7 @@ describe("globalConfig", () => {
             logger.warn("warn", 3);
             logger.error("error", 4);
             logger.error("error", 5);
-    
+
             expect(testLogger.debug.mock.calls.length).toEqual(0);
             expect(testLogger.info.mock.calls.length).toEqual(1);
             // setGlobalConfig without `features` no longer emits the
@@ -267,7 +264,7 @@ describe("globalConfig", () => {
             expect(testLogger.warn.mock.calls.length).toEqual(1);
             expect(testLogger.error.mock.calls.length).toEqual(2);
         });
-    
+
         it("should override log level to ERROR", () => {
             ChatSessionObject.setGlobalConfig({
                 loggerConfig: {
@@ -282,13 +279,13 @@ describe("globalConfig", () => {
             logger.warn("warn", 3);
             logger.error("error", 4);
             logger.error("error", 5);
-    
+
             expect(testLogger.debug.mock.calls.length).toEqual(0);
             expect(testLogger.info.mock.calls.length).toEqual(0);
             expect(testLogger.warn.mock.calls.length).toEqual(0);
             expect(testLogger.error.mock.calls.length).toEqual(2);
         });
-  
+
         it("should call logger with correct params [logLevel, logStatement, logMetaData]", () => {
             ChatSessionObject.setGlobalConfig({
                 loggerConfig: {
@@ -421,7 +418,7 @@ describe("globalConfig", () => {
         it('should pass not down invalid config object', () => {
             expect(() => ChatSessionObject.setGlobalConfig(null)).toThrow(TypeError);
         });
- 
+
         it('should pass down config to WebSocketManager', () => {
             const mockConfig = {
                 loggerConfig: {},
@@ -429,11 +426,76 @@ describe("globalConfig", () => {
                     isNetworkOnline: () => true
                 }
             };
- 
+
             jest.spyOn(WebSocketManager, 'setGlobalConfig').mockImplementation(() => {});
- 
+
             ChatSessionObject.setGlobalConfig(mockConfig);
             expect(WebSocketManager.setGlobalConfig).toHaveBeenCalledWith(mockConfig);
         });
+    });
+});
+
+describe("message-receipts config behavior", () => {
+    beforeEach(() => {
+        GlobalConfig._messageReceiptsExplicitlyConfigured = false;
+    });
+
+    it("should default-enable receipts when setGlobalConfig is called without features and no prior explicit config", () => {
+        // No prior explicit config — first call without features should enable receipts
+        ChatSessionObject.setGlobalConfig({
+            region: "us-east-1"
+        });
+        expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(true);
+    });
+
+    it("should preserve disabled state when setGlobalConfig is called without features after explicit disable", () => {
+        // First disable receipts explicitly
+        ChatSessionObject.setGlobalConfig({
+            features: { messageReceipts: { shouldSendMessageReceipts: false } }
+        });
+        expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
+
+        // Call setGlobalConfig without features — should preserve disabled state
+        ChatSessionObject.setGlobalConfig({
+            region: "us-east-1"
+        });
+        expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
+    });
+
+    it("should preserve throttleTime when setGlobalConfig is called without throttleTime", () => {
+        GlobalConfig.update({ throttleTime: 3000 });
+        expect(GlobalConfig.getMessageReceiptsThrottleTime()).toEqual(3000);
+
+        // Call update without throttleTime — should preserve 3000
+        GlobalConfig.update({ region: "eu-west-1" });
+        expect(GlobalConfig.getMessageReceiptsThrottleTime()).toEqual(3000);
+    });
+
+    it("should default throttleTime to 5000 when never explicitly set", () => {
+        GlobalConfig.messageReceiptThrottleTime = undefined;
+
+        GlobalConfig.updateThrottleTime(undefined);
+        expect(GlobalConfig.getMessageReceiptsThrottleTime()).toEqual(5000);
+    });
+
+    it("should default throttleTime to 5000 in update() when never initialized", () => {
+        GlobalConfig.messageReceiptThrottleTime = undefined;
+
+        GlobalConfig.update({ region: "us-east-1" });
+        expect(GlobalConfig.getMessageReceiptsThrottleTime()).toEqual(5000);
+    });
+
+    it("should re-enable receipts when features is explicitly passed", () => {
+        // Disable first
+        ChatSessionObject.setGlobalConfig({
+            features: { messageReceipts: { shouldSendMessageReceipts: false } }
+        });
+        expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
+
+        // Re-enable by passing features without shouldSendMessageReceipts: false
+        ChatSessionObject.setGlobalConfig({
+            features: { messageReceipts: { throttleTime: 2000 } }
+        });
+        expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(true);
     });
 });
