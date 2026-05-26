@@ -1,24 +1,24 @@
+import { jest } from "@jest/globals";
 import {
-    CHAT_EVENTS,
-    TRANSCRIPT_DEFAULT_PARAMS,
-    CONTENT_TYPE,
-    SESSION_TYPES,
-    MESSAGE,
-    EVENT,
-    CSM_CATEGORY,
-    ACPS_METHODS,
-    FEATURES,
-    CREATE_PARTICIPANT_CONACK_FAILURE,
-    DUMMY_ENDED_EVENT
+  ACPS_METHODS,
+  CHAT_EVENTS,
+  CONTENT_TYPE,
+  CREATE_PARTICIPANT_CONACK_FAILURE,
+  CSM_CATEGORY,
+  DUMMY_ENDED_EVENT,
+  EVENT,
+  FEATURES,
+  MESSAGE,
+  SESSION_TYPES,
+  TRANSCRIPT_DEFAULT_PARAMS
 } from "../constants";
+import { GlobalConfig } from "../globalConfig";
+import { csmService } from "../service/csmService";
 import Utils from "../utils";
 import { ChatController } from "./chatController";
 import { ConnectionHelperStatus } from "./connectionHelpers/baseConnectionHelper";
-import LpcConnectionHelper from "./connectionHelpers/LpcConnectionHelper";
 import connectionDetailsProvider from "./connectionHelpers/connectionDetailsProvider";
-import { csmService } from "../service/csmService";
-import { GlobalConfig } from "../globalConfig";
-import { jest } from "@jest/globals";
+import LpcConnectionHelper from "./connectionHelpers/LpcConnectionHelper";
 
 jest.mock("./connectionHelpers/LpcConnectionHelper");
 jest.mock("./connectionHelpers/connectionDetailsProvider");
@@ -279,7 +279,7 @@ describe("ChatController", () => {
             expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.SEND_MESSAGE, expect.anything(), CSM_CATEGORY.API, [{name: "ContentType", value: CONTENT_TYPE.textPlain}]);
         }
     });
-  
+
     test("sendEvent works as expected", async () => {
         const args = {
             metadata: "metadata",
@@ -397,7 +397,7 @@ describe("ChatController", () => {
         expect(csmService.addCountAndErrorMetric).toHaveBeenCalledWith(ACPS_METHODS.DESCRIBE_VIEW, CSM_CATEGORY.API, false, []);
         expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.DESCRIBE_VIEW, expect.anything(), CSM_CATEGORY.API, []);
     });
- 
+
     test("describeView throws an error", async () => {
         const args = {
             metadata: "metadata",
@@ -424,7 +424,7 @@ describe("ChatController", () => {
         };
         const chatController = getChatController();
         await chatController.connect();
- 
+
         const response = await chatController.getAuthenticationUrl(args);
         expect(chatClient.getAuthenticationUrl).toHaveBeenCalledWith("token", "redirectUri", "sessionId");
         expect(response.metadata).toBe("metadata");
@@ -451,7 +451,7 @@ describe("ChatController", () => {
         }
     });
 
-    
+
     test("cancelParticipantAuthentication works as expected", async () => {
         const args = {
             metadata: "metadata",
@@ -459,7 +459,7 @@ describe("ChatController", () => {
         };
         const chatController = getChatController();
         await chatController.connect();
- 
+
         const response = await chatController.cancelParticipantAuthentication(args);
         expect(chatClient.cancelParticipantAuthentication).toHaveBeenCalledWith("token", "sessionId");
         expect(response.metadata).toBe("metadata");
@@ -522,7 +522,7 @@ describe("ChatController", () => {
             expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.GET_TRANSCRIPT, expect.anything(), CSM_CATEGORY.API, []);
         }
     });
-  
+
     test("disconnect works as expected", async () => {
         const chatController = getChatController();
         await chatController.connect();
@@ -546,7 +546,7 @@ describe("ChatController", () => {
             expect(csmService.addLatencyMetricWithStartTime).toHaveBeenCalledWith(ACPS_METHODS.DISCONNECT_PARTICIPANT, expect.anything(), CSM_CATEGORY.API);
         }
     });
-  
+
     test("incoming message receive works as expected", async () => {
         const chatController = getChatController();
         await chatController.connect();
@@ -586,7 +586,7 @@ describe("ChatController", () => {
         await Utils.delay(1);
         expect(messageHandler).toHaveBeenCalledTimes(0);
     });
-  
+
     test("incoming typing receive works as expected", async () => {
         const chatController = getChatController();
         await chatController.connect();
@@ -641,7 +641,7 @@ describe("ChatController", () => {
         const chatController = getChatController();
         chatController.connect().then(() => {
             chatClient.sendEvent.mockClear();
-      
+
             Promise.all([chatController.sendEvent(args),
                 chatController.sendEvent(args),
                 chatController.sendEvent(args),
@@ -662,7 +662,7 @@ describe("ChatController", () => {
                 messageId: "messageId"
             })
         };
-        
+
         const chatController = getChatController();
         await chatController.connect();
         chatController.pubsub = {
@@ -765,7 +765,7 @@ describe("ChatController", () => {
                 }).then(response => {
                     expect(chatClient.sendEvent).toHaveBeenCalledTimes(2);
                     expect(chatClient.sendEvent).toHaveBeenCalledWith("token", "application/vnd.amazonaws.connect.event.message.read", readArgs.content, "INCOMING_READ_RECEIPT", 1000);
-                    expect(chatClient.sendEvent).toHaveBeenCalledWith("token", "application/vnd.amazonaws.connect.event.message.delivered", finalContent, "INCOMING_DELIVERED_RECEIPT", 1000);  
+                    expect(chatClient.sendEvent).toHaveBeenCalledWith("token", "application/vnd.amazonaws.connect.event.message.delivered", finalContent, "INCOMING_DELIVERED_RECEIPT", 1000);
                     expect(response.metadata).toBe("metadata");
                     expect(response.testField).toBe("test");
                     done();
@@ -925,7 +925,7 @@ describe("ChatController", () => {
         // Simulate chat ended event to set _participantDisconnected = true
         chatController.connectionHelper.$simulateEnding();
         await Utils.delay(15); // Wait for the delay in _handleIncomingMessage
-        
+
         try {
             await chatController.sendMessage(args);
         } catch(err) {
@@ -962,10 +962,10 @@ describe("ChatController", () => {
         const chatController = getChatController(false);
         await chatController.connect();
         await Utils.delay(1);
-      
+
         chatController.connectionHelper.$simulateEnding();
-        await Utils.delay(15); 
-        
+        await Utils.delay(15);
+
         try {
             await chatController.sendAttachment(args);
         } catch(err) {
@@ -998,10 +998,10 @@ describe("ChatController", () => {
         const chatController = getChatController(false);
         await chatController.connect();
         await Utils.delay(1);
-        
+
         chatController.connectionHelper.$simulateEnding();
         await Utils.delay(15);
-        
+
         try {
             await chatController.downloadAttachment(args);
         } catch(err) {
@@ -1034,10 +1034,10 @@ describe("ChatController", () => {
         const chatController = getChatController(false);
         await chatController.connect();
         await Utils.delay(1);
-      
+
         chatController.connectionHelper.$simulateEnding();
-        await Utils.delay(15); 
-        
+        await Utils.delay(15);
+
         try {
             await chatController.sendEvent(args);
         } catch(err) {
@@ -1062,10 +1062,10 @@ describe("ChatController", () => {
         const chatController = getChatController(false);
         await chatController.connect();
         await Utils.delay(1);
-        
+
         chatController.connectionHelper.$simulateEnding();
-        await Utils.delay(15); 
-        
+        await Utils.delay(15);
+
         try {
             await chatController.getTranscript({});
         } catch(err) {
@@ -1090,11 +1090,11 @@ describe("ChatController", () => {
         const chatController = getChatController(false);
         await chatController.connect();
         await Utils.delay(1);
-        
+
         // Simulate chat ended event to set _participantDisconnected = true
         chatController.connectionHelper.$simulateEnding();
         await Utils.delay(15); // Wait for the delay in _handleIncomingMessage
-        
+
         try {
             await chatController.disconnectParticipant();
         } catch(err) {
@@ -1147,20 +1147,20 @@ describe("ChatController", () => {
         const chatController = getChatController();
         const cleanUpSpy = jest.spyOn(chatController, 'cleanUpOnParticipantDisconnect');
         const breakConnectionSpy = jest.spyOn(chatController, 'breakConnection');
-        
+
         chatController._forwardChatEvent = jest.fn();
-    
+
         cleanUpSpy.mockImplementation(() => {});
-     
+
         expect(chatController.hasChatEnded).toBe(false);
         expect(chatController._participantDisconnected).toBe(false);
-        
+
         const chatEndedData = {
             ContentType: CONTENT_TYPE.chatEnded,
             Type: EVENT,
             AbsoluteTime: '2023-01-01T00:00:00.000Z'
         };
-        
+
         const originalForwardChatEvent = chatController._forwardChatEvent;
         chatController._forwardChatEvent = jest.fn((eventName, data) => {
             originalForwardChatEvent.call(chatController, eventName, data);
@@ -1171,9 +1171,9 @@ describe("ChatController", () => {
                 }, 5);
             }
         });
-        
+
         chatController._handleIncomingMessage(chatEndedData);
-        
+
         expect(chatController.hasChatEnded).toBe(true);
         expect(chatController._forwardChatEvent).toHaveBeenCalledWith(
             CHAT_EVENTS.INCOMING_MESSAGE,
@@ -1182,16 +1182,16 @@ describe("ChatController", () => {
                 chatDetails: expect.anything()
             }
         );
-        
+
         expect(chatController._forwardChatEvent.mock.calls[1][0]).toBe(CHAT_EVENTS.CHAT_ENDED);
         expect(chatController._forwardChatEvent.mock.calls[1][1]).toEqual({
             data: null,
             chatDetails: expect.anything()
         });
-        
+
         expect(breakConnectionSpy).toHaveBeenCalledTimes(1);
         await Utils.delay(10);
-        
+
         expect(chatController._participantDisconnected).toBe(true);
         expect(cleanUpSpy).toHaveBeenCalledTimes(1);
     });
@@ -1199,19 +1199,19 @@ describe("ChatController", () => {
     test('_handleIncomingMessage should not set _participantDisconnected for non-chatEnded events', async () => {
         const chatController = getChatController();
         const cleanUpSpy = jest.spyOn(chatController, 'cleanUpOnParticipantDisconnect');
-        
+
         expect(chatController._participantDisconnected).toBe(false);
-        
+
         const messageData = {
             ContentType: CONTENT_TYPE.textPlain,
             Type: MESSAGE,
             Message: 'Hello world'
         };
-        
+
         chatController._handleIncomingMessage(messageData);
-        
+
         await Utils.delay(15);
-        
+
         expect(chatController._participantDisconnected).toBe(false);
         expect(cleanUpSpy).not.toHaveBeenCalled();
     });
@@ -1300,3 +1300,140 @@ describe("ChatController", () => {
         });
     });
 });
+
+
+describe("sendMessageReceipt", () => {
+    const chatDetails = {
+        contactId: "id",
+        initialContactId: "id",
+        connectionDetails: {},
+        participantId: "pid",
+        participantToken: "token"
+    };
+    let chatClient;
+
+    function getController() {
+        GlobalConfig.update({
+            features: [],
+            throttleTime: 1000
+        });
+        return new ChatController({
+            sessionType: SESSION_TYPES.CUSTOMER,
+            chatDetails: chatDetails,
+            chatClient: chatClient,
+            websocketManager: {},
+        });
+    }
+
+    beforeEach(() => {
+        jest.resetAllMocks();
+        console.error = jest.fn();
+        window.connect = { ChatSession: {} };
+        connectionDetailsProvider.mockImplementation(() => ({
+            fetchConnectionDetails: () => Promise.resolve({
+                url: "url", expiry: "expiry", connectionToken: "token"
+            }),
+            callCreateParticipantConnection: () => Promise.resolve("connAck"),
+            getConnectionDetails: () => ({}),
+        }));
+        LpcConnectionHelper.mockImplementation(() => ({
+            onEnded: () => {},
+            onConnectionLost: () => {},
+            onConnectionGain: () => {},
+            onDeepHeartbeatSuccess: () => {},
+            onDeepHeartbeatFailure: () => {},
+            onBackgroundChatEnded: () => {},
+            onMessage: () => {},
+            start: () => Promise.resolve(),
+            end: () => Promise.resolve(),
+            getStatus: () => ConnectionHelperStatus.Connected,
+            getConnectionToken: () => "token",
+        }));
+        chatClient = {
+            sendMessage: jest.fn(() => Promise.resolve({ testField: "test" })),
+            sendEvent: jest.fn(() => Promise.resolve({ testField: "test" })),
+            getTranscript: jest.fn(() => Promise.resolve({ testField: "test" })),
+            disconnectParticipant: jest.fn(() => Promise.resolve({ testField: "test" })),
+            sendAttachment: jest.fn(() => Promise.resolve({ testField: "test" })),
+            downloadAttachment: jest.fn(() => Promise.resolve({ testField: "test" })),
+            describeView: jest.fn(() => Promise.resolve({ testField: "test" })),
+            getAuthenticationUrl: jest.fn(() => Promise.resolve({ testField: "test" })),
+            cancelParticipantAuthentication: jest.fn(() => Promise.resolve({ testField: "test" })),
+        };
+        jest.spyOn(csmService, 'addLatencyMetricWithStartTime').mockImplementation(() => {});
+        jest.spyOn(csmService, 'addCountAndErrorMetric').mockImplementation(() => {});
+        jest.spyOn(csmService, 'addCountMetric').mockImplementation(() => {});
+    });
+
+    test("should send a delivered receipt successfully", async () => {
+        const chatController = getController();
+        await chatController.connect();
+        const result = await chatController.sendMessageReceipt({
+            event: "delivered",
+            messageId: "msg-123"
+        });
+        expect(chatClient.sendEvent).toHaveBeenCalledWith(
+            "token",
+            CONTENT_TYPE.deliveredReceipt,
+            JSON.stringify({ messageId: "msg-123" }),
+            undefined
+        );
+        expect(result.testField).toEqual("test");
+    });
+
+    test("should send a read receipt successfully", async () => {
+        const chatController = getController();
+        await chatController.connect();
+        const result = await chatController.sendMessageReceipt({
+            event: "read",
+            messageId: "msg-456"
+        });
+        expect(chatClient.sendEvent).toHaveBeenCalledWith(
+            "token",
+            CONTENT_TYPE.readReceipt,
+            JSON.stringify({ messageId: "msg-456" }),
+            undefined
+        );
+        expect(result.testField).toEqual("test");
+    });
+
+    test("should accept message object with Id field", async () => {
+        const chatController = getController();
+        await chatController.connect();
+        const result = await chatController.sendMessageReceipt({
+            event: "read",
+            message: { Id: "msg-789", Type: "MESSAGE" }
+        });
+        expect(chatClient.sendEvent).toHaveBeenCalledWith(
+            "token",
+            CONTENT_TYPE.readReceipt,
+            JSON.stringify({ messageId: "msg-789" }),
+            undefined
+        );
+        expect(result.testField).toEqual("test");
+    });
+
+    test("should reject when event is invalid", async () => {
+        const chatController = getController();
+        await chatController.connect();
+        await expect(chatController.sendMessageReceipt({
+            event: "sent",
+            messageId: "msg-123"
+        })).rejects.toEqual({
+            errorMessage: "sendMessageReceipt: event must be 'delivered' or 'read'",
+            data: { event: "sent", messageId: "msg-123" }
+        });
+    });
+
+    test("should reject when messageId is missing", async () => {
+        const chatController = getController();
+        await chatController.connect();
+        await expect(chatController.sendMessageReceipt({
+            event: "delivered"
+        })).rejects.toEqual({
+            errorMessage: "sendMessageReceipt: messageId or message.Id is required",
+            data: { event: "delivered" }
+        });
+    });
+});
+

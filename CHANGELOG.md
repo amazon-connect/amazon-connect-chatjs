@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.1.0]
+### Added
+- `sendMessageReceipt()` method that sends Read/Delivered receipts directly, bypassing the automatic receipt gate and throttle. This allows manual control over when receipts are sent regardless of the `shouldSendMessageReceipts` setting.
+
+### Fixed
+- `setGlobalConfig` now preserves message-receipts configuration when the caller omits the `features` field. Previously, any subsequent call (e.g., from AmazonConnectStreams updating only `loggerConfig` and `region`) would re-enable receipts even if they were explicitly disabled. Receipts are still enabled by default on first call if no prior explicit configuration exists.
+
 ## [5.0.0]
 ### Added
 - Lex streaming support with partial message stitching for bot responses

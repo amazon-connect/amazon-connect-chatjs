@@ -142,6 +142,10 @@ connect.ChatSession.setGlobalConfig({
       throttleTime: 5000 // default: 5000, customize time to wait before sending Read/Delivered receipts
     }
   },
+  // NOTE: Message receipts are enabled by default on the first setGlobalConfig() call.
+  // If you explicitly configure messageReceipts (enable or disable), subsequent setGlobalConfig()
+  // calls that omit `features` will preserve your configuration. To send receipts manually with
+  // full control over timing, use the `sendMessageReceipt()` method instead of `sendEvent()`.
   // Pass in a user agent suffix used to configure the AWS SDK client in Amazon Connect ChatJS.
   // This will be appended to the x-amz-user-agent custom header used in outgoing API requests
   customUserAgentSuffix: "", // (optional)
@@ -1234,6 +1238,29 @@ The arguments are based on the [API request body](https://docs.aws.amazon.com/co
   The response is a url string.
   `chatSession.getAttachmentURL()` invokes the GetAttachment using the AttachmentId as a request parameter and directly returns pre-signed URL received in the GetAttachment API response.
 
+##### `chatSession.sendMessageReceipt()`
+
+```js
+const awsSdkResponse = await chatSession.sendMessageReceipt({
+  event: "delivered", // REQUIRED: "delivered" or "read"
+  messageId: "message-id-from-transcript" // REQUIRED
+});
+```
+
+Sends a Read or Delivered receipt for a specific message. Unlike `sendEvent()`, this method bypasses the automatic receipt gate and throttle, allowing you to send receipts even when `shouldSendMessageReceipts` is set to `false` in the global config.
+
+This is useful when you want manual control over when receipts are sent (e.g., sending a Read receipt only when the user scrolls a message into view).
+
+The `event` field must be either `"delivered"` or `"read"`. The `messageId` field is the ID of the message you want to acknowledge. You can also pass `message` with an object containing an `Id` field instead of `messageId`.
+
+```js
+// Alternative: pass the message object directly
+await chatSession.sendMessageReceipt({
+  event: "read",
+  message: transcriptItem // must have an `Id` property
+});
+```
+
 #### `chatSession.getChatDetails()`
 
 ```js
@@ -2299,6 +2326,10 @@ connect.ChatSession.setGlobalConfig({
       throttleTime: 5000 //default throttle time - time to wait before sending Read/Delivered receipt.
     }
   },
+  // NOTE: Message receipts are enabled by default on the first setGlobalConfig() call.
+  // If you explicitly configure messageReceipts (enable or disable), subsequent setGlobalConfig()
+  // calls that omit `features` will preserve your configuration. To send receipts manually with
+  // full control over timing, use the `sendMessageReceipt()` method instead of `sendEvent()`.
   // Pass in a user agent suffix used to configure the AWS SDK client in Amazon Connect ChatJS.
   // This will be appended to the x-amz-user-agent custom header used in outgoing API requests
   customUserAgentSuffix: "",

@@ -1,4 +1,4 @@
-import { FEATURES, DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS } from "./constants";
+import { DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS, FEATURES } from "./constants";
 import { LogManager } from "./log";
 
 class GlobalConfigImpl {
@@ -21,9 +21,9 @@ class GlobalConfigImpl {
                 if (Array.isArray(value)) {
                     value.forEach(feature => {
                         //if a new feature is added
-                        if (Array.isArray(oldVal) && oldVal.indexOf(feature) === -1 && 
+                        if (Array.isArray(oldVal) && oldVal.indexOf(feature) === -1 &&
                                 Array.isArray(self.featureChangeListeners[feature])) {
-                                    
+
                             self.featureChangeListeners[feature].forEach(callback => callback());
                             self._cleanFeatureChangeListener(feature);
                         }
@@ -38,6 +38,7 @@ class GlobalConfigImpl {
         this.messageReceiptThrottleTime = DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS;
         this.featureChangeListeners = [];
         this.customUserAgentSuffix = "";
+        this._messageReceiptsExplicitlyConfigured = false;
     }
     update(configInput) {
         var config = configInput || {};
@@ -46,10 +47,12 @@ class GlobalConfigImpl {
         this.cell = config.cell || this.cell;
         this.endpointOverride = config.endpoint || this.endpointOverride;
         this.reconnect = config.reconnect === false ? false : this.reconnect;
-        this.messageReceiptThrottleTime = config.throttleTime || this.messageReceiptThrottleTime;
-        // update features only if features is of type array.
-        const features = Array.isArray(config.features) ? config.features : this.features.values;
-        this.features["values"] = Array.isArray(features) ? [...features] : new Array();
+        this.messageReceiptThrottleTime = config.throttleTime || this.messageReceiptThrottleTime || DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS;
+        if (Array.isArray(config.features)) {
+            this.features["values"] = [...config.features];
+        } else if (!Array.isArray(this.features["values"])) {
+            this.features["values"] = new Array();
+        }
         this.customUserAgentSuffix = config.customUserAgentSuffix || this.customUserAgentSuffix;
     }
 
@@ -66,7 +69,7 @@ class GlobalConfigImpl {
     }
 
     updateThrottleTime(throttleTime) {
-        this.messageReceiptThrottleTime = throttleTime || this.messageReceiptThrottleTime;
+        this.messageReceiptThrottleTime = throttleTime || this.messageReceiptThrottleTime || DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS;
     }
 
     updateRegionOverride(regionOverride) {
@@ -102,7 +105,17 @@ class GlobalConfigImpl {
             return;
         }
         const index = this.features["values"].indexOf(feature);
-        this.features["values"].splice(index, 1);
+        if (index > -1) {
+            this.features["values"].splice(index, 1);
+        }
+    }
+
+    setMessageReceiptsExplicitlyConfigured() {
+        this._messageReceiptsExplicitlyConfigured = true;
+    }
+
+    isMessageReceiptsExplicitlyConfigured() {
+        return this._messageReceiptsExplicitlyConfigured;
     }
 
     setFeatureFlag(feature) {

@@ -1,16 +1,16 @@
-import {
-    UnImplementedMethodException,
-    IllegalArgumentException
-} from "./exceptions";
 import { ChatClientFactory } from "../client/client";
-import { ChatServiceArgsValidator } from "./chatArgsValidator";
-import { SESSION_TYPES, CHAT_EVENTS, FEATURES, STREAM_JS, CHAT_SESSION_ERROR_TYPES, STREAM_METRIC_ERROR_TYPES, CHAT_SESSION_SUCCESS_TYPES } from "../constants";
+import { CHAT_EVENTS, CHAT_SESSION_ERROR_TYPES, CHAT_SESSION_SUCCESS_TYPES, FEATURES, SESSION_TYPES, STREAM_JS, STREAM_METRIC_ERROR_TYPES } from "../constants";
 import { GlobalConfig } from "../globalConfig";
-import { ChatController } from "./chatController";
-import { LogManager, LogLevel, Logger } from "../log";
-import { csmService } from "../service/csmService";
 import WebSocketManager from "../lib/amazon-connect-websocket-manager";
+import { LogLevel, LogManager, Logger } from "../log";
+import { csmService } from "../service/csmService";
 import StreamMetricUtils from "../streamMetricUtils";
+import { ChatServiceArgsValidator } from "./chatArgsValidator";
+import { ChatController } from "./chatController";
+import {
+  IllegalArgumentException,
+  UnImplementedMethodException
+} from "./exceptions";
 
 const logger = LogManager.getLogger({ prefix: "ChatJS-GlobalConfig" });
 
@@ -280,21 +280,21 @@ var setGlobalConfig = config => {
      * subsequent setGlobalConfig call that updates unrelated fields does not unintentionally
      * reset them.
      */
-    if (config.features !== undefined) {
-        logger.warn("enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false");
-        GlobalConfig.updateThrottleTime(config.features?.messageReceipts?.throttleTime);
-        if (config.features?.messageReceipts?.shouldSendMessageReceipts === false) {
-            GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
-        } else {
-            /**
-             * Note: if update config is called with `config.features` array, it replaces default config
-             * this ensure `message-receipts` feature is always enabled.
-             * Only way to disable message receipts is by setting config.features.messageReceipts.shouldSendMessageReceipts == false
-             * */
+    //Message Receipts enabled by default
+    if (!config.features) {
+        if (!GlobalConfig.isMessageReceiptsExplicitlyConfigured()) {
             setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
         }
+    } else if (!(config.features?.messageReceipts?.shouldSendMessageReceipts === false)) {
+        logger.warn("enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false");
+        setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+        GlobalConfig.updateThrottleTime(config.features?.messageReceipts?.throttleTime);
+        GlobalConfig.setMessageReceiptsExplicitlyConfigured();
+    } else {
+        GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
+        GlobalConfig.updateThrottleTime(config.features?.messageReceipts?.throttleTime);
+        GlobalConfig.setMessageReceiptsExplicitlyConfigured();
     }
-    // else: features omitted, preserve the prior caller's message-receipts configuration
 };
 
 var setFeatureFlag = feature => {
@@ -313,7 +313,7 @@ var ChatSessionConstructor = args => {
     return CHAT_SESSION_FACTORY.createChatSession(
         type,
         args.chatDetails,
-        options,//options contain region 
+        options,//options contain region
         args.websocketManager,
     );
 };
