@@ -281,18 +281,21 @@ var setGlobalConfig = config => {
      * reset them.
      */
     //Message Receipts enabled by default
-    if (!config.features) {
+    const messageReceiptsConfig = config.features?.messageReceipts;
+    if (messageReceiptsConfig === undefined || messageReceiptsConfig === null) {
+        // Caller did not configure messageReceipts on this call (undefined or null).
+        // Default-enable only if the customer has never explicitly configured them in a prior call.
         if (!GlobalConfig.isMessageReceiptsExplicitlyConfigured()) {
             setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
         }
-    } else if (!(config.features?.messageReceipts?.shouldSendMessageReceipts === false)) {
+    } else if (messageReceiptsConfig.shouldSendMessageReceipts !== false) {
         logger.warn("enabling message-receipts by default; to disable set config.features.messageReceipts.shouldSendMessageReceipts = false");
         setFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
-        GlobalConfig.updateThrottleTime(config.features?.messageReceipts?.throttleTime);
+        GlobalConfig.updateThrottleTime(messageReceiptsConfig.throttleTime);
         GlobalConfig.setMessageReceiptsExplicitlyConfigured();
     } else {
         GlobalConfig.removeFeatureFlag(FEATURES.MESSAGE_RECEIPTS_ENABLED);
-        GlobalConfig.updateThrottleTime(config.features?.messageReceipts?.throttleTime);
+        GlobalConfig.updateThrottleTime(messageReceiptsConfig.throttleTime);
         GlobalConfig.setMessageReceiptsExplicitlyConfigured();
     }
 };

@@ -498,4 +498,44 @@ describe("message-receipts config behavior", () => {
         });
         expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(true);
     });
+
+    it("should preserve disabled state when a later setGlobalConfig passes features but omits messageReceipts", () => {
+        // Customer explicitly disables receipts
+        ChatSessionObject.setGlobalConfig({
+            features: { messageReceipts: { shouldSendMessageReceipts: false } }
+        });
+        expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
+
+        // A later caller (e.g., Streams) passes features but does not configure messageReceipts
+        ChatSessionObject.setGlobalConfig({
+            features: []
+        });
+        expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
+
+        ChatSessionObject.setGlobalConfig({
+            features: { someOtherFeature: true }
+        });
+        expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
+    });
+
+    it("should not mark messageReceipts explicit when features is passed but messageReceipts is omitted", () => {
+        ChatSessionObject.setGlobalConfig({
+            features: []
+        });
+        expect(GlobalConfig.isMessageReceiptsExplicitlyConfigured()).toEqual(false);
+        expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(true);
+    });
+
+    it("should treat features.messageReceipts === null the same as undefined and not throw", () => {
+        // First disable receipts explicitly so we can assert the null call preserves it
+        ChatSessionObject.setGlobalConfig({
+            features: { messageReceipts: { shouldSendMessageReceipts: false } }
+        });
+        expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
+
+        expect(() => ChatSessionObject.setGlobalConfig({
+            features: { messageReceipts: null }
+        })).not.toThrow();
+        expect(GlobalConfig.isFeatureEnabled(FEATURES.MESSAGE_RECEIPTS_ENABLED)).toEqual(false);
+    });
 });

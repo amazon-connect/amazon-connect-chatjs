@@ -953,16 +953,16 @@ declare namespace connect {
    * receipt gate and throttle.
    */
   interface SendMessageReceiptArgs {
-    /** The receipt type: "delivered" or "read". */
+    /** The receipt event type. */
     event: "delivered" | "read";
 
-    /** The ID of the incoming message to acknowledge. */
+    /** The ID of the message to acknowledge. Takes precedence over `message.Id`. */
     messageId?: string;
 
-    /** A ChatTranscriptItem from getTranscript or onMessage — its Id will be used. */
-    message?: ChatTranscriptItem;
+    /** A transcript item or any object exposing `Id`. Used when `messageId` is not supplied. */
+    message?: { Id: string };
 
-    /** (Optional) Idempotency token. */
+    /** Optional client token forwarded to the underlying SendEvent call. */
     clientToken?: string;
   }
 
