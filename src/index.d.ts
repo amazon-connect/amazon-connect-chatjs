@@ -162,15 +162,7 @@ declare namespace connect {
     readonly region?: string;
 
     /** Feature configurations */
-    readonly features?: {
-      /** Message receipt configuration */
-      messageReceipts?: {
-        /** Enable/disable Read/Delivered receipts */
-        shouldSendMessageReceipts?: boolean;
-        /** Throttle time in milliseconds before sending Read/Delivered receipt */
-        throttleTime?: number;
-      };
-    };
+    readonly features?: ChatFeaturesConfig;
 
     /** Custom user agent suffix */
     readonly customUserAgentSuffix?: string;
@@ -179,6 +171,35 @@ declare namespace connect {
     readonly webSocketManagerConfig?: {
       isNetworkOnline: () => boolean;
     }
+  }
+
+  /** Feature configurations passed to `setGlobalConfig`'s `features` field. */
+  interface ChatFeaturesConfig {
+    /**
+     * Message receipt configuration. Omit this key to preserve any previously
+     * configured message-receipts settings across `setGlobalConfig` calls.
+     */
+    messageReceipts?: MessageReceiptsConfig;
+  }
+
+  /** Read/Delivered message receipt configuration. */
+  interface MessageReceiptsConfig {
+    /**
+     * Enables or disables Read/Delivered receipts.
+     *
+     * Setting this to `false` is the ONLY supported way to disable receipts.
+     * Note: assigning a falsy value to `messageReceipts` itself (e.g. `false`,
+     * `0`, `""`) does NOT disable receipts — you must set
+     * `shouldSendMessageReceipts: false`.
+     * @default true
+     */
+    shouldSendMessageReceipts?: boolean;
+
+    /**
+     * Throttle time in milliseconds to wait before sending a Read/Delivered receipt.
+     * @default 5000
+     */
+    throttleTime?: number;
   }
 
   interface ChatLogger {
@@ -953,16 +974,16 @@ declare namespace connect {
    * receipt gate and throttle.
    */
   interface SendMessageReceiptArgs {
-    /** The receipt type: "delivered" or "read". */
+    /** The receipt event type. */
     event: "delivered" | "read";
 
-    /** The ID of the incoming message to acknowledge. */
+    /** The ID of the message to acknowledge. Takes precedence over `message.Id`. */
     messageId?: string;
 
-    /** A ChatTranscriptItem from getTranscript or onMessage — its Id will be used. */
-    message?: ChatTranscriptItem;
+    /** A transcript item or any object exposing `Id`. Used when `messageId` is not supplied. */
+    message?: { Id: string };
 
-    /** (Optional) Idempotency token. */
+    /** Optional client token forwarded to the underlying SendEvent call. */
     clientToken?: string;
   }
 

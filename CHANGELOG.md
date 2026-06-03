@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `setGlobalConfig` now preserves message-receipts configuration when the caller omits the `features` field. Previously, any subsequent call (e.g., from AmazonConnectStreams updating only `loggerConfig` and `region`) would re-enable receipts even if they were explicitly disabled. Receipts are still enabled by default on first call if no prior explicit configuration exists.
+- `setGlobalConfig` no longer marks message-receipts as explicitly configured when `features` is passed but does not include a `messageReceipts` key (or sets it to `null`). This ensures a customer's prior explicit configuration is preserved across calls that supply other feature flags.
+- Added `SendMessageReceiptArgs` interface and `sendMessageReceipt()` typings to `src/index.d.ts` for TypeScript consumers.
+
+### Changed
+- Extracted the `features` config in `src/index.d.ts` into named `ChatFeaturesConfig` and `MessageReceiptsConfig` interfaces with documentation clarifying that `shouldSendMessageReceipts: false` is the only supported way to disable receipts. No behavior change.
 
 ## [5.0.0]
 ### Added
