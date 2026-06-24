@@ -81,9 +81,23 @@ import 'amazon-connect-chatjs';
 
 This package includes built-in TypeScript type definitions (requires `typescript@>=3.0.1`). No additional `@types` packages needed.
 
+ChatJS publishes its types as an ambient global `namespace connect`, so reference that global directly (e.g. `connect.CustomerChatSession`, `connect.ChatMessageEvent`) to get full typing. If you access the library through `window.connect`, bind it to the namespace with `typeof connect` so it isn't inferred as `any`.
+
 ```typescript
 import 'amazon-connect-chatjs'; // loads dist/index.d.ts
+
+declare global {
+  interface Window {
+    connect: typeof connect;
+  }
+}
+
+const session: connect.CustomerChatSession = window.connect.ChatSession.create({ /* ... */ });
+session.onMessage((event: connect.ChatMessageEvent) => {
+  const content = event.data.Content; // string | undefined
+});
 ```
+
 ### Importing from CDN
 
 ```html
