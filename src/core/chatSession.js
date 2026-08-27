@@ -1,4 +1,4 @@
-import { ChatClientFactory } from "../client/client";
+import { ChatClientFactory, ChatClient } from "../client/client";
 import { CHAT_EVENTS, CHAT_SESSION_ERROR_TYPES, CHAT_SESSION_SUCCESS_TYPES, FEATURES, SESSION_TYPES, STREAM_JS, STREAM_METRIC_ERROR_TYPES } from "../constants";
 import { GlobalConfig } from "../globalConfig";
 import WebSocketManager from "../lib/amazon-connect-websocket-manager";
@@ -343,7 +343,8 @@ const ChatSessionObject = {
     SessionTypes: SESSION_TYPES,
     csmService: csmService,
     setFeatureFlag: setFeatureFlag,
-    setRegionOverride: setRegionOverride
+    setRegionOverride: setRegionOverride,
+    ChatClient: ChatClient
 };
 
 export { ChatSessionObject };

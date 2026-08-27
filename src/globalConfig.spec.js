@@ -80,6 +80,43 @@ describe("globalConfig", () => {
         });
     });
 
+    describe("customChatClient", () => {
+        const clientA = { sendMessage: () => {} };
+        const clientB = { sendMessage: () => {} };
+
+        afterEach(() => {
+            GlobalConfig.update({ customChatClient: null });
+        });
+
+        it("defaults to null so the bundled AWS client is used", () => {
+            expect(GlobalConfig.getCustomChatClient()).toBeNull();
+        });
+
+        it("stores the client it is given", () => {
+            GlobalConfig.update({ customChatClient: clientA });
+            expect(GlobalConfig.getCustomChatClient()).toBe(clientA);
+        });
+
+        it("preserves the client across a config update that omits it", () => {
+            GlobalConfig.update({ customChatClient: clientA });
+            GlobalConfig.update({ region: "eu-west-1" });
+            expect(GlobalConfig.getCustomChatClient()).toBe(clientA);
+        });
+
+        it("replaces the client when a new one is given", () => {
+            GlobalConfig.update({ customChatClient: clientA });
+            GlobalConfig.update({ customChatClient: clientB });
+            expect(GlobalConfig.getCustomChatClient()).toBe(clientB);
+        });
+
+        // Without this, a page cannot return to the bundled AWS client without a reload.
+        it("clears the client when passed null explicitly", () => {
+            GlobalConfig.update({ customChatClient: clientA });
+            GlobalConfig.update({ customChatClient: null });
+            expect(GlobalConfig.getCustomChatClient()).toBeNull();
+        });
+    });
+
     describe("About using default logger", () => {
         let messages;
         let mockFn;
