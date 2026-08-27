@@ -16,6 +16,21 @@ export default class MessageReceiptsUtil {
         this.throttleSendEventApiCall = null;
     }
 
+    /** Clears both pending throttle timers and all read/delivered receipt state. */
+    reset() {
+        clearTimeout(this.timeout);
+        clearTimeout(this.timeoutId);
+        this.timeout = null;
+        this.timeoutId = null;
+        this.readSet = new Set();
+        this.deliveredSet = new Set();
+        this.readPromiseMap = new Map();
+        this.deliveredPromiseMap = new Map();
+        this.lastReadArgs = null;
+        this.throttleInitialEventsToPrioritizeRead = null;
+        this.throttleSendEventApiCall = null;
+    }
+
     /**
      * check if message is of type read or delivered event
      *

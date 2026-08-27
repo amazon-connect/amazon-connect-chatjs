@@ -408,6 +408,13 @@ declare namespace connect {
       args: WithMetadata<DescribeViewArgs, T>
     ): Promise<WithMetadata<ParticipantServiceResponse<DescribeViewResult>, T>>;
 
+    /**
+     * Disconnects the WebSocket and unsubscribes handlers WITHOUT ending the
+     * contact, so a later connect() resumes it on a fresh socket. To end the
+     * contact, use disconnectParticipant().
+     */
+    reset(): void;
+
     // ======
     // Events
     // ======
