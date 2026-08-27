@@ -64,6 +64,27 @@ class ChatController {
         this.partialMessageUtil = new PartialMessageUtil();
         this.internalTranscriptUtils = new InternalTranscriptUtils(this.logger);
         this.transcriptUpdateEnabled = false;
+        this._setChatClientContext();
+    }
+
+    /**
+     * Lets one custom chat client serve concurrent chats. Called once per session, before any
+     * operation. Optional: the bundled AWS client does not define it.
+     */
+    _setChatClientContext() {
+        if (typeof this.chatClient?.setChatContext !== "function") {
+            return;
+        }
+        try {
+            this.chatClient.setChatContext({
+                contactId: this.contactId,
+                initialContactId: this.initialContactId,
+                participantId: this.participantId,
+                sessionType: this.sessionType
+            });
+        } catch (err) {
+            this.logger.error("customChatClient.setChatContext threw; continuing without it", err);
+        }
     }
 
     subscribe(eventName, callback) {

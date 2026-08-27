@@ -38,6 +38,7 @@ class GlobalConfigImpl {
         this.messageReceiptThrottleTime = DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS;
         this.featureChangeListeners = [];
         this.customUserAgentSuffix = "";
+        this.customChatClient = null;
         this._messageReceiptsExplicitlyConfigured = false;
     }
     update(configInput) {
@@ -54,6 +55,10 @@ class GlobalConfigImpl {
             this.features["values"] = new Array();
         }
         this.customUserAgentSuffix = config.customUserAgentSuffix || this.customUserAgentSuffix;
+        // Explicit null clears; omitting the key preserves, as elsewhere here.
+        this.customChatClient = config.customChatClient === null
+            ? null
+            : (config.customChatClient || this.customChatClient);
     }
 
     updateStageRegionCell(config) {
@@ -98,6 +103,11 @@ class GlobalConfigImpl {
 
     getEndpointOverride() {
         return this.endpointOverride;
+    }
+
+    /** The client registered via setGlobalConfig({ customChatClient }), or null. */
+    getCustomChatClient() {
+        return this.customChatClient;
     }
 
     removeFeatureFlag(feature) {

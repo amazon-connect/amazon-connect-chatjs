@@ -1,6 +1,7 @@
-import { ChatClientFactory } from "./client";
+import { ChatClientFactory, ChatClient } from "./client";
 import { CONTENT_TYPE } from "../constants";
 import { GlobalConfig } from "../globalConfig";
+import { LogManager } from "../log";
 import packageJson from '../../package.json';
 import {
   GetAttachmentCommand,
@@ -13,6 +14,7 @@ jest.mock('../globalConfig', () => {
       getRegion: jest.fn(),
       getEndpointOverride: jest.fn(),
       getCustomUserAgentSuffix: jest.fn(),
+      getCustomChatClient: jest.fn(),
     }
   }
 });
@@ -323,5 +325,81 @@ describe("client test cases", () => {
         }
       });
     });
+  });
+});
+
+describe("customChatClient", () => {
+  const region = "eu-central-1";
+  let errorLog;
+
+  function completeClient() {
+    return new (class extends ChatClient {})();
+  }
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    errorLog = jest.fn();
+    jest.spyOn(LogManager, "getLogger").mockReturnValue({
+      error: errorLog,
+      warn: jest.fn(),
+      info: jest.fn(),
+      debug: jest.fn(),
+    });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test("returns the client passed per session", () => {
+    const client = completeClient();
+    expect(ChatClientFactory.getCachedClient({ customChatClient: client }, {})).toBe(client);
+  });
+
+  test("returns the client registered globally", () => {
+    const client = completeClient();
+    GlobalConfig.getCustomChatClient.mockReturnValue(client);
+    expect(ChatClientFactory.getCachedClient({}, {})).toBe(client);
+  });
+
+  test("per-session client wins over the global one", () => {
+    const perSession = completeClient();
+    GlobalConfig.getCustomChatClient.mockReturnValue(completeClient());
+    expect(ChatClientFactory.getCachedClient({ customChatClient: perSession }, {})).toBe(perSession);
+  });
+
+  test("flags the session in logMetaData", () => {
+    const logMetaData = {};
+    ChatClientFactory.getCachedClient({ customChatClient: completeClient() }, logMetaData);
+    expect(logMetaData.usingCustomChatClient).toBe(true);
+  });
+
+  // Caching it would leak one session's client into the next.
+  test("is not cached under the region key", () => {
+    const client = completeClient();
+    const first = ChatClientFactory.getCachedClient({ region, customChatClient: client }, {});
+    const second = ChatClientFactory.getCachedClient({ region }, {});
+
+    expect(first).toBe(client);
+    expect(second).not.toBe(client);
+    expect(second.constructor.name).toBe("AWSChatClient");
+  });
+
+  test("falls back to the AWS client when none is configured", () => {
+    expect(ChatClientFactory.getCachedClient({}, {}).constructor.name).toBe("AWSChatClient");
+  });
+
+  test("logs the methods an incomplete client is missing", () => {
+    ChatClientFactory.getCachedClient({ customChatClient: { sendMessage: jest.fn() } }, {});
+    expect(errorLog).toHaveBeenCalledWith(
+      expect.stringContaining("missing required methods"),
+      { missingMethods: expect.not.arrayContaining(["sendMessage"]) }
+    );
+    expect(errorLog.mock.calls[0][1].missingMethods).toContain("createParticipantConnection");
+  });
+
+  test("stays quiet for a client extending ChatClient", () => {
+    ChatClientFactory.getCachedClient({ customChatClient: completeClient() }, {});
+    expect(errorLog).not.toHaveBeenCalled();
   });
 });

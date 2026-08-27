@@ -50,6 +50,9 @@ declare namespace connect {
     setFeatureFlag: SetFeatureFlag;
 
     setRegionOverride: SetRegionOverride;
+
+    /** Base class to extend when proxying Participant Service calls through your backend. */
+    ChatClient: typeof ChatClient;
   }
 
   // ==============
@@ -72,7 +75,9 @@ declare namespace connect {
   interface ChatDetailsInput {
     readonly contactId: string;
     readonly participantId: string;
-    readonly participantToken: string;
+
+    /** From StartChatContact. Optional only when a `customChatClient` holds it instead. */
+    readonly participantToken?: string;
   }
 
   /** Contains the options for a chat session. */
@@ -82,6 +87,107 @@ declare namespace connect {
      * @default "us-west-2"
      */
     readonly region?: string;
+
+    /**
+     * Routes every Participant Service call through this client instead of the bundled AWS
+     * one, so tokens need not reach the browser. Takes precedence over a client registered
+     * via `setGlobalConfig`.
+     */
+    readonly customChatClient?: ChatClient | null;
+  }
+
+  /**
+   * Transport contract between ChatJS and the Amazon Connect Participant Service. Extend it
+   * to proxy ACPS calls through your own backend; un-overridden methods throw.
+   *
+   * Methods resolve to `{ data: <ACPS response body, PascalCase keys unchanged> }`, except
+   * `downloadAttachment` (a Blob) and `getAttachmentURL` (a string). `connectionToken` is
+   * whatever `createParticipantConnection` returned, handed back verbatim.
+   */
+  class ChatClient {
+    createParticipantConnection(
+      participantToken: string | null,
+      type: string[] | null,
+      acknowledgeConnection: boolean | null
+    ): Promise<{ data: CreateParticipantConnectionResult }>;
+
+    disconnectParticipant(connectionToken: string | null): Promise<{ data: unknown }>;
+
+    sendMessage(
+      connectionToken: string | null,
+      content: string,
+      contentType: string,
+      clientToken?: string
+    ): Promise<{ data: SendMessageResult }>;
+
+    /** contentType precedes content here, unlike `sendMessage`. */
+    sendEvent(
+      connectionToken: string | null,
+      contentType: string,
+      content: string,
+      clientToken?: string
+    ): Promise<{ data: SendEventResult }>;
+
+    getTranscript(
+      connectionToken: string | null,
+      args: GetTranscriptArgs
+    ): Promise<{ data: GetTranscriptResult }>;
+
+    /** Owns the full upload: start, PUT to the returned URL, then complete. */
+    sendAttachment(
+      connectionToken: string | null,
+      attachment: File | Blob,
+      metadata?: unknown
+    ): Promise<{ data: unknown }>;
+
+    /** Resolves to the attachment bytes, not a `{ data }` wrapper. */
+    downloadAttachment(connectionToken: string | null, attachmentId: string): Promise<Blob>;
+
+    /** Resolves to the pre-signed URL string, not a `{ data }` wrapper. */
+    getAttachmentURL(connectionToken: string | null, attachmentId: string): Promise<string>;
+
+    /** viewToken comes first here, unlike every other method. */
+    describeView(
+      viewToken: string,
+      connectionToken: string | null
+    ): Promise<{ data: DescribeViewResult }>;
+
+    getAuthenticationUrl(
+      connectionToken: string | null,
+      redirectUri: string,
+      sessionId: string
+    ): Promise<{ data: GetAuthenticationUrlResult }>;
+
+    cancelParticipantAuthentication(
+      connectionToken: string | null,
+      sessionId: string
+    ): Promise<{ data: unknown }>;
+
+    /**
+     * Optional. Called once per session at creation, before any operation, so one client can
+     * tell concurrent chats apart. Exceptions thrown here are logged and swallowed.
+     */
+    setChatContext?(context: ChatClientContext): void;
+  }
+
+  /** Identifiers of the session a `customChatClient` is serving. */
+  interface ChatClientContext {
+    readonly contactId: string;
+    readonly initialContactId?: string;
+    readonly participantId: string;
+    readonly sessionType: ChatSessionTypes[keyof ChatSessionTypes];
+  }
+
+  /** The response shape ChatJS expects from `createParticipantConnection`. */
+  interface CreateParticipantConnectionResult {
+    readonly Websocket?: {
+      readonly Url: string;
+      readonly ConnectionExpiry: string;
+    };
+    readonly ConnectionCredentials?: {
+      readonly ConnectionToken: string;
+      readonly Expiry: string;
+    };
   }
 
   interface ChatSessionArgs {
