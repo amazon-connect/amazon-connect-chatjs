@@ -191,4 +191,32 @@ describe("MessageReceiptsUtil", () => {
             });
         }
     });
+
+    test("reset clears receipt state and BOTH pending timers", () => {
+        jest.useRealTimers();
+        const util = new MessageReceiptsUtil({});
+        util.readSet.add("m1");
+        util.deliveredSet.add("m2");
+        util.lastReadArgs = { foo: "bar" };
+        // The class uses two distinct timer handles (throttle paths at
+        // MessageReceiptsUtil.js L130 and L204); reset must clear both.
+        const clearSpy = jest.spyOn(global, "clearTimeout");
+        const timeoutHandle = setTimeout(() => {}, 10000);
+        const timeoutIdHandle = setTimeout(() => {}, 10000);
+        util.timeout = timeoutHandle;
+        util.timeoutId = timeoutIdHandle;
+
+        util.reset();
+
+        expect(clearSpy).toHaveBeenCalledWith(timeoutHandle);
+        expect(clearSpy).toHaveBeenCalledWith(timeoutIdHandle);
+        expect(util.readSet.size).toBe(0);
+        expect(util.deliveredSet.size).toBe(0);
+        expect(util.readPromiseMap.size).toBe(0);
+        expect(util.deliveredPromiseMap.size).toBe(0);
+        expect(util.lastReadArgs).toBeNull();
+        expect(util.timeout).toBeNull();
+        expect(util.timeoutId).toBeNull();
+        clearSpy.mockRestore();
+    });
 });

@@ -32,6 +32,7 @@ describe("ChatController - Transcript Updates", () => {
                 },
                 callCreateParticipantConnection: () => Promise.resolve("connAck"),
                 getConnectionDetails: () => {},
+                reset: () => {},
             };
         });
         
@@ -388,6 +389,86 @@ describe("ChatController - Transcript Updates", () => {
             await Utils.delay(1);
 
             expect(mockChatClient.getTranscript).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("reset", () => {
+        beforeEach(async () => {
+            // Establish a connectionHelper so breakConnection() has something to end.
+            await chatController.connect();
+        });
+
+        it("closes the transport WITHOUT calling disconnectParticipant", () => {
+            const endSpy = jest.spyOn(chatController.connectionHelper, "end");
+
+            chatController.reset();
+
+            // Socket is torn down (drives customerBaseInstances eviction)...
+            expect(endSpy).toHaveBeenCalledTimes(1);
+            // ...but the participant is NOT disconnected (contact survives).
+            expect(mockChatClient.disconnectParticipant).not.toHaveBeenCalled();
+        });
+
+        it("unsubscribes all event handlers", () => {
+            const handler = jest.fn();
+            chatController.subscribe(CHAT_EVENTS.INCOMING_MESSAGE, handler);
+            const unsubscribeAllSpy = jest.spyOn(chatController.pubsub, "unsubscribeAll");
+
+            chatController.reset();
+
+            expect(unsubscribeAllSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it("clears accumulated transcript state", () => {
+            chatController.transcriptUpdateEnabled = true;
+            chatController._updateTranscript(TRANSCRIPT_ACTIONS.SEND_MESSAGE, {
+                contentType: "text/plain",
+                message: "Hello"
+            });
+            expect(
+                chatController.internalTranscriptUtils.getTranscriptData().transcript
+            ).toHaveLength(1);
+
+            chatController.reset();
+
+            expect(
+                chatController.internalTranscriptUtils.getTranscriptData().transcript
+            ).toHaveLength(0);
+        });
+
+        it("resets message receipts and connection details (iOS parity)", () => {
+            const receiptSpy = jest.spyOn(chatController.messageReceiptUtil, "reset");
+            const providerSpy = jest.spyOn(chatController.connectionDetailsProvider, "reset");
+
+            chatController.reset();
+
+            expect(receiptSpy).toHaveBeenCalledTimes(1);
+            expect(providerSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it("releases the provider so a later connect() is not ignored as a duplicate", async () => {
+            chatController.reset();
+            expect(chatController.connectionDetailsProvider).toBeNull();
+
+            await chatController.connect();
+
+            expect(chatController.connectionDetailsProvider).not.toBeNull();
+        });
+
+        it("does not throw when never connected", () => {
+            const freshController = new ChatController({
+                sessionType: "CUSTOMER",
+                chatDetails: {
+                    contactId: "contact-456",
+                    participantId: "participant-456",
+                    participantToken: "token-456"
+                },
+                chatClient: mockChatClient
+            });
+
+            // No connect() called — connectionHelper is undefined; breakConnection
+            // must tolerate it.
+            expect(() => freshController.reset()).not.toThrow();
         });
     });
 });
