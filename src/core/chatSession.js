@@ -227,6 +227,16 @@ export class ChatSession {
     cancelParticipantAuthentication(args) {
         return this.controller.cancelParticipantAuthentication(args);
     }
+
+    /**
+     * Disconnects the WebSocket and unsubscribes handlers WITHOUT ending the
+     * contact, so a later connect() resumes it on a fresh socket. Mirrors
+     * amazon-connect-chat-ios ChatSession.reset(). To END the contact, use
+     * disconnectParticipant().
+     */
+    reset() {
+        return this.controller.reset();
+    }
 }
 
 class AgentChatSession extends ChatSession {

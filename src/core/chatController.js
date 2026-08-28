@@ -507,6 +507,22 @@ class ChatController {
         this.pubsub.unsubscribeAll();
     }
 
+    /**
+     * Disconnects the WebSocket and drops session-scoped state WITHOUT ending
+     * the contact, so a later connect() resumes on a fresh socket. Mirrors
+     * amazon-connect-chat-ios ChatService.reset(). Unlike disconnectParticipant().
+     */
+    reset() {
+        this.breakConnection();                    // websocketManager.disconnect
+        this.cleanUpOnParticipantDisconnect();     // clearSubscriptionsAndPublishers
+        this.messageReceiptUtil.reset();           // messageReceiptsManager.reset
+        this.connectionDetailsProvider?.reset();   // connectionDetailsProvider.reset
+        this.internalTranscriptUtils.reset();      // clear transcript + temp/attachment maps
+        // connect() treats a retained provider as "already connected" and ignores the
+        // call, so drop the reference to let a later connect() start a fresh socket.
+        this.connectionDetailsProvider = null;
+    }
+
     disconnectParticipant() {
         if (!this._validateConnectionStatus('disconnectParticipant')) {
             return Promise.reject(`Failed to call disconnectParticipant, No active connection`);
