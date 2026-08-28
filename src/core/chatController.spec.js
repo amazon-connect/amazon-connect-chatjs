@@ -1437,3 +1437,61 @@ describe("sendMessageReceipt", () => {
     });
 });
 
+
+// Lets one custom chat client tell concurrent chats apart.
+describe("setChatContext", () => {
+    let chatClient;
+
+    function getController(chatDetails) {
+        return new ChatController({
+            sessionType: SESSION_TYPES.CUSTOMER,
+            chatDetails: chatDetails || { contactId: "id", participantId: "pid" },
+            chatClient: chatClient,
+            websocketManager: {},
+        });
+    }
+
+    beforeEach(() => {
+        jest.resetAllMocks();
+        console.error = jest.fn();
+        chatClient = { setChatContext: jest.fn() };
+    });
+
+    test("hands the client the session identifiers at construction", () => {
+        getController({
+            contactId: "id",
+            initialContactId: "initial-id",
+            participantId: "pid"
+        });
+        expect(chatClient.setChatContext).toHaveBeenCalledTimes(1);
+        expect(chatClient.setChatContext).toHaveBeenCalledWith({
+            contactId: "id",
+            initialContactId: "initial-id",
+            participantId: "pid",
+            sessionType: SESSION_TYPES.CUSTOMER
+        });
+    });
+
+    test("gives each concurrent session its own context", () => {
+        getController({ contactId: "id1", participantId: "pid1" });
+        getController({ contactId: "id2", participantId: "pid2" });
+        expect(chatClient.setChatContext.mock.calls.map(call => call[0].contactId))
+            .toEqual(["id1", "id2"]);
+    });
+
+    test("is optional: a client without the hook still constructs", () => {
+        chatClient = { sendMessage: jest.fn() };
+        expect(() => getController()).not.toThrow();
+    });
+
+    // A throw here would escape create() and yield an undefined controller.
+    test("swallows and logs an exception from the hook", () => {
+        const err = new Error("customer bug");
+        chatClient = { setChatContext: () => { throw err; } };
+        expect(() => getController()).not.toThrow();
+        expect(console.error).toHaveBeenCalledWith(
+            expect.stringContaining("setChatContext"),
+            err
+        );
+    });
+});
