@@ -1028,6 +1028,35 @@ Amazon Connect [Participant Service API](https://docs.aws.amazon.com/connect/lat
 >   })
 > ```
 
+> ##### Error Handling
+>
+> API methods like `sendMessage()` and `getTranscript()` return a Promise that rejects with an error object: `{ type, message, statusCode, stack, metadata }`.
+>
+> **Distinguishing network errors from server errors:**
+>
+> ```js
+> chatSession.sendMessage({
+>   contentType: "text/plain",
+>   message: "Hello World!",
+> }).catch((error) => {
+>   // error = { type, message, statusCode, stack, metadata }
+>
+>   if (error.statusCode === undefined && error.type === "TypeError") {
+>     // Network error: device is offline, DNS failure, or request timed out
+>     // error.message is browser-specific:
+>     //   Chrome/Edge: "Failed to fetch"
+>     //   Firefox:     "NetworkError when attempting to fetch resource"
+>     //   Safari:      "Load failed"
+>   } else if (error.statusCode >= 500) {
+>     // Server error: 500, 502, 503, etc.
+>   } else if (error.statusCode >= 400) {
+>     // Client error: 400, 403, 429, etc.
+>   }
+> });
+> ```
+>
+> **Tip:** Combine error handling with [Connection Management](#connection-management) events (`onConnectionLost`, `onConnectionBroken`, `onDeepHeartbeatFailure`) to monitor WebSocket health and decide whether to retry failed API calls.
+
 #### `chatSession.connect()`
 
 ```js
