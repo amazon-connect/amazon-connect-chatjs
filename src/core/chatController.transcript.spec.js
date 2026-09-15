@@ -453,6 +453,9 @@ describe("ChatController - Transcript Updates", () => {
             await chatController.connect();
 
             expect(chatController.connectionDetailsProvider).not.toBeNull();
+            // The nulled references are all re-established by the reconnect.
+            expect(chatController.connectionHelper).not.toBeNull();
+            expect(chatController.getChatDetails().connectionDetails).toBeDefined();
         });
 
         it("does not throw when never connected", () => {
@@ -469,6 +472,92 @@ describe("ChatController - Transcript Updates", () => {
             // No connect() called — connectionHelper is undefined; breakConnection
             // must tolerate it.
             expect(() => freshController.reset()).not.toThrow();
+        });
+
+        it("drops half-received bot message chunks", () => {
+            const partialSpy = jest.spyOn(chatController.partialMessageUtil, "reset");
+            chatController.partialMessageUtil.updatePartialMessageMap({
+                Id: "bot-msg-1",
+                ParticipantRole: "SYSTEM",
+                Type: "MESSAGE",
+                Content: "Hel",
+                MessageMetadata: { MessageCompleted: false, ChunkNumber: 1 }
+            });
+            expect(chatController.partialMessageUtil.partialMessageMap.size).toBe(1);
+
+            chatController.reset();
+
+            expect(partialSpy).toHaveBeenCalledTimes(1);
+            expect(chatController.partialMessageUtil.partialMessageMap.size).toBe(0);
+        });
+
+        it("releases the connection helper so API calls report no active connection", async () => {
+            chatController.reset();
+
+            expect(chatController.connectionHelper).toBeNull();
+            // Without connectionHelper, _validateConnectionStatus short-circuits
+            // instead of dereferencing null.
+            await expect(
+                chatController.sendMessage({ message: "hi", contentType: "text/plain" })
+            ).rejects.toEqual("Failed to call sendMessage, No active connection");
+            expect(mockChatClient.sendMessage).not.toHaveBeenCalled();
+        });
+
+        it("stops reporting connection details of the closed connection", () => {
+            expect(chatController.getChatDetails().connectionDetails).toBeDefined();
+
+            chatController.reset();
+
+            expect(chatController.getChatDetails().connectionDetails).toBeNull();
+            // Contact identity survives — reset does not end the contact.
+            expect(chatController.getChatDetails().contactId).toBe("contact-123");
+        });
+
+        it("returns a promise that resolves once the socket teardown settles", async () => {
+            let endResolve;
+            chatController.connectionHelper.end = jest.fn(
+                () => new Promise(resolve => { endResolve = resolve; })
+            );
+            let settled = false;
+
+            const resetPromise = chatController.reset().then(() => { settled = true; });
+
+            await Utils.delay(1);
+            expect(settled).toBe(false);
+
+            endResolve();
+            await resetPromise;
+            expect(settled).toBe(true);
+        });
+
+        it("resolves rather than rejects when the socket teardown throws synchronously", async () => {
+            const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+            const teardownError = new Error("closeWebSocket blew up");
+            chatController.connectionHelper.end = jest.fn(() => { throw teardownError; });
+
+            // A synchronous throw must not escape to the caller...
+            await expect(chatController.reset()).resolves.toBeUndefined();
+            // ...and the rest of the cleanup must still have run.
+            expect(chatController.connectionDetailsProvider).toBeNull();
+            expect(warnSpy).toHaveBeenCalledWith(
+                "Failed to close the websocket during reset",
+                teardownError
+            );
+            warnSpy.mockRestore();
+        });
+
+        it("resolves rather than rejects when the socket teardown rejects", async () => {
+            const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+            const teardownError = new Error("socket already gone");
+            chatController.connectionHelper.end = jest.fn(() => Promise.reject(teardownError));
+
+            await expect(chatController.reset()).resolves.toBeUndefined();
+
+            expect(warnSpy).toHaveBeenCalledWith(
+                "Failed to close the websocket during reset",
+                teardownError
+            );
+            warnSpy.mockRestore();
         });
     });
 });
