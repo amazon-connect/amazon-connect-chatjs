@@ -511,16 +511,33 @@ class ChatController {
      * Disconnects the WebSocket and drops session-scoped state WITHOUT ending
      * the contact, so a later connect() resumes on a fresh socket. Mirrors
      * amazon-connect-chat-ios ChatService.reset(). Unlike disconnectParticipant().
+     *
+     * @return {Promise} resolves once the socket teardown has settled. Never
+     *   rejects - teardown is best-effort and any failure is logged instead, so
+     *   callers that ignore the returned promise cannot trigger an unhandled rejection.
      */
     reset() {
-        this.breakConnection();                    // websocketManager.disconnect
+        // Tear the socket down first, while connectionHelper is still reachable. The
+        // executor form captures a synchronous throw from end() as a rejection, so a
+        // failing teardown neither escapes to the caller nor skips the cleanup below.
+        const socketClosed = new Promise(resolve => resolve(this.breakConnection()))
+            .catch(error => this._sendInternalLogToServer(
+                this.logger.warn("Failed to close the websocket during reset", error)
+            ));
+
         this.cleanUpOnParticipantDisconnect();     // clearSubscriptionsAndPublishers
         this.messageReceiptUtil.reset();           // messageReceiptsManager.reset
+        this.partialMessageUtil.reset();           // drop half-received bot message chunks
         this.connectionDetailsProvider?.reset();   // connectionDetailsProvider.reset
         this.internalTranscriptUtils.reset();      // clear transcript + temp/attachment maps
         // connect() treats a retained provider as "already connected" and ignores the
-        // call, so drop the reference to let a later connect() start a fresh socket.
+        // call, so drop these references to let a later connect() start a fresh socket
+        // and to stop getChatDetails() from reporting details of a closed connection.
         this.connectionDetailsProvider = null;
+        this.connectionHelper = null;
+        this.connectionDetails = null;
+
+        return socketClosed;
     }
 
     disconnectParticipant() {

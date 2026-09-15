@@ -412,8 +412,11 @@ declare namespace connect {
      * Disconnects the WebSocket and unsubscribes handlers WITHOUT ending the
      * contact, so a later connect() resumes it on a fresh socket. To end the
      * contact, use disconnectParticipant().
+     *
+     * Resolves once the socket teardown has settled. Never rejects - teardown is
+     * best-effort and any failure is logged instead, so awaiting is optional.
      */
-    reset(): void;
+    reset(): Promise<void>;
 
     // ======
     // Events

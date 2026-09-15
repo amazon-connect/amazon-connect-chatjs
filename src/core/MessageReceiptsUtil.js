@@ -24,11 +24,33 @@ export default class MessageReceiptsUtil {
         this.timeoutId = null;
         this.readSet = new Set();
         this.deliveredSet = new Set();
+        // The throttled sendEvent calls these maps were waiting on are cancelled above,
+        // so settle every in-flight receipt before dropping the maps - otherwise an
+        // awaiting caller hangs forever.
+        this.resolveAllPendingPromises(this.readPromiseMap);
+        this.resolveAllPendingPromises(this.deliveredPromiseMap);
         this.readPromiseMap = new Map();
         this.deliveredPromiseMap = new Map();
         this.lastReadArgs = null;
         this.throttleInitialEventsToPrioritizeRead = null;
         this.throttleSendEventApiCall = null;
+    }
+
+    /**
+     * Resolves every pending receipt promise in the map, then empties it.
+     * These are resolved rather than rejected: the receipt was abandoned, not
+     * failed, and callers routinely ignore the promise sendMessageReceipt()
+     * returns - rejecting would surface as an unhandled rejection.
+     *
+     * @param {Map} promiseMap of either read or delivered promises
+    */
+    resolveAllPendingPromises(promiseMap) {
+        promiseMap.forEach(([resolve]) => {
+            if (typeof resolve === 'function') {
+                resolve({ message: 'Chat session was reset before the message receipt was sent' });
+            }
+        });
+        promiseMap.clear();
     }
 
     /**

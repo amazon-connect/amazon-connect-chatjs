@@ -4,6 +4,15 @@ export default class PartialMessageUtil {
         this.partialMessageMapChanged = false;
     }
 
+    /**
+     * Drops any partially-received bot messages. Without this a chunk buffered
+     * before a reset would be stitched onto the next session's chunks.
+     */
+    reset() {
+        this.partialMessageMap = new Map();
+        this.partialMessageMapChanged = false;
+    }
+
     isPartialMessage(incomingData) {
         return incomingData?.ParticipantRole === "SYSTEM"
             && incomingData?.Type === "MESSAGE"

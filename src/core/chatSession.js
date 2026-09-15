@@ -233,6 +233,8 @@ export class ChatSession {
      * contact, so a later connect() resumes it on a fresh socket. Mirrors
      * amazon-connect-chat-ios ChatSession.reset(). To END the contact, use
      * disconnectParticipant().
+     *
+     * @return {Promise} resolves once the socket teardown has settled; never rejects.
      */
     reset() {
         return this.controller.reset();
