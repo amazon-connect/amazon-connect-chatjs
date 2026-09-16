@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+- `customChatClient` — supply your own transport in place of the bundled AWS client, per session via `ChatSession.create({ options })` or globally via `setGlobalConfig()`. Extend the exported base class, `connect.ChatSession.ChatClient`.
+
+### Fixed
+- `setGlobalConfig` with a truthy non-object (e.g. `setGlobalConfig("us-west-2")`) no longer throws `TypeError: Cannot use 'in' operator to search for 'customChatClient'` — an error naming a key the caller never passed — which aborted global initialization before the websocket, logger and message-receipt defaults were applied. Previously a harmless no-op.
+
+### Changed
+- **Breaking (types only):** `GetTranscriptResult.NextToken` is now optional, matching the Participant Service, which omits it on the last page. Strict-mode consumers assigning it to `string` must widen to `string | undefined`. (Shipped in `84a9e72`; recorded here because that change went unlogged.)
+
 ## [5.1.0]
 ### Added
 - `sendMessageReceipt()` method that sends Read/Delivered receipts directly, bypassing the automatic receipt gate and throttle. This allows manual control over when receipts are sent regardless of the `shouldSendMessageReceipts` setting.

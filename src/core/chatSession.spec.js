@@ -1,4 +1,5 @@
 import { ChatSession, ChatSessionObject } from "./chatSession";
+import { ChatClient } from "../client/client";
 import { csmService } from "../service/csmService";
 import { CHAT_SESSION_FACTORY } from "./chatSession";
 import { ChatController } from "./chatController";
@@ -278,8 +279,61 @@ describe('CHAT_SESSION_FACTORY._createChatController', () => {
         expect(result).toBeDefined();                                                   
         expect(result.constructor.name).toBe('ChatController');                         
         expect(StreamMetricUtils.publishError).not.toHaveBeenCalled();                                                                                                          
-        expect(StreamMetricUtils.publishEvent).toHaveBeenCalledWith(                    
-            expect.stringContaining(CHAT_SESSION_SUCCESS_TYPES.CHATJS_CONNECT_SESSION_SUCCESS)      
-        );                                                                              
-    }); 
+        expect(StreamMetricUtils.publishEvent).toHaveBeenCalledWith(
+            expect.stringContaining(CHAT_SESSION_SUCCESS_TYPES.CHATJS_CONNECT_SESSION_SUCCESS)
+        );
+    });
+});
+
+describe("customChatClient through the public create() path", () => {
+    const chatDetails = { contactId: "contact-1", participantId: "participant-1" };
+
+    function customClient() {
+        return new (class extends ChatClient {
+            createParticipantConnection() { return Promise.resolve({ data: {} }); }
+            disconnectParticipant() { return Promise.resolve({ data: {} }); }
+            sendMessage() { return Promise.resolve({ data: {} }); }
+            sendEvent() { return Promise.resolve({ data: {} }); }
+            getTranscript() { return Promise.resolve({ data: {} }); }
+        })();
+    }
+
+    beforeEach(() => {
+        jest.restoreAllMocks();
+        window.connect = { version: "2.18.1" };
+        GlobalConfig.update({ customChatClient: null });
+    });
+
+    afterEach(() => {
+        GlobalConfig.update({ customChatClient: null });
+    });
+
+    test("options.customChatClient reaches the controller", () => {
+        const client = customClient();
+        const session = ChatSessionObject.create({
+            chatDetails: { ...chatDetails, participantToken: "pToken" },
+            type: SESSION_TYPES.CUSTOMER,
+            options: { customChatClient: client },
+            websocketManager: {},
+            disableCSM: true
+        });
+        expect(session.controller.chatClient).toBe(client);
+    });
+
+    // The documented tokenless entry point: the backend holds participantToken, not the browser.
+    test("a session is created with participantToken omitted", () => {
+        const client = customClient();
+        const session = ChatSessionObject.create({
+            chatDetails,
+            type: SESSION_TYPES.CUSTOMER,
+            options: { customChatClient: client },
+            websocketManager: {},
+            disableCSM: true
+        });
+        expect(session.controller.chatClient).toBe(client);
+    });
+
+    test("ChatSessionObject exposes the ChatClient base class customers extend", () => {
+        expect(ChatSessionObject.ChatClient).toBe(ChatClient);
+    });
 });
