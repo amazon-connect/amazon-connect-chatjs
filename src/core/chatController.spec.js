@@ -1436,3 +1436,62 @@ describe("sendMessageReceipt", () => {
         });
     });
 });
+
+describe("ChatController setChatContext hook", () => {
+    const chatDetails = {
+        contactId: "cid",
+        initialContactId: "icid",
+        connectionDetails: {},
+        participantId: "pid",
+        participantToken: "token"
+    };
+    const websocketManager = {};
+
+    function build(chatClient, sessionType = SESSION_TYPES.CUSTOMER) {
+        return new ChatController({ sessionType, chatDetails, chatClient, websocketManager });
+    }
+
+    beforeEach(() => {
+        console.error = jest.fn();
+    });
+
+    test("calls setChatContext once at construction with the chat identity", () => {
+        const chatClient = { setChatContext: jest.fn() };
+        build(chatClient);
+        expect(chatClient.setChatContext).toHaveBeenCalledTimes(1);
+        expect(chatClient.setChatContext).toHaveBeenCalledWith({
+            contactId: "cid",
+            initialContactId: "icid",
+            participantId: "pid",
+            sessionType: SESSION_TYPES.CUSTOMER
+        });
+    });
+
+    test("passes the session type through for an agent session", () => {
+        const chatClient = { setChatContext: jest.fn() };
+        build(chatClient, SESSION_TYPES.AGENT);
+        expect(chatClient.setChatContext).toHaveBeenCalledWith(
+            expect.objectContaining({ sessionType: SESSION_TYPES.AGENT })
+        );
+    });
+
+    test("constructs normally when the client omits the hook", () => {
+        expect(() => build({})).not.toThrow();
+    });
+
+    test("does not treat a non-function setChatContext as a hook", () => {
+        expect(() => build({ setChatContext: "nope" })).not.toThrow();
+    });
+
+    test("a throwing hook is logged and does not fail construction", () => {
+        const boom = new Error("boom");
+        const chatClient = { setChatContext: jest.fn(() => { throw boom; }) };
+        let controller;
+        expect(() => { controller = build(chatClient); }).not.toThrow();
+        expect(controller.contactId).toBe("cid");
+        expect(console.error).toHaveBeenCalledWith(
+            "customChatClient.setChatContext threw; continuing without chat context",
+            boom
+        );
+    });
+});

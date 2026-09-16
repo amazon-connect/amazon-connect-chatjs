@@ -109,7 +109,25 @@ declare namespace connect {
    * `downloadAttachment` (a Blob) and `getAttachmentURL` (a string). `connectionToken` is
    * whatever `createParticipantConnection` returned, handed back verbatim.
    */
+  /** Identity of the chat a `ChatClient` call belongs to. @see ChatClient.setChatContext */
+  interface ChatContext {
+    readonly contactId: string;
+    readonly initialContactId?: string;
+    readonly participantId: string;
+    readonly sessionType: ChatSessionTypes[keyof ChatSessionTypes];
+  }
+
   abstract class ChatClient {
+    /**
+     * Called once while the session is constructed, before any operation runs. Implement
+     * it when one client instance serves concurrent chats — notably a client registered
+     * with `setGlobalConfig({ customChatClient })`, which every session shares — so calls
+     * carrying only a `connectionToken` can still be attributed to a chat.
+     *
+     * Optional: omit it and nothing is called. A throw is logged and ignored.
+     */
+    setChatContext?(context: ChatContext): void;
+
     abstract createParticipantConnection(
       participantToken: string | null,
       type: string[] | null,

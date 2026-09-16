@@ -64,6 +64,26 @@ class ChatController {
         this.partialMessageUtil = new PartialMessageUtil();
         this.internalTranscriptUtils = new InternalTranscriptUtils(this.logger);
         this.transcriptUpdateEnabled = false;
+        this._setChatContextOnClient(args.chatDetails);
+    }
+
+    // A globally registered customChatClient serves every session, so it needs
+    // the chat's identity to attribute calls. Optional; a throw here must not
+    // fail ChatSession.create().
+    _setChatContextOnClient(chatDetails) {
+        if (typeof this.chatClient?.setChatContext !== "function") {
+            return;
+        }
+        try {
+            this.chatClient.setChatContext({
+                contactId: chatDetails.contactId,
+                initialContactId: chatDetails.initialContactId,
+                participantId: chatDetails.participantId,
+                sessionType: this.sessionType
+            });
+        } catch (error) {
+            this.logger.error("customChatClient.setChatContext threw; continuing without chat context", error);
+        }
     }
 
     subscribe(eventName, callback) {
