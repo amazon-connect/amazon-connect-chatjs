@@ -1436,4 +1436,3 @@ describe("sendMessageReceipt", () => {
         });
     });
 });
-

@@ -26,6 +26,23 @@ import packageJson from '../../package.json';
 
 const DEFAULT_PREFIX = "Amazon-Connect-ChatJS-ChatClient";
 
+const CRITICAL_CHAT_CLIENT_METHODS = [
+  "createParticipantConnection",
+  "disconnectParticipant",
+  "sendMessage",
+  "sendEvent",
+  "getTranscript"
+];
+
+const OPTIONAL_CHAT_CLIENT_METHODS = [
+  "sendAttachment",
+  "downloadAttachment",
+  "getAttachmentURL",
+  "describeView",
+  "getAuthenticationUrl",
+  "cancelParticipantAuthentication"
+];
+
 class ChatClientFactoryImpl {
   constructor() {
     this.clientCache = {};
@@ -33,6 +50,13 @@ class ChatClientFactoryImpl {
   }
 
   getCachedClient(optionsInput, logMetaData) {
+    // Not cached: a per-session client must not leak into another session.
+    const customChatClient = optionsInput.customChatClient || GlobalConfig.getCustomChatClient();
+    if (customChatClient) {
+      logMetaData.usingCustomChatClient = true;
+      this._reportUnimplementedMethods(customChatClient, logMetaData);
+      return customChatClient;
+    }
     let region = GlobalConfig.getRegionOverride() || optionsInput.region || GlobalConfig.getRegion() || REGIONS.pdx;
     logMetaData.region = region;
     if (this.clientCache[region]) {
@@ -41,6 +65,33 @@ class ChatClientFactoryImpl {
     let client = this._createAwsClient(region, logMetaData);
     this.clientCache[region] = client;
     return client;
+  }
+
+  _reportUnimplementedMethods(client, logMetaData) {
+    // An inherited stub counts as unimplemented
+    const unimplemented = name =>
+      typeof client[name] !== "function" || client[name] === ChatClient.prototype[name];
+    const missingCritical = CRITICAL_CHAT_CLIENT_METHODS.filter(unimplemented);
+    const missingOptional = OPTIONAL_CHAT_CLIENT_METHODS.filter(unimplemented);
+    if (missingCritical.length === 0 && missingOptional.length === 0) {
+      return;
+    }
+    const logger = LogManager.getLogger({ prefix: DEFAULT_PREFIX, logMetaData });
+    if (missingCritical.length > 0) {
+      logger.error(
+        "customChatClient does not implement operations a chat cannot work without; " +
+        "please check your client implementation.",
+        { missingMethods: missingCritical }
+      );
+    }
+    if (missingOptional.length > 0) {
+      logger.warn(
+        "customChatClient does not implement these optional operations; the corresponding " +
+        "features will fail if they are enabled on your instance.",
+        { missingMethods: missingOptional }
+      );
+    }
+
   }
 
   _createAwsClient(region, logMetaData) {
@@ -58,41 +109,84 @@ class ChatClientFactoryImpl {
   }
 }
 
-/*eslint-disable*/
+/**
+ * Transport contract between ChatJS and the Amazon Connect Participant Service (ACPS).
+ * AWSChatClient is the bundled implementation. Extend this class to route ACPS calls
+ * through a transport of your own instead:
+ *
+ *   class MyClient extends connect.ChatSession.ChatClient { ... }
+ */
+/*eslint-disable no-unused-vars*/
 class ChatClient {
-  sendMessage(participantToken, message, type) {
-    throw new UnImplementedMethodException("sendTextMessage in ChatClient");
-  }
-
-  sendAttachment(participantToken, attachment, metadata) {
-    throw new UnImplementedMethodException("sendAttachment in ChatClient");
-  }
-
-  downloadAttachment(participantToken, attachmentId) {
-    throw new UnImplementedMethodException("downloadAttachment in ChatClient");
-  }
-
-  disconnectParticipant(participantToken) {
-    throw new UnImplementedMethodException("disconnectParticipant in ChatClient");
-  }
-
-  sendEvent(connectionToken, contentType, content) {
-    throw new UnImplementedMethodException("sendEvent in ChatClient");
-  }
-
-  createParticipantConnection(participantToken, type) {
+  /**
+   * @returns {Promise<{data: {Websocket: {Url: string, ConnectionExpiry: string},
+   *   ConnectionCredentials: {ConnectionToken: string, Expiry: string}}}>}
+   */
+  createParticipantConnection(participantToken, type, acknowledgeConnection) {
     throw new UnImplementedMethodException("createParticipantConnection in ChatClient");
   }
 
-  describeView() {
+  /** Ends the contact. @returns {Promise<{data: {}}>} */
+  disconnectParticipant(connectionToken) {
+    throw new UnImplementedMethodException("disconnectParticipant in ChatClient");
+  }
+
+  /**
+   * clientToken is an idempotency token; omit from the request when absent.
+   * @returns {Promise<{data: {Id: string, AbsoluteTime: string}}>}
+   */
+  sendMessage(connectionToken, content, contentType, clientToken) {
+    throw new UnImplementedMethodException("sendMessage in ChatClient");
+  }
+
+  /**
+   * contentType precedes content here, unlike sendMessage.
+   * @returns {Promise<{data: {Id: string, AbsoluteTime: string}}>}
+   */
+  sendEvent(connectionToken, contentType, content, clientToken) {
+    throw new UnImplementedMethodException("sendEvent in ChatClient");
+  }
+
+  /**
+   * @param {{maxResults: number, nextToken: string, scanDirection: string, sortOrder: string,
+   *   startPosition: {id: string, absoluteTime: string, mostRecent: number},
+   *   contactId?: string}} args camelCase; map to the PascalCase ACPS fields.
+   * @returns {Promise<{data: {InitialContactId: string, Transcript: Array<Object>, NextToken: string}}>}
+   */
+  getTranscript(connectionToken, args) {
+    throw new UnImplementedMethodException("getTranscript in ChatClient");
+  }
+
+  /**
+   * Owns the whole upload: start, PUT to the returned URL, then complete.
+   * @returns {Promise<{data: {}}>}
+   */
+  sendAttachment(connectionToken, attachment, metadata) {
+    throw new UnImplementedMethodException("sendAttachment in ChatClient");
+  }
+
+  /** Resolves to the bytes, not a `{ data }` wrapper. @returns {Promise<Blob>} */
+  downloadAttachment(connectionToken, attachmentId) {
+    throw new UnImplementedMethodException("downloadAttachment in ChatClient");
+  }
+
+  /** Resolves to the URL string, not a `{ data }` wrapper. @returns {Promise<string>} */
+  getAttachmentURL(connectionToken, attachmentId) {
+    throw new UnImplementedMethodException("getAttachmentURL in ChatClient");
+  }
+
+  /** viewToken comes first here. @returns {Promise<{data: {View: Object}}>} */
+  describeView(viewToken, connectionToken) {
     throw new UnImplementedMethodException("describeView in ChatClient");
   }
 
-  getAuthenticationUrl() {
+  /** @returns {Promise<{data: {AuthenticationUrl: string}}>} */
+  getAuthenticationUrl(connectionToken, redirectUri, sessionId) {
     throw new UnImplementedMethodException("getAuthenticationUrl in ChatClient");
   }
 
-  cancelParticipantAuthentication() {
+  /** @returns {Promise<{data: {}}>} */
+  cancelParticipantAuthentication(connectionToken, sessionId) {
     throw new UnImplementedMethodException("cancelParticipantAuthentication in ChatClient");
   }
 }
@@ -394,4 +488,4 @@ class AWSChatClient extends ChatClient {
 }
 
 let ChatClientFactory = new ChatClientFactoryImpl();
-export { ChatClientFactory };
+export { ChatClientFactory, ChatClient };

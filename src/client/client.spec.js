@@ -1,6 +1,7 @@
-import { ChatClientFactory } from "./client";
+import { ChatClientFactory, ChatClient } from "./client";
 import { CONTENT_TYPE } from "../constants";
 import { GlobalConfig } from "../globalConfig";
+import { LogManager } from "../log";
 import packageJson from '../../package.json';
 import {
   GetAttachmentCommand,
@@ -13,6 +14,7 @@ jest.mock('../globalConfig', () => {
       getRegion: jest.fn(),
       getEndpointOverride: jest.fn(),
       getCustomUserAgentSuffix: jest.fn(),
+      getCustomChatClient: jest.fn(),
     }
   }
 });
@@ -323,5 +325,118 @@ describe("client test cases", () => {
         }
       });
     });
+  });
+});
+
+describe("customChatClient", () => {
+  const region = "eu-central-1";
+  const CRITICAL_METHODS = [
+    "createParticipantConnection", "disconnectParticipant", "sendMessage", "sendEvent",
+    "getTranscript"
+  ];
+  const OPTIONAL_METHODS = [
+    "sendAttachment", "downloadAttachment", "getAttachmentURL", "describeView",
+    "getAuthenticationUrl", "cancelParticipantAuthentication"
+  ];
+  const ALL_METHODS = [...CRITICAL_METHODS, ...OPTIONAL_METHODS];
+  let errorLog;
+  let warnLog;
+
+  // Overrides every operation, so nothing is left inherited from ChatClient.
+  function completeClient(only = ALL_METHODS) {
+    const client = new (class extends ChatClient {})();
+    only.forEach(name => { client[name] = jest.fn(); });
+    return client;
+  }
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    errorLog = jest.fn();
+    warnLog = jest.fn();
+    jest.spyOn(LogManager, "getLogger").mockReturnValue({
+      error: errorLog,
+      warn: warnLog,
+      info: jest.fn(),
+      debug: jest.fn(),
+    });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test("returns the client passed per session", () => {
+    const client = completeClient();
+    expect(ChatClientFactory.getCachedClient({ customChatClient: client }, {})).toBe(client);
+  });
+
+  test("returns the client registered globally", () => {
+    const client = completeClient();
+    GlobalConfig.getCustomChatClient.mockReturnValue(client);
+    expect(ChatClientFactory.getCachedClient({}, {})).toBe(client);
+  });
+
+  test("per-session client wins over the global one", () => {
+    const perSession = completeClient();
+    GlobalConfig.getCustomChatClient.mockReturnValue(completeClient());
+    expect(ChatClientFactory.getCachedClient({ customChatClient: perSession }, {})).toBe(perSession);
+  });
+
+  test("flags the session in logMetaData", () => {
+    const logMetaData = {};
+    ChatClientFactory.getCachedClient({ customChatClient: completeClient() }, logMetaData);
+    expect(logMetaData.usingCustomChatClient).toBe(true);
+  });
+
+  // Caching it would leak one session's client into the next.
+  test("is not cached under the region key", () => {
+    const client = completeClient();
+    const first = ChatClientFactory.getCachedClient({ region, customChatClient: client }, {});
+    const second = ChatClientFactory.getCachedClient({ region }, {});
+
+    expect(first).toBe(client);
+    expect(second).not.toBe(client);
+    expect(second.constructor.name).toBe("AWSChatClient");
+  });
+
+  test("falls back to the AWS client when none is configured", () => {
+    expect(ChatClientFactory.getCachedClient({}, {}).constructor.name).toBe("AWSChatClient");
+  });
+
+  test("errors on the critical operations a duck-typed client is missing", () => {
+    ChatClientFactory.getCachedClient({ customChatClient: { sendMessage: jest.fn() } }, {});
+    expect(errorLog).toHaveBeenCalledWith(
+      expect.stringContaining("a chat cannot work without"),
+      { missingMethods: expect.not.arrayContaining(["sendMessage"]) }
+    );
+    expect(errorLog.mock.calls[0][1].missingMethods).toContain("createParticipantConnection");
+  });
+
+  // Attachments, views and customer auth are opt-in Connect features, so a text-only client
+  // is legitimate and must not be reported as broken.
+  test("only warns when a client implements every critical operation but no optional one", () => {
+    ChatClientFactory.getCachedClient(
+      { customChatClient: completeClient(CRITICAL_METHODS) }, {}
+    );
+    expect(errorLog).not.toHaveBeenCalled();
+    expect(warnLog).toHaveBeenCalledWith(
+      expect.stringContaining("optional operations"),
+      { missingMethods: OPTIONAL_METHODS }
+    );
+  });
+
+  // An inherited stub throws UnImplementedMethodException, so it is not an implementation.
+  test("flags an empty subclass of ChatClient, whose stubs are all inherited", () => {
+    ChatClientFactory.getCachedClient(
+      { customChatClient: new (class extends ChatClient {})() }, {}
+    );
+    expect(errorLog.mock.calls[0][1].missingMethods).toEqual(CRITICAL_METHODS);
+    expect(warnLog.mock.calls[0][1].missingMethods).toEqual(OPTIONAL_METHODS);
+  });
+
+  test("stays quiet for a client that implements every operation", () => {
+    ChatClientFactory.getCachedClient({ customChatClient: completeClient() }, {});
+    expect(errorLog).not.toHaveBeenCalled();
+    expect(warnLog).not.toHaveBeenCalled();
   });
 });
