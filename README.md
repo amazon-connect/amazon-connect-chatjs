@@ -31,6 +31,7 @@ This stand-alone library supports customer chat sessions by default. For agent c
 
 ## 📢 Announcements
 
+- **2026-09-23**: v5.2.0 - Added `customChatClient`, to replace the bundled AWS transport with your own. TypeScript: `GetTranscriptResult.NextToken` is now optional, so strict-mode consumers assigning it to `string` must widen to `string | undefined`
 - **2025-05-29**: Migrated baked-in dependency from AWS SDK v2 to AWS SDK v3: `src/client/aws-sdk-connectparticipant.js`
 - **2024-04-02**: Connection Acknowledgement (ConnAck) has migrated from [SendEvent](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html) API to the [CreateParticipant](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CreateParticipantConnection.html) API. Please upgrade to `amazon-connect-chatjs@^1.4.0` by **Dec 31, 2024**
 - **2023-03-30**: v1.5.0 - Added support for _React Native environments_
@@ -149,6 +150,9 @@ connect.ChatSession.setGlobalConfig({
   // Pass in a user agent suffix used to configure the AWS SDK client in Amazon Connect ChatJS.
   // This will be appended to the x-amz-user-agent custom header used in outgoing API requests
   customUserAgentSuffix: "", // (optional)
+  // (optional) Route every Participant Service call through your own transport instead of the
+  // bundled AWS SDK client. See `connect.ChatSession.ChatClient`
+  customChatClient: null,
 });
 ```
 
@@ -878,6 +882,7 @@ window.connect.ChatSession = {
   LogLevel: { /* ... */ },
   Logger: { /* ... */ },
   SessionTypes: { /* ... */ },
+  ChatClient: class { /* ... */ },
 };
 ```
 This is the main entry point to `amazon-connect-chatjs`.
@@ -923,10 +928,11 @@ const chatSession = await connect.ChatSession.create({
   chatDetails: {
     contactId: "...", // REQUIRED
     participantId: "...", // REQUIRED
-    participantToken: "...", // REQUIRED
+    participantToken: "...", // REQUIRED, unless a `customChatClient` holds it instead
   },
   options: {
     region: "us-east-1", // (optional) defaults to `region` set in `.setGlobalConfig()`
+    customChatClient: new MyChatClient(), // (optional) see `connect.ChatSession.ChatClient`
   },
   type: window.connect.ChatSession.SessionTypes.CUSTOMER, // REQUIRED - options: `CUSTOMER`, `AGENT`
   disableCSM: true
@@ -934,6 +940,8 @@ const chatSession = await connect.ChatSession.create({
 ```
 
 `ContactId`, `ParticipantId`, and `ParticipantToken` must be generated on your backend and passed to the client. Make a request to [StartChatContact](https://docs.aws.amazon.com/connect/latest/APIReference/API_StartChatContact.html) API (see [#Usage](#usage-customer-chat)) for more details.
+
+`participantToken` may be omitted only when you supply a [`customChatClient`](#connectchatsessionchatclient) that holds the token on your backend, since nothing in the browser then needs it.
 
 #### `connect.ChatSession.setGlobalConfig()`
 
@@ -973,12 +981,39 @@ connect.ChatSession.setGlobalConfig({
 
   // User agent suffix for AWS SDK client (optional)
   // Appended to x-amz-user-agent custom header in API requests
-  customUserAgentSuffix: ""
+  customUserAgentSuffix: "",
+
+  // Your own Participant Service transport, used by every session (optional)
+  // See `connect.ChatSession.ChatClient`
+  customChatClient: null
 });
 ```
 Set the global configuration to use. If this method is not called, the defaults of loggerConfig and region are used. This method should be called before `connect.ChatSession.create()`.
 
 > **Note on `features`:** the `features` block (including `messageReceipts`) is only re-evaluated when you pass it explicitly. If a subsequent `setGlobalConfig` call omits `features`, the previously configured message-receipts settings (`shouldSendMessageReceipts` and `throttleTime`) are preserved. This keeps wrapping libraries that only update unrelated fields like `loggerConfig` or `region` from unintentionally re-enabling receipts.
+
+#### `connect.ChatSession.ChatClient`
+
+```js
+class MyChatClient extends connect.ChatSession.ChatClient {
+  // REQUIRED - no chat works without these five
+  createParticipantConnection(participantToken, type, acknowledgeConnection) {} // -> { data: { Websocket, ConnectionCredentials } }
+  disconnectParticipant(connectionToken) {} // -> { data: {} }
+  sendMessage(connectionToken, content, contentType, clientToken) {} // -> { data: { Id, AbsoluteTime } }
+  sendEvent(connectionToken, contentType, content, clientToken) {} // -> { data: { Id, AbsoluteTime } }
+  getTranscript(connectionToken, args) {} // -> { data: { InitialContactId, Transcript, NextToken } }
+
+  // (optional) only needed for the Connect features that use them: sendAttachment,
+  // downloadAttachment, getAttachmentURL, describeView, getAuthenticationUrl,
+  // cancelParticipantAuthentication
+}
+
+const chatSession = connect.ChatSession.create({
+  chatDetails: { contactId, participantId }, // `participantToken` no longer required
+  options: { customChatClient: new MyChatClient() },
+  type: "CUSTOMER",
+});
+```
 
 #### `connect.ChatSession.Logger`
 
