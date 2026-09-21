@@ -983,8 +983,8 @@ connect.ChatSession.setGlobalConfig({
   // Appended to x-amz-user-agent custom header in API requests
   customUserAgentSuffix: "",
 
-  // Your own Participant Service transport, used by every session (optional)
-  // See `connect.ChatSession.ChatClient`
+  // (optional) Route every session's Participant Service calls through your own transport
+  // instead of the bundled AWS SDK client. See `connect.ChatSession.ChatClient`
   customChatClient: null
 });
 ```
@@ -993,6 +993,8 @@ Set the global configuration to use. If this method is not called, the defaults 
 > **Note on `features`:** the `features` block (including `messageReceipts`) is only re-evaluated when you pass it explicitly. If a subsequent `setGlobalConfig` call omits `features`, the previously configured message-receipts settings (`shouldSendMessageReceipts` and `throttleTime`) are preserved. This keeps wrapping libraries that only update unrelated fields like `loggerConfig` or `region` from unintentionally re-enabling receipts.
 
 #### `connect.ChatSession.ChatClient`
+
+The transport contract between ChatJS and the [Amazon Connect Participant Service](https://docs.aws.amazon.com/connect/latest/APIReference/API_Operations_Amazon_Connect_Participant_Service.html). By default ChatJS calls that service directly using its bundled AWS SDK client; extend `ChatClient` and pass the instance as `customChatClient` to route every call through your own backend instead, so tokens need not reach the browser. Methods resolve to `{ data: <response body, PascalCase keys unchanged> }`, except `downloadAttachment` (a `Blob`) and `getAttachmentURL` (a `string`). A client passed to `create()` takes precedence over one registered with `setGlobalConfig()`.
 
 ```js
 class MyChatClient extends connect.ChatSession.ChatClient {
