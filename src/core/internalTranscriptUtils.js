@@ -10,14 +10,6 @@ class InternalTranscriptUtils {
         this.tempMessageIdMap = {};
     }
 
-    /** Clears accumulated transcript state (dict, items, temp-id map, token). */
-    reset() {
-        this.transcriptDict = {};
-        this.transcriptItems = [];
-        this.previousTranscriptNextToken = null;
-        this.tempMessageIdMap = {};
-    }
-
     /**
      * Creates a transcript item with serialized content for debugging and compatibility.
      * @param {Object} rawItem - The raw transcript item
