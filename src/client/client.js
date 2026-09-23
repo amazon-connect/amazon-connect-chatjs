@@ -151,7 +151,7 @@ class ChatClient {
    * @param {{maxResults: number, nextToken: string, scanDirection: string, sortOrder: string,
    *   startPosition: {id: string, absoluteTime: string, mostRecent: number},
    *   contactId?: string}} args camelCase; map to the PascalCase ACPS fields.
-   * @returns {Promise<{data: {InitialContactId: string, Transcript: Array<Object>, NextToken: string}}>}
+   * @returns {Promise<{data: {InitialContactId: string, Transcript: Array<Object>, NextToken?: string}}>}
    */
   getTranscript(connectionToken, args) {
     throw new UnImplementedMethodException("getTranscript in ChatClient");

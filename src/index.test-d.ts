@@ -53,6 +53,10 @@ connect.ChatSession.setGlobalConfig({ customChatClient: null });
 // @ts-expect-error: does not implement the abstract members of ChatClient
 class EmptySubclass extends connect.ChatSession.ChatClient {}
 
+declare const transcript: connect.GetTranscriptResult;
+// @ts-expect-error: NextToken is optional
+const pageToken: string = transcript.NextToken;
+
 // @ts-expect-error: cannot create an instance of an abstract class
 const bareBase = new connect.ChatSession.ChatClient();
 
