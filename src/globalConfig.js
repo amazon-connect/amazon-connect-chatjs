@@ -42,7 +42,9 @@ class GlobalConfigImpl {
         this._messageReceiptsExplicitlyConfigured = false;
     }
     update(configInput) {
-        var config = configInput || {};
+        // A truthy primitive would reach the `in` test below and throw, aborting the rest
+        // of global initialization.
+        var config = (configInput && typeof configInput === "object") ? configInput : {};
         this.stage = config.stage || this.stage;
         this.region = config.region || this.region;
         this.cell = config.cell || this.cell;
@@ -55,7 +57,7 @@ class GlobalConfigImpl {
             this.features["values"] = new Array();
         }
         this.customUserAgentSuffix = config.customUserAgentSuffix || this.customUserAgentSuffix;
-        
+
         if ("customChatClient" in config) {
             this.customChatClient = config.customChatClient;
         }

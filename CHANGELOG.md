@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.2.0]
+### Added
+- `customChatClient` — supply your own transport in place of the bundled AWS client, per session via `ChatSession.create({ options })` or globally via `setGlobalConfig()`. Extend the exported base class, `connect.ChatSession.ChatClient`. `chatDetails.participantToken` becomes optional when such a client holds the token. Documented under [`connect.ChatSession.ChatClient`](README.md#connectchatsessionchatclient).
+
+### Changed
+- **Types only:** `GetTranscriptResult.NextToken` is now optional, matching the Participant Service, which omits it on the last page. No runtime change, but strict-mode consumers assigning it to `string` must widen to `string | undefined` to keep compiling. (Shipped in `84a9e72`; recorded here because that change went unlogged.)
+
 ## [5.1.0]
 ### Added
 - `sendMessageReceipt()` method that sends Read/Delivered receipts directly, bypassing the automatic receipt gate and throttle. This allows manual control over when receipts are sent regardless of the `shouldSendMessageReceipts` setting.

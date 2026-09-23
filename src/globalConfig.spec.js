@@ -115,6 +115,9 @@ describe("globalConfig", () => {
             GlobalConfig.update({ customChatClient: null });
             expect(GlobalConfig.getCustomChatClient()).toBeNull();
         });
+        it("does not throw when update is called with a non-object", () => {
+            expect(() => GlobalConfig.update("us-west-2")).not.toThrow();
+        });
     });
 
     describe("About using default logger", () => {
