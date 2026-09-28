@@ -1005,9 +1005,13 @@ class MyChatClient extends connect.ChatSession.ChatClient {
   sendEvent(connectionToken, contentType, content, clientToken) {} // -> { data: { Id, AbsoluteTime } }
   getTranscript(connectionToken, args) {} // -> { data: { InitialContactId, Transcript, NextToken } }
 
-  // (optional) only needed for the Connect features that use them: sendAttachment,
-  // downloadAttachment, getAttachmentURL, describeView, getAuthenticationUrl,
-  // cancelParticipantAuthentication
+  // (optional) only needed for the Connect features that use them
+  sendAttachment(connectionToken, attachment, metadata) {} // -> { data: {} }
+  downloadAttachment(connectionToken, attachmentId) {} // -> Blob
+  getAttachmentURL(connectionToken, attachmentId) {} // -> string
+  describeView(viewToken, connectionToken) {} // -> { data: { View } } (note: viewToken first)
+  getAuthenticationUrl(connectionToken, redirectUri, sessionId) {} // -> { data: { AuthenticationUrl } }
+  cancelParticipantAuthentication(connectionToken, sessionId) {} // -> { data: {} }
 }
 
 const chatSession = connect.ChatSession.create({
@@ -1016,6 +1020,29 @@ const chatSession = connect.ChatSession.create({
   type: "CUSTOMER",
 });
 ```
+
+**Implementing a custom chat client**
+
+- **Return `ConnectionCredentials` from `createParticipantConnection`.** ChatJS never reads `ConnectionToken`. It only passes the value back as the `connectionToken` argument of every other method, so it can be any string your backend recognizes. Keep the `ConnectionToken` that `CreateParticipantConnection` returned on your backend.
+- **Set `ConnectionCredentials.Expiry` to the `Expiry` your backend received from `CreateParticipantConnection`** (e.g. `"2026-09-29T21:00:00.000Z"`). ChatJS calls `createParticipantConnection` again 1 minute before this time. A past or unparseable value makes it call repeatedly without waiting.
+- **Return `Websocket` unchanged from `CreateParticipantConnection`.** The browser opens this WebSocket itself. `ConnectionToken` is the only field you may replace with your own value.
+- **Return `Id` from `sendMessage`.** ChatJS uses it to match the message it displayed optimistically. Without it, the message can appear twice.
+- **Reject on failure. Don't throw synchronously.** Use `async` methods or return a rejected promise, so ChatJS can roll back its transcript state.
+- **Map `getTranscript` args to the service request.** They arrive in camelCase (`maxResults`, `nextToken`, `scanDirection`, `sortOrder`, `startPosition: { id, absoluteTime, mostRecent }`, `contactId`). `startPosition` may be an empty object.
+- **`sendAttachment` does the whole upload:** start the upload, send the file to the returned URL, then complete the upload.
+- **Throttle typing events yourself if needed.** The bundled client throttles them, but a custom client replaces it.
+
+ChatJS checks the client when the session is created. It logs an error for a missing required method and a warning for a missing optional one. Calling a missing method rejects with an `UnImplementedMethod` error, and ChatJS doesn't fall back to the bundled client.
+
+**Your backend**
+
+1. Call `StartChatContact`. Keep `ParticipantToken` and return only `ContactId` and `ParticipantId` to the browser.
+2. For `createParticipantConnection`, call `CreateParticipantConnection` with `Type: ["WEBSOCKET", "CONNECTION_CREDENTIALS"]`. Store the returned `ConnectionToken` and return the `Websocket` block with your stand-in `ConnectionCredentials`.
+   - ChatJS calls this on `connect()`, again 1 minute before `Expiry`, and whenever the WebSocket reconnects. Every call refreshes both the WebSocket and the token, so handle each call the same way. Call `CreateParticipantConnection` again, replace the stored `ConnectionToken`, and return the new `Websocket` object together with your stand-in `ConnectionCredentials` (carrying the new `Expiry`).
+   - On refresh calls, `acknowledgeConnection` is `null`. In that case, leave `ConnectParticipant` out of the `CreateParticipantConnection` request.
+3. For every other method, authenticate the request with your own credentials. Then look up the stored `ConnectionToken` and call the matching [Participant Service API](https://docs.aws.amazon.com/connect/latest/APIReference/API_Operations_Amazon_Connect_Participant_Service.html).
+
+Two things still reach the browser: the WebSocket URL, and the pre-signed attachment URLs if your client uploads or downloads from the browser.
 
 #### `connect.ChatSession.Logger`
 
