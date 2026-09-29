@@ -999,7 +999,7 @@ The transport contract between ChatJS and the [Amazon Connect Participant Servic
 ```js
 class MyChatClient extends connect.ChatSession.ChatClient {
   // REQUIRED - no chat works without these five
-  createParticipantConnection(participantToken, type, acknowledgeConnection) {} // -> { data: { Websocket, ConnectionCredentials } }
+  createParticipantConnection(participantToken, type, acknowledgeConnection) {} // -> { data: { Websocket, ConnectionCredentials? } }
   disconnectParticipant(connectionToken) {} // -> { data: {} }
   sendMessage(connectionToken, content, contentType, clientToken) {} // -> { data: { Id, AbsoluteTime } }
   sendEvent(connectionToken, contentType, content, clientToken) {} // -> { data: { Id, AbsoluteTime } }
@@ -1023,7 +1023,7 @@ const chatSession = connect.ChatSession.create({
 
 **Implementing a custom chat client**
 
-- **Return `ConnectionCredentials` from `createParticipantConnection`.** ChatJS never reads `ConnectionToken`. It only passes the value back as the `connectionToken` argument of every other method, so it can be any string your backend recognizes. Keep the `ConnectionToken` that `CreateParticipantConnection` returned on your backend.
+- **Return `ConnectionCredentials` from `createParticipantConnection`, or omit it to run [tokenless](#tokenless-mode).** ChatJS never reads `ConnectionToken`. It only passes the value back as the `connectionToken` argument of every other method, so it can be any string your backend recognizes. Keep the `ConnectionToken` that `CreateParticipantConnection` returned on your backend.
 - **Set `ConnectionCredentials.Expiry` to the `Expiry` your backend received from `CreateParticipantConnection`** (e.g. `"2026-09-29T21:00:00.000Z"`). ChatJS calls `createParticipantConnection` again 1 minute before this time. A past or unparseable value makes it call repeatedly without waiting.
 - **Return `Websocket` unchanged from `CreateParticipantConnection`.** The browser opens this WebSocket itself. `ConnectionToken` is the only field you may replace with your own value.
 - **Return `Id` from `sendMessage`.** ChatJS uses it to match the message it displayed optimistically. Without it, the message can appear twice.
@@ -1037,12 +1037,31 @@ ChatJS checks the client when the session is created. It logs an error for a mis
 **Your backend**
 
 1. Call `StartChatContact`. Keep `ParticipantToken` and return only `ContactId` and `ParticipantId` to the browser.
-2. For `createParticipantConnection`, call `CreateParticipantConnection` with `Type: ["WEBSOCKET", "CONNECTION_CREDENTIALS"]`. Store the returned `ConnectionToken` and return the `Websocket` block with your stand-in `ConnectionCredentials`.
+2. For `createParticipantConnection`, call `CreateParticipantConnection` with `Type: ["WEBSOCKET", "CONNECTION_CREDENTIALS"]`. Store the returned `ConnectionToken` and return the `Websocket` block with your stand-in `ConnectionCredentials`, or with no `ConnectionCredentials` in [tokenless mode](#tokenless-mode).
    - ChatJS calls this on `connect()`, again 1 minute before `Expiry`, and whenever the WebSocket reconnects. Every call refreshes both the WebSocket and the token, so handle each call the same way. Call `CreateParticipantConnection` again, replace the stored `ConnectionToken`, and return the new `Websocket` object together with your stand-in `ConnectionCredentials` (carrying the new `Expiry`).
    - On refresh calls, `acknowledgeConnection` is `null`. In that case, leave `ConnectParticipant` out of the `CreateParticipantConnection` request.
 3. For every other method, authenticate the request with your own credentials. Then look up the stored `ConnectionToken` and call the matching [Participant Service API](https://docs.aws.amazon.com/connect/latest/APIReference/API_Operations_Amazon_Connect_Participant_Service.html).
 
 Two things still reach the browser: the WebSocket URL, and the pre-signed attachment URLs if your client uploads or downloads from the browser.
+
+<a id="tokenless-mode"></a>
+**Keeping both tokens in your backend (tokenless mode)**
+
+Your backend can hold the `participantToken` and `connectionToken` and never send either to the browser. To do this, have `createParticipantConnection` resolve with only the websocket:
+
+```js
+// -> { data: { Websocket: { Url, ConnectionExpiry } } }   (no ConnectionCredentials)
+```
+
+When a `customChatClient` returns no `ConnectionCredentials`, ChatJS runs the session tokenless:
+
+- `connectionToken` is `null` on every other `ChatClient` method, and `chatSession.getChatDetails().connectionDetails.connectionToken` is `null`. Your backend attaches the real token.
+- `participantToken` is whatever you passed in `chatDetails`, so omit it there to keep it off the browser. It is then `null` on every `createParticipantConnection` call, including websocket refreshes.
+- ChatJS does not poll to refresh the connection token. Your backend owns token refresh.
+- ChatJS logs a `WARN` once, when the session goes tokenless. If you didn't intend it, check that your backend forwards `ConnectionCredentials`.
+- **Tokenless mode lasts for the rest of the session.** If a later `createParticipantConnection` response includes `ConnectionCredentials`, ChatJS ignores it and `connectionToken` stays `null`. Return credentials on every call, or on none.
+
+`Websocket.Url` is still required. The bundled AWS client is unaffected: a response without `ConnectionCredentials` still fails as a malformed response.
 
 #### `connect.ChatSession.Logger`
 

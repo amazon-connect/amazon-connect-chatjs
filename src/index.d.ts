@@ -175,6 +175,11 @@ declare namespace connect {
       readonly Url: string;
       readonly ConnectionExpiry: string;
     };
+    /**
+     * Omit it to keep both tokens in your backend: ChatJS then runs the session tokenless and passes
+     * `null` tokens to every `ChatClient` call. That lasts for the whole session, and ChatJS never
+     * refreshes a token in this mode. Only a `customChatClient` may omit it.
+     */
     readonly ConnectionCredentials?: {
       readonly ConnectionToken: string;
       readonly Expiry: string;

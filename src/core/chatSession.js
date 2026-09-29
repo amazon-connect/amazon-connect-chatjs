@@ -54,14 +54,19 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
 
     _createChatController(sessionType, chatDetailsInput, options, websocketManager) {
         try {
-            var chatDetails = this.argsValidator.normalizeChatDetails(chatDetailsInput);
+            var customChatClient = ChatClientFactory.resolveCustomChatClient(options);
+            var chatDetails = this.argsValidator.normalizeChatDetails(
+                chatDetailsInput,
+                Boolean(customChatClient)
+            );
             var logMetaData = {
                 contactId: chatDetails.contactId,
                 participantId: chatDetails.participantId,
                 sessionType,
             };
 
-            var chatClient = ChatClientFactory.getCachedClient(options, logMetaData);
+            var { client: chatClient, isCustom: usingCustomChatClient } =
+                ChatClientFactory.getCachedClient(options, logMetaData, customChatClient);
 
             var args = {
                 sessionType: sessionType,
@@ -69,6 +74,7 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
                 chatClient,
                 websocketManager: websocketManager,
                 logMetaData,
+                usingCustomChatClient,
             };
 
             StreamMetricUtils.publishEvent(`${STREAM_JS}-${window.connect.version}-${CHAT_SESSION_SUCCESS_TYPES.CHATJS_CONNECT_SESSION_SUCCESS}`);
