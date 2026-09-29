@@ -51,4 +51,63 @@ describe("BaseConnectionHelper", () => {
     // A date (in ms) would be larger than this constant.
         expect(baseConnectionHelper.getTimeToConnectionTokenExpiry()).toBeLessThan(100000000);
     });
+
+    describe("a bad connection token Expiry", () => {
+        const flushPromises = () => new Promise(jest.requireActual("timers").setImmediate);
+        const pollAndSettle = async () => {
+            jest.runOnlyPendingTimers();
+            await flushPromises();
+        };
+
+        test("stops polling with a warning when Expiry is missing", async () => {
+            connectionDetailsProvider.getConnectionTokenExpiry = jest.fn(() => undefined);
+            const warn = jest.spyOn(baseConnectionHelper.logger, "warn");
+
+            baseConnectionHelper.start();
+
+            expect(jest.getTimerCount()).toBe(0);
+            expect(warn).toHaveBeenCalledWith(expect.stringContaining("not a valid date"));
+        });
+
+        test("treats a null Expiry as missing, not as 1970", () => {
+            connectionDetailsProvider.getConnectionTokenExpiry = jest.fn(() => null);
+
+            baseConnectionHelper.start();
+
+            expect(jest.getTimerCount()).toBe(0);
+        });
+
+        test("stops polling when a refresh returns an unparseable Expiry", async () => {
+            baseConnectionHelper.start();
+            connectionDetailsProvider.getConnectionTokenExpiry = jest.fn(() => "tomorrow");
+
+            await pollAndSettle();
+
+            expect(connectionDetailsProvider.fetchConnectionDetails).toHaveBeenCalledTimes(1);
+            expect(jest.getTimerCount()).toBe(0);
+        });
+
+        test("waits at least a minute between refreshes when Expiry stays in the past", async () => {
+            baseConnectionHelper.start();
+            connectionDetailsProvider.getConnectionTokenExpiry = jest.fn(() => new Date(Date.now() - 60 * 60 * 1000));
+
+            await pollAndSettle();
+            jest.advanceTimersByTime(59 * 1000);
+            await flushPromises();
+            expect(connectionDetailsProvider.fetchConnectionDetails).toHaveBeenCalledTimes(1);
+
+            jest.advanceTimersByTime(1000);
+            await flushPromises();
+            expect(connectionDetailsProvider.fetchConnectionDetails).toHaveBeenCalledTimes(2);
+        });
+
+        test("still refreshes right away on start when the token is about to expire", () => {
+            connectionDetailsProvider.getConnectionTokenExpiry = jest.fn(() => new Date(Date.now() + 30 * 1000));
+
+            baseConnectionHelper.start();
+            jest.advanceTimersByTime(0);
+
+            expect(connectionDetailsProvider.fetchConnectionDetails).toHaveBeenCalledTimes(1);
+        });
+    });
 });
