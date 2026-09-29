@@ -39,19 +39,28 @@ export default class BaseConnectionHelper {
                 .then(response => {
                     this.logger.info("Connection token polling succeeded.");
                     expiry = this.getTimeToConnectionTokenExpiry();
-                    this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this), expiry);
+                    this._scheduleNextPoll(expiry, CONNECTION_TOKEN_EXPIRY_BUFFER_IN_MS);
                     return response;
                 })
                 .catch((e) => {
                     this.logger.error("An error occurred when attempting to fetch the connection token during Connection Token Polling", e);
-                    this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this), expiry);
+                    this._scheduleNextPoll(expiry, CONNECTION_TOKEN_EXPIRY_BUFFER_IN_MS);
                     return e;
                 });
         }
         else {
             this.logger.info("First time polling connection token.");
-            this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this), expiry);
+            this._scheduleNextPoll(expiry, 0);
         }
+    }
+
+    // Guards setTimeout against NaN/negative delays, which fire immediately and re-poll in a tight loop.
+    _scheduleNextPoll(delay, minDelay) {
+        if (!Number.isFinite(delay)) {
+            this.logger.warn("Connection token Expiry is missing or not a valid date; stopping connection token refresh.");
+            return;
+        }
+        this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this), Math.max(delay, minDelay));
     }
 
     start() {
@@ -78,9 +87,12 @@ export default class BaseConnectionHelper {
     }
 
     getTimeToConnectionTokenExpiry() {
-        var dateExpiry = new Date(
-            this.getConnectionTokenExpiry()
-        ).getTime();
+        const expiry = this.getConnectionTokenExpiry();
+        // No Expiry: stop polling. (new Date(null) would read it as 1970.)
+        if (expiry === null || expiry === undefined) {
+            return NaN;
+        }
+        var dateExpiry = new Date(expiry).getTime();
         var now = new Date().getTime();
         return dateExpiry - now - CONNECTION_TOKEN_EXPIRY_BUFFER_IN_MS;
     }

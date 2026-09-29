@@ -1024,7 +1024,7 @@ const chatSession = connect.ChatSession.create({
 **Implementing a custom chat client**
 
 - **Return `ConnectionCredentials` from `createParticipantConnection`.** ChatJS never reads `ConnectionToken`. It only passes the value back as the `connectionToken` argument of every other method, so it can be any string your backend recognizes. Keep the `ConnectionToken` that `CreateParticipantConnection` returned on your backend.
-- **Set `ConnectionCredentials.Expiry` to the `Expiry` your backend received from `CreateParticipantConnection`** (e.g. `"2026-09-29T21:00:00.000Z"`). ChatJS calls `createParticipantConnection` again 1 minute before this time. A past or unparseable value makes it call repeatedly without waiting.
+- **Set `ConnectionCredentials.Expiry` to the `Expiry` your backend received from `CreateParticipantConnection`** (e.g. `"2026-09-29T21:00:00.000Z"`). ChatJS calls `createParticipantConnection` again 1 minute before this time. If the value is missing or unparseable, ChatJS logs a warning and stops refreshing. If it's in the past, ChatJS refreshes at most once a minute.
 - **Return `Websocket` unchanged from `CreateParticipantConnection`.** The browser opens this WebSocket itself. `ConnectionToken` is the only field you may replace with your own value.
 - **Return `Id` from `sendMessage`.** ChatJS uses it to match the message it displayed optimistically. Without it, the message can appear twice.
 - **Reject on failure. Don't throw synchronously.** Use `async` methods or return a rejected promise, so ChatJS can roll back its transcript state.
