@@ -333,6 +333,22 @@ describe("customChatClient through the public create() path", () => {
         expect(session.controller.chatClient).toBe(client);
     });
 
+    test("normalizeChatDetails learns whether a customChatClient is in use", () => {
+        const spy = jest.spyOn(CHAT_SESSION_FACTORY.argsValidator, "normalizeChatDetails");
+        const create = options => ChatSessionObject.create({
+            chatDetails: { ...chatDetails, participantToken: "pToken" },
+            type: SESSION_TYPES.CUSTOMER,
+            options,
+            websocketManager: {},
+            disableCSM: true
+        });
+
+        create({ customChatClient: customClient() });
+        expect(spy).toHaveBeenLastCalledWith(expect.any(Object), true);
+        create({});
+        expect(spy).toHaveBeenLastCalledWith(expect.any(Object), false);
+    });
+
     test("ChatSessionObject exposes the ChatClient base class customers extend", () => {
         expect(ChatSessionObject.ChatClient).toBe(ChatClient);
     });

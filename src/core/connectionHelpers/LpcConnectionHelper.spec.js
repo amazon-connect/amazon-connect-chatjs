@@ -222,6 +222,37 @@ describe("LpcConnectionHelper", () => {
     });
 
     describe("Connections with auto-created WebsocketManager (customer connections)", () => {
+        const tokenlessDetails = {
+            url: "tokenlessUrl",
+            expiry: "tokenlessExpiry",
+            connectionToken: null,
+            connectionTokenExpiry: null
+        };
+
+        // A tokenless session's held details carry no connectionTokenExpiry but are still enough to build the transport.
+        test("uses a tokenless session's connection details without re-fetching", async () => {
+            connectionDetailsProvider.isTokenless = jest.fn(() => true);
+            getLpcConnectionHelper("id", undefined, tokenlessDetails).start();
+
+            const [result] = await autoCreatedWebsocketManager.$simulateRefresh();
+
+            expect(result.status).toEqual("fulfilled");
+            expect(result.value.webSocketTransport.url).toEqual("tokenlessUrl");
+            expect(result.value.webSocketTransport.expiry).toEqual("tokenlessExpiry");
+            expect(connectionDetailsProvider.fetchConnectionDetails).not.toHaveBeenCalled();
+        });
+
+        // Unchanged from before this feature: without the tokenless carve-out, a missing
+        // connectionTokenExpiry still re-fetches.
+        test("re-fetches details with no connectionTokenExpiry when not tokenless", async () => {
+            connectionDetailsProvider.isTokenless = jest.fn(() => false);
+            getLpcConnectionHelper("id", undefined, tokenlessDetails).start();
+
+            await autoCreatedWebsocketManager.$simulateRefresh();
+
+            expect(connectionDetailsProvider.fetchConnectionDetails).toHaveBeenCalledTimes(1);
+        });
+
         test("onRefresh handler is called with error", () => {
             connectionDetailsProvider.fetchConnectionDetails =
         jest.fn(() => Promise.reject(new Error("error")));

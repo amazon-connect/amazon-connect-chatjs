@@ -48,6 +48,7 @@ class ChatController {
         this.contactId = args.chatDetails.contactId;
         this.participantId = args.chatDetails.participantId;
         this.chatClient = args.chatClient;
+        this.usingCustomChatClient = args.usingCustomChatClient;
         this.participantToken = args.chatDetails.participantToken;
         this.websocketManager = args.websocketManager;
         this._participantDisconnected = false;
@@ -329,10 +330,12 @@ class ChatController {
 
     _getConnectionDetailsProvider() {
         return new ConnectionDetailsProvider(
-            this.participantToken, 
+            this.participantToken,
             this.chatClient,
             this.sessionType,
-            this.getConnectionToken
+            this.getConnectionToken,
+            this.usingCustomChatClient,
+            this.logMetaData
         );
     }
 
