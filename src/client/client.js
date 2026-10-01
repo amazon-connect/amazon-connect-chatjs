@@ -49,22 +49,32 @@ class ChatClientFactoryImpl {
 
   }
 
-  getCachedClient(optionsInput, logMetaData) {
+  /**
+   * @param customChatClient pass what resolveCustomChatClient returned to avoid a second lookup.
+   * @returns {{client: Object, isCustom: boolean}} isCustom gates tokenless behaviour, so it is a return value rather than a logMetaData side effect.
+   */
+  getCachedClient(optionsInput, logMetaData, customChatClient = this.resolveCustomChatClient(optionsInput)) {
     // Not cached: a per-session client must not leak into another session.
-    const customChatClient = optionsInput.customChatClient || GlobalConfig.getCustomChatClient();
     if (customChatClient) {
       logMetaData.usingCustomChatClient = true;
       this._reportUnimplementedMethods(customChatClient, logMetaData);
-      return customChatClient;
+      return { client: customChatClient, isCustom: true };
     }
     let region = GlobalConfig.getRegionOverride() || optionsInput.region || GlobalConfig.getRegion() || REGIONS.pdx;
     logMetaData.region = region;
     if (this.clientCache[region]) {
-      return this.clientCache[region];
+      return { client: this.clientCache[region], isCustom: false };
     }
     let client = this._createAwsClient(region, logMetaData);
     this.clientCache[region] = client;
-    return client;
+    return { client, isCustom: false };
+  }
+
+  /**
+   * The session's customChatClient: per-session first, then global, else null.
+   */
+  resolveCustomChatClient(optionsInput) {
+    return optionsInput.customChatClient || GlobalConfig.getCustomChatClient() || null;
   }
 
   _reportUnimplementedMethods(client, logMetaData) {

@@ -38,6 +38,10 @@ export default class BaseConnectionHelper {
             return this.connectionDetailsProvider.fetchConnectionDetails()
                 .then(response => {
                     this.logger.info("Connection token polling succeeded.");
+                    // A refresh can turn the session tokenless; with no expiry to schedule by, polling must stop.
+                    if (this.connectionDetailsProvider.isTokenless?.()) {
+                        return response;
+                    }
                     expiry = this.getTimeToConnectionTokenExpiry();
                     this.timeout = setTimeout(this.startConnectionTokenPolling.bind(this), expiry);
                     return response;
@@ -59,8 +63,12 @@ export default class BaseConnectionHelper {
             return this.getConnectionToken();
         }
         this.isStarted = true;
+        // A tokenless session has no connection token, so polling would only refetch one that never arrives.
+        if (this.connectionDetailsProvider.isTokenless?.()) {
+            return;
+        }
         return this.startConnectionTokenPolling(
-            true, 
+            true,
             this.getTimeToConnectionTokenExpiry()
         );
     }

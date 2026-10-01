@@ -24,7 +24,7 @@ describe("client test cases", () => {
   const content = "content";
   const options = {};
   const logMetaData = {};
-  var chatClient = ChatClientFactory.getCachedClient(options, logMetaData);
+  var { client: chatClient } = ChatClientFactory.getCachedClient(options, logMetaData);
 
   beforeEach(() => {
     jest.spyOn(chatClient, "_submitEvent").mockImplementation(() => {});
@@ -96,7 +96,7 @@ describe("client test cases", () => {
     });
     const options = {};
     const logMetaData = {};
-    var chatClient = ChatClientFactory.getCachedClient(options, logMetaData);
+    var { client: chatClient } = ChatClientFactory.getCachedClient(options, logMetaData);
 
     describe("DescribeView", () => {
       test("No errors thrown in happy case", async () => {
@@ -367,19 +367,21 @@ describe("customChatClient", () => {
 
   test("returns the client passed per session", () => {
     const client = completeClient();
-    expect(ChatClientFactory.getCachedClient({ customChatClient: client }, {})).toBe(client);
+    expect(ChatClientFactory.getCachedClient({ customChatClient: client }, {}))
+      .toEqual({ client, isCustom: true });
   });
 
   test("returns the client registered globally", () => {
     const client = completeClient();
     GlobalConfig.getCustomChatClient.mockReturnValue(client);
-    expect(ChatClientFactory.getCachedClient({}, {})).toBe(client);
+    expect(ChatClientFactory.getCachedClient({}, {})).toEqual({ client, isCustom: true });
   });
 
   test("per-session client wins over the global one", () => {
     const perSession = completeClient();
     GlobalConfig.getCustomChatClient.mockReturnValue(completeClient());
-    expect(ChatClientFactory.getCachedClient({ customChatClient: perSession }, {})).toBe(perSession);
+    expect(ChatClientFactory.getCachedClient({ customChatClient: perSession }, {}).client)
+      .toBe(perSession);
   });
 
   test("flags the session in logMetaData", () => {
@@ -394,13 +396,38 @@ describe("customChatClient", () => {
     const first = ChatClientFactory.getCachedClient({ region, customChatClient: client }, {});
     const second = ChatClientFactory.getCachedClient({ region }, {});
 
-    expect(first).toBe(client);
-    expect(second).not.toBe(client);
-    expect(second.constructor.name).toBe("AWSChatClient");
+    expect(first.client).toBe(client);
+    expect(second.client).not.toBe(client);
+    expect(second.client.constructor.name).toBe("AWSChatClient");
   });
 
   test("falls back to the AWS client when none is configured", () => {
-    expect(ChatClientFactory.getCachedClient({}, {}).constructor.name).toBe("AWSChatClient");
+    const { client, isCustom } = ChatClientFactory.getCachedClient({}, {});
+    expect(client.constructor.name).toBe("AWSChatClient");
+    expect(isCustom).toBe(false);
+  });
+
+  // Tokenless connections gate on isCustom, so it must not be a logMetaData side effect.
+  test("reports isCustom so callers never have to read logMetaData", () => {
+    expect(ChatClientFactory.getCachedClient({ customChatClient: completeClient() }, {}).isCustom)
+      .toBe(true);
+    expect(ChatClientFactory.getCachedClient({ region }, {}).isCustom).toBe(false);
+  });
+
+  test("resolveCustomChatClient finds a per-session or global client without touching logMetaData", () => {
+    const perSession = completeClient();
+    expect(ChatClientFactory.resolveCustomChatClient({ customChatClient: perSession })).toBe(perSession);
+    expect(ChatClientFactory.resolveCustomChatClient({ region })).toBeNull();
+    const global = completeClient();
+    GlobalConfig.getCustomChatClient.mockReturnValue(global);
+    expect(ChatClientFactory.resolveCustomChatClient({})).toBe(global);
+  });
+
+  test("getCachedClient uses a pre-resolved client without looking it up again", () => {
+    const client = completeClient();
+    GlobalConfig.getCustomChatClient.mockClear();
+    expect(ChatClientFactory.getCachedClient({}, {}, client)).toEqual({ client, isCustom: true });
+    expect(GlobalConfig.getCustomChatClient).not.toHaveBeenCalled();
   });
 
   test("errors on the critical operations a duck-typed client is missing", () => {
