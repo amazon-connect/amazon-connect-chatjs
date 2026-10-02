@@ -59,11 +59,15 @@ class ChatClientFactoryImpl {
     }
     let region = GlobalConfig.getRegionOverride() || optionsInput.region || GlobalConfig.getRegion() || REGIONS.pdx;
     logMetaData.region = region;
-    if (this.clientCache[region]) {
-      return this.clientCache[region];
+    const useDualStack = GlobalConfig.getDualStackFlag() === true;
+    // Key on the endpoint stack too, so toggling useDualStack after a session exists
+    // does not keep returning a client bound to the previous endpoint.
+    const cacheKey = useDualStack ? `${region}:dualstack` : region;
+    if (this.clientCache[cacheKey]) {
+      return this.clientCache[cacheKey];
     }
-    let client = this._createAwsClient(region, logMetaData);
-    this.clientCache[region] = client;
+    let client = this._createAwsClient(region, logMetaData, useDualStack);
+    this.clientCache[cacheKey] = client;
     return client;
   }
 
@@ -94,9 +98,11 @@ class ChatClientFactoryImpl {
 
   }
 
-  _createAwsClient(region, logMetaData) {
+  _createAwsClient(region, logMetaData, useDualStack) {
     let endpointOverride = GlobalConfig.getEndpointOverride();
-    let endpointUrl = `https://participant.connect.${region}.amazonaws.com`;
+    let ipv4EndpointUrl = `https://participant.connect.${region}.amazonaws.com`;
+    let dualStackEndpointUrl = `https://participant.connect.${region}.api.aws`;
+    let endpointUrl = useDualStack ? dualStackEndpointUrl: ipv4EndpointUrl;
     if (endpointOverride) {
       endpointUrl = endpointOverride;
     }

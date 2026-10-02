@@ -153,6 +153,10 @@ connect.ChatSession.setGlobalConfig({
   // (optional) Route every Participant Service call through your own transport instead of the
   // bundled AWS SDK client. See `connect.ChatSession.ChatClient`
   customChatClient: null,
+  // (optional) Call the dual-stack (IPv4 + IPv6) Participant Service endpoint,
+  // https://participant.connect.{region}.api.aws, instead of the IPv4-only
+  // https://participant.connect.{region}.amazonaws.com. Default: false. Ignored when `endpoint` is set.
+  useDualStack: false,
 });
 ```
 
@@ -985,10 +989,16 @@ connect.ChatSession.setGlobalConfig({
 
   // (optional) Route every session's Participant Service calls through your own transport
   // instead of the bundled AWS SDK client. See `connect.ChatSession.ChatClient`
-  customChatClient: null
+  customChatClient: null,
+
+  // (optional) Use the dual-stack (IPv4 + IPv6) Participant Service endpoint
+  // (participant.connect.{region}.api.aws). Default: false. `endpoint` takes precedence.
+  useDualStack: false
 });
 ```
 Set the global configuration to use. If this method is not called, the defaults of loggerConfig and region are used. This method should be called before `connect.ChatSession.create()`.
+
+> **Note on `useDualStack`:** this option applies to the Amazon Connect Participant Service API calls that ChatJS makes. The WebSocket URL is not affected: it is returned by the [CreateParticipantConnection](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CreateParticipantConnection.html) API and depends on your Amazon Connect instance. For clients on IPv6-only networks, confirm that your Amazon Connect instance supports IPv6 for chat as well as setting `useDualStack: true`; otherwise API calls can succeed while the WebSocket fails to connect, and incoming messages are not delivered in real time.
 
 > **Note on `features`:** the `features` block (including `messageReceipts`) is only re-evaluated when you pass it explicitly. If a subsequent `setGlobalConfig` call omits `features`, the previously configured message-receipts settings (`shouldSendMessageReceipts` and `throttleTime`) are preserved. This keeps wrapping libraries that only update unrelated fields like `loggerConfig` or `region` from unintentionally re-enabling receipts.
 
