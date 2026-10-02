@@ -1,4 +1,4 @@
-import { DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS, FEATURES } from "./constants";
+import { DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS, FEATURES, USE_DUAL_STACK_DEFAULT_VALUE } from "./constants";
 import { LogManager } from "./log";
 
 class GlobalConfigImpl {
@@ -40,6 +40,7 @@ class GlobalConfigImpl {
         this.customUserAgentSuffix = "";
         this.customChatClient = null;
         this._messageReceiptsExplicitlyConfigured = false;
+        this.useDualStack = USE_DUAL_STACK_DEFAULT_VALUE;
     }
     update(configInput) {
         // A truthy primitive would reach the `in` test below and throw, aborting the rest
@@ -57,6 +58,10 @@ class GlobalConfigImpl {
             this.features["values"] = new Array();
         }
         this.customUserAgentSuffix = config.customUserAgentSuffix || this.customUserAgentSuffix;
+        // Only a real boolean flips the flag; omitted/invalid values keep the current setting.
+        if (typeof config.useDualStack === "boolean") {
+            this.useDualStack = config.useDualStack;
+        }
 
         if ("customChatClient" in config) {
             this.customChatClient = config.customChatClient;
@@ -136,6 +141,10 @@ class GlobalConfigImpl {
         }
         const featureValues = Array.isArray(this.features["values"]) ? this.features["values"] : [];
         this.features["values"] = [...featureValues, feature];
+    }
+
+    getDualStackFlag() {
+        return this.useDualStack;
     }
 
     //private method
