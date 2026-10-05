@@ -1412,6 +1412,20 @@ The response `data` is the same as the [API response body](https://docs.aws.amaz
 
 **Important note:** The session id is only available from the authentication.initiated event which is only emitted when the authenticate customer contact flow block is used. The session id is a 1 time use code.
 
+#### `chatSession.reset()`
+
+```js
+await chatSession.reset();
+// The contact is still live. Register handlers again, then reconnect:
+chatSession.onMessage(handleMessage);
+await chatSession.connect();
+```
+
+Closes the WebSocket and clears the session's state **without** ending the contact, so the next `connect()` starts clean. Use `disconnectParticipant()` to end the contact instead.
+
+- Returns a promise that resolves once the socket is closed. It never rejects; failures are logged.
+- Removes every registered event handler. Register them again before reconnecting on the same session.
+
 #### `customerChatSession.disconnectParticipant()`
 
 ```js
