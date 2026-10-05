@@ -126,6 +126,28 @@ describe("tokenless session (customChatClient holds both tokens)", () => {
         expect(session.getChatDetails().connectionDetails.connectionToken).toBeNull();
     });
 
+    // reset() + tokenless together: close the socket without ending the contact, then start clean.
+    it("reset() closes the socket without ending the contact, and the next connect() is tokenless again", async () => {
+        const client = new TokenlessClient();
+        const session = createTokenlessSession(client);
+        await session.connect();
+        const firstSocket = websocketManager;
+
+        await session.reset();
+
+        expect(client.calls.some(c => c.method === "disconnectParticipant")).toBe(false);
+        expect(firstSocket.closeWebSocket).toHaveBeenCalled();
+        expect(session.getChatDetails().connectionDetails).toBeNull();
+
+        const { connectSuccess } = await session.connect();
+        await session.sendMessage({ message: "after reset", contentType: "text/plain" });
+
+        expect(connectSuccess).toBe(true);
+        expect(client.calls.filter(c => c.method === "createParticipantConnection")).toHaveLength(2);
+        expect(session.getChatDetails().connectionDetails.connectionToken).toBeNull();
+        expect(client.calls.find(c => c.method === "sendMessage").connectionToken).toBeNull();
+    });
+
     it("opens the websocket URL the customer's backend returned", async () => {
         const client = new TokenlessClient();
         const session = createTokenlessSession(client);
