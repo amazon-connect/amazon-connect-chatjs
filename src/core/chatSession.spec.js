@@ -189,6 +189,7 @@ describe("chatSession", () => {
         jest.spyOn(controller, 'getChatDetails').mockImplementation(() => {});
         jest.spyOn(controller, 'cancelParticipantAuthentication').mockImplementation(() => {});
         jest.spyOn(controller, 'getAttachmentURL').mockImplementation(() => {});
+        jest.spyOn(controller, 'reset').mockImplementation(() => {});
 
         session.sendMessage(args);
         expect(controller.sendMessage).toHaveBeenCalled();
@@ -208,6 +209,16 @@ describe("chatSession", () => {
         expect(controller.cancelParticipantAuthentication).toHaveBeenCalled();
         session.getAttachmentURL(args);
         expect(controller.getAttachmentURL).toHaveBeenCalled();
+        session.reset();
+        expect(controller.reset).toHaveBeenCalled();
+    });
+
+    test('reset forwards the controller teardown promise to the caller', async () => {
+        const teardown = Promise.resolve();
+        jest.spyOn(controller, 'reset').mockImplementation(() => teardown);
+
+        await expect(session.reset()).resolves.toBeUndefined();
+        expect(session.reset()).toBe(teardown);
     });
 });
 
@@ -331,6 +342,22 @@ describe("customChatClient through the public create() path", () => {
             disableCSM: true
         });
         expect(session.controller.chatClient).toBe(client);
+    });
+
+    test("normalizeChatDetails learns whether a customChatClient is in use", () => {
+        const spy = jest.spyOn(CHAT_SESSION_FACTORY.argsValidator, "normalizeChatDetails");
+        const create = options => ChatSessionObject.create({
+            chatDetails: { ...chatDetails, participantToken: "pToken" },
+            type: SESSION_TYPES.CUSTOMER,
+            options,
+            websocketManager: {},
+            disableCSM: true
+        });
+
+        create({ customChatClient: customClient() });
+        expect(spy).toHaveBeenLastCalledWith(expect.any(Object), true);
+        create({});
+        expect(spy).toHaveBeenLastCalledWith(expect.any(Object), false);
     });
 
     test("ChatSessionObject exposes the ChatClient base class customers extend", () => {

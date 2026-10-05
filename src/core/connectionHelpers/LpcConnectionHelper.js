@@ -176,7 +176,9 @@ class LpcConnectionHelperBase {
     }
 
     _getConnectionDetails(connectionDetailsProvider, connectionDetails, startTime) {
-        if (connectionDetails !== null && typeof connectionDetails === "object" && connectionDetails.expiry && connectionDetails.connectionTokenExpiry) {
+        // A tokenless session never has a connectionTokenExpiry, so requiring one would re-handshake details it can already use.
+        if (connectionDetails !== null && typeof connectionDetails === "object" && connectionDetails.expiry &&
+            (connectionDetails.connectionTokenExpiry || connectionDetailsProvider.isTokenless?.())) {
             const logContent = {expiry: connectionDetails.expiry, transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS};
             this.logger.debug("Websocket manager initialized. Connection details:", logContent);
             return Promise.resolve({

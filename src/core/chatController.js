@@ -48,6 +48,7 @@ class ChatController {
         this.contactId = args.chatDetails.contactId;
         this.participantId = args.chatDetails.participantId;
         this.chatClient = args.chatClient;
+        this.usingCustomChatClient = args.usingCustomChatClient;
         this.participantToken = args.chatDetails.participantToken;
         this.websocketManager = args.websocketManager;
         this._participantDisconnected = false;
@@ -329,10 +330,12 @@ class ChatController {
 
     _getConnectionDetailsProvider() {
         return new ConnectionDetailsProvider(
-            this.participantToken, 
+            this.participantToken,
             this.chatClient,
             this.sessionType,
-            this.getConnectionToken
+            this.getConnectionToken,
+            this.usingCustomChatClient,
+            this.logMetaData
         );
     }
 
@@ -505,6 +508,39 @@ class ChatController {
     // disconnected here means that the participant is no longer part of ther chat.
     cleanUpOnParticipantDisconnect() {
         this.pubsub.unsubscribeAll();
+    }
+
+    /**
+     * Disconnects the WebSocket and drops session-scoped state WITHOUT ending
+     * the contact, so a later connect() resumes on a fresh socket. Mirrors
+     * amazon-connect-chat-ios ChatService.reset(). Unlike disconnectParticipant().
+     *
+     * @return {Promise} resolves once the socket teardown has settled. Never
+     *   rejects - teardown is best-effort and any failure is logged instead, so
+     *   callers that ignore the returned promise cannot trigger an unhandled rejection.
+     */
+    reset() {
+        // Tear the socket down first, while connectionHelper is still reachable. The
+        // executor form captures a synchronous throw from end() as a rejection, so a
+        // failing teardown neither escapes to the caller nor skips the cleanup below.
+        const socketClosed = new Promise(resolve => resolve(this.breakConnection()))
+            .catch(error => this._sendInternalLogToServer(
+                this.logger.warn("Failed to close the websocket during reset", error)
+            ));
+
+        this.cleanUpOnParticipantDisconnect();     // clearSubscriptionsAndPublishers
+        this.messageReceiptUtil.reset();           // messageReceiptsManager.reset
+        this.partialMessageUtil.reset();           // drop half-received bot message chunks
+        this.connectionDetailsProvider?.reset();   // connectionDetailsProvider.reset
+        this.internalTranscriptUtils.reset();      // clear transcript + temp/attachment maps
+        // connect() treats a retained provider as "already connected" and ignores the
+        // call, so drop these references to let a later connect() start a fresh socket
+        // and to stop getChatDetails() from reporting details of a closed connection.
+        this.connectionDetailsProvider = null;
+        this.connectionHelper = null;
+        this.connectionDetails = null;
+
+        return socketClosed;
     }
 
     disconnectParticipant() {

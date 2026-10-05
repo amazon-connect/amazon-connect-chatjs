@@ -15,6 +15,50 @@ describe('PartialMessageUtil', () => {
         });
     });
 
+    describe('reset', () => {
+        const firstChunk = {
+            Id: 'msg1',
+            ParticipantRole: "SYSTEM",
+            Type: "MESSAGE",
+            Content: "Hel",
+            MessageMetadata: { MessageCompleted: false, ChunkNumber: 1 }
+        };
+
+        it('should drop buffered chunks and clear the changed flag', () => {
+            util.updatePartialMessageMap(firstChunk);
+            expect(util.partialMessageMap.size).toBe(1);
+            expect(util.partialMessageMapChanged).toBe(true);
+
+            util.reset();
+
+            expect(util.partialMessageMap).toBeInstanceOf(Map);
+            expect(util.partialMessageMap.size).toBe(0);
+            expect(util.partialMessageMapChanged).toBe(false);
+        });
+
+        it('should not stitch a pre-reset chunk onto a post-reset message', () => {
+            util.updatePartialMessageMap(firstChunk);
+            util.reset();
+
+            // Same message id, chunk 2: without the reset this would be appended to
+            // "Hel" and stitched into "Hello". After a reset chunk 2 is orphaned, so
+            // the buffer stays empty until a fresh chunk 1 (or a completed message).
+            util.updatePartialMessageMap({
+                ...firstChunk,
+                Content: "lo",
+                MessageMetadata: { MessageCompleted: false, ChunkNumber: 2 }
+            });
+
+            expect(util.partialMessageMap.size).toBe(0);
+            expect(util.partialMessageMapChanged).toBe(false);
+        });
+
+        it('should be safe to call when nothing is buffered', () => {
+            expect(() => util.reset()).not.toThrow();
+            expect(util.partialMessageMap.size).toBe(0);
+        });
+    });
+
     describe('isPartialMessage', () => {
         it('should return true for valid partial message', () => {
             const data = {

@@ -214,4 +214,146 @@ describe("ConnectionDetailsProvider", () => {
             });
         });
     });
+
+    describe("tokenless connection (customChatClient omits ConnectionCredentials)", () => {
+
+        function respondWith(data) {
+            chatClient.createParticipantConnection = jest.fn(() => Promise.resolve({ data }));
+        }
+
+        function setupWithCustomClient() {
+            connectionDetailsProvider = new ConnectionDetailsProvider(
+                null, chatClient, SESSION_TYPES.CUSTOMER, null, true
+            );
+        }
+
+        const websocketOnly = {
+            Websocket: { Url: "wss://example/socket", ConnectionExpiry: "2026-08-20T00:00:00.000Z" }
+        };
+
+        test("resolves with a null connection token instead of throwing", async () => {
+            respondWith(websocketOnly);
+            setupWithCustomClient();
+
+            const details = await connectionDetailsProvider.fetchConnectionDetails();
+
+            expect(details.url).toEqual("wss://example/socket");
+            expect(details.expiry).toEqual("2026-08-20T00:00:00.000Z");
+            expect(details.connectionToken).toBeNull();
+            expect(details.connectionTokenExpiry).toBeNull();
+            expect(connectionDetailsProvider.getFetchedConnectionToken()).toBeNull();
+            expect(connectionDetailsProvider.getConnectionTokenExpiry()).toBeNull();
+        });
+
+        test("warns, so a proxy that dropped the credentials by mistake is visible", async () => {
+            respondWith(websocketOnly);
+            setupWithCustomClient();
+            const warn = jest.spyOn(connectionDetailsProvider.logger, "warn");
+
+            await connectionDetailsProvider.fetchConnectionDetails();
+
+            expect(warn).toHaveBeenCalledWith(expect.stringContaining("no ConnectionCredentials"));
+        });
+
+        test("warns only on the first websocket-only response", async () => {
+            respondWith(websocketOnly);
+            setupWithCustomClient();
+            const warn = jest.spyOn(connectionDetailsProvider.logger, "warn");
+
+            await connectionDetailsProvider.fetchConnectionDetails();
+            await connectionDetailsProvider.fetchConnectionDetails();
+
+            expect(warn.mock.calls.filter(([msg]) => /no ConnectionCredentials/.test(msg))).toHaveLength(1);
+        });
+
+        // tokenless for the whole session, even if a refresh later carries credentials.
+        test("stays tokenless when a later response includes credentials", async () => {
+            respondWith(websocketOnly);
+            setupWithCustomClient();
+            await connectionDetailsProvider.fetchConnectionDetails();
+
+            respondWith({
+                ...websocketOnly,
+                ConnectionCredentials: { ConnectionToken: "later-token", Expiry: "2026-09-01T00:00:00.000Z" }
+            });
+            await connectionDetailsProvider.fetchConnectionDetails();
+
+            expect(connectionDetailsProvider.isTokenless()).toBe(true);
+            // Ignored, not stored: nothing would ever refresh it.
+            expect(connectionDetailsProvider.getFetchedConnectionToken()).toBeNull();
+            expect(connectionDetailsProvider.getConnectionTokenExpiry()).toBeNull();
+        });
+
+        test("passes a null participantToken through to the custom client", async () => {
+            respondWith(websocketOnly);
+            setupWithCustomClient();
+
+            await connectionDetailsProvider.fetchConnectionDetails();
+
+            expect(chatClient.createParticipantConnection).toHaveBeenCalledWith(
+                null,
+                [ConnectionInfoType.WEBSOCKET, ConnectionInfoType.CONNECTION_CREDENTIALS],
+                null
+            );
+        });
+
+        test("still rejects when Websocket.Url is absent, naming the field", async () => {
+            respondWith({});
+            setupWithCustomClient();
+
+            await expect(connectionDetailsProvider.fetchConnectionDetails())
+                .rejects.toEqual(expect.objectContaining({
+                    _debug: expect.objectContaining({
+                        message: expect.stringContaining("Websocket.Url")
+                    })
+                }));
+        });
+
+        // The Websocket.Url guard is scoped to the tokenless branch, so the bundled client still
+        // fails on the dereference exactly as it did before this feature.
+        test("leaves the bundled AWS client's missing-Websocket failure untouched", async () => {
+            respondWith({ ConnectionCredentials: { ConnectionToken: "t", Expiry: "e" } });
+            setupCustomer();
+
+            await expect(connectionDetailsProvider.fetchConnectionDetails())
+                .rejects.toEqual(expect.objectContaining({ _debug: expect.any(TypeError) }));
+        });
+
+        // Without a custom client this is a malformed AWS response, not a tokenless session.
+        test("keeps failing for the bundled AWS client, with the same TypeError as before", async () => {
+            respondWith(websocketOnly);
+            setupCustomer();
+
+            await expect(connectionDetailsProvider.fetchConnectionDetails())
+                .rejects.toEqual(expect.objectContaining({ _debug: expect.any(TypeError) }));
+        });
+
+        test("still honours a credentials block when one is returned", async () => {
+            respondWith({
+                ...websocketOnly,
+                ConnectionCredentials: { ConnectionToken: "real-token", Expiry: "2026-09-01T00:00:00.000Z" }
+            });
+            setupWithCustomClient();
+
+            const details = await connectionDetailsProvider.fetchConnectionDetails();
+
+            expect(details.connectionToken).toEqual("real-token");
+            expect(connectionDetailsProvider.getFetchedConnectionToken()).toEqual("real-token");
+        });
+    });
+
+    describe(".reset()", () => {
+        it("clears cached connection details, token, and expiry", () => {
+            setupCustomer();
+            connectionDetailsProvider.connectionDetails = { url: "u" };
+            connectionDetailsProvider.connectionToken = "token";
+            connectionDetailsProvider.connectionTokenExpiry = "expiry";
+
+            connectionDetailsProvider.reset();
+
+            expect(connectionDetailsProvider.getConnectionDetails()).toBeNull();
+            expect(connectionDetailsProvider.getFetchedConnectionToken()).toBeNull();
+            expect(connectionDetailsProvider.getConnectionTokenExpiry()).toBeNull();
+        });
+    });
 });

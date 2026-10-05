@@ -54,14 +54,19 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
 
     _createChatController(sessionType, chatDetailsInput, options, websocketManager) {
         try {
-            var chatDetails = this.argsValidator.normalizeChatDetails(chatDetailsInput);
+            var customChatClient = ChatClientFactory.resolveCustomChatClient(options);
+            var chatDetails = this.argsValidator.normalizeChatDetails(
+                chatDetailsInput,
+                Boolean(customChatClient)
+            );
             var logMetaData = {
                 contactId: chatDetails.contactId,
                 participantId: chatDetails.participantId,
                 sessionType,
             };
 
-            var chatClient = ChatClientFactory.getCachedClient(options, logMetaData);
+            var { client: chatClient, isCustom: usingCustomChatClient } =
+                ChatClientFactory.getCachedClient(options, logMetaData, customChatClient);
 
             var args = {
                 sessionType: sessionType,
@@ -69,6 +74,7 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
                 chatClient,
                 websocketManager: websocketManager,
                 logMetaData,
+                usingCustomChatClient,
             };
 
             StreamMetricUtils.publishEvent(`${STREAM_JS}-${window.connect.version}-${CHAT_SESSION_SUCCESS_TYPES.CHATJS_CONNECT_SESSION_SUCCESS}`);
@@ -226,6 +232,18 @@ export class ChatSession {
 
     cancelParticipantAuthentication(args) {
         return this.controller.cancelParticipantAuthentication(args);
+    }
+
+    /**
+     * Disconnects the WebSocket and unsubscribes handlers WITHOUT ending the
+     * contact, so a later connect() resumes it on a fresh socket. Mirrors
+     * amazon-connect-chat-ios ChatSession.reset(). To END the contact, use
+     * disconnectParticipant().
+     *
+     * @return {Promise} resolves once the socket teardown has settled; never rejects.
+     */
+    reset() {
+        return this.controller.reset();
     }
 }
 
