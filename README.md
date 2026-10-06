@@ -156,6 +156,7 @@ connect.ChatSession.setGlobalConfig({
   // (optional) Call the dual-stack (IPv4 + IPv6) Participant Service endpoint,
   // https://participant.connect.{region}.api.aws, instead of the IPv4-only
   // https://participant.connect.{region}.amazonaws.com. Default: false. Ignored when `endpoint` is set.
+  // Must be a boolean; any other value is ignored (with a warning) and the current setting is kept.
   useDualStack: false,
 });
 ```

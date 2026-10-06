@@ -58,9 +58,14 @@ class GlobalConfigImpl {
             this.features["values"] = new Array();
         }
         this.customUserAgentSuffix = config.customUserAgentSuffix || this.customUserAgentSuffix;
-        // Only a real boolean flips the flag; omitted/invalid values keep the current setting.
+        // Only a real boolean flips the flag. JS callers can pass anything (e.g. the string
+        // "false" read from env or a config file, which is truthy), so a non-boolean is ignored
+        // with a warning instead of silently picking an endpoint the caller did not ask for.
         if (typeof config.useDualStack === "boolean") {
             this.useDualStack = config.useDualStack;
+        } else if (config.useDualStack !== undefined) {
+            this.logger.warn("useDualStack must be a boolean; ignoring the provided value and keeping " +
+                "the current setting.", { providedType: typeof config.useDualStack, useDualStack: this.useDualStack });
         }
 
         if ("customChatClient" in config) {

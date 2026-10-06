@@ -72,9 +72,21 @@ describe("globalConfig", () => {
             GlobalConfig.update({region: "us-east-1"});
             expect(GlobalConfig.getDualStackFlag()).toEqual(true);
 
-            // Non-boolean values are ignored
+            // Non-boolean values are ignored, with a warning
+            const warnSpy = jest.spyOn(GlobalConfig.logger, "warn");
             GlobalConfig.update({useDualStack: "false"});
             expect(GlobalConfig.getDualStackFlag()).toEqual(true);
+            expect(warnSpy).toHaveBeenCalledWith(
+                expect.stringContaining("useDualStack must be a boolean"),
+                { providedType: "string", useDualStack: true }
+            );
+
+            // Omitting it (or passing a boolean) does not warn
+            warnSpy.mockClear();
+            GlobalConfig.update({region: "us-east-1"});
+            GlobalConfig.update({useDualStack: true});
+            expect(warnSpy).not.toHaveBeenCalled();
+            warnSpy.mockRestore();
 
             // Test disabling useDualStack after enabling it
             GlobalConfig.update({useDualStack: false});

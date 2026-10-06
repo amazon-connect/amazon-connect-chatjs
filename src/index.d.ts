@@ -276,6 +276,9 @@ declare namespace connect {
      *
      * This only affects ChatJS's API calls. The WebSocket URL is returned by
      * `CreateParticipantConnection` and depends on the Amazon Connect instance.
+     *
+     * Must be a boolean; any other value is ignored (a warning is logged) and the current
+     * setting is kept.
      * @default false
      */
     readonly useDualStack?: boolean;
