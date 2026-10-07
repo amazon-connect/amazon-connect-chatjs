@@ -31,6 +31,7 @@ This stand-alone library supports customer chat sessions by default. For agent c
 
 ## 📢 Announcements
 
+- **2026-10-07**: v5.3.0 - Added `useDualStack` in `setGlobalConfig()`, to call the dual-stack (IPv4 + IPv6) Participant Service endpoint `participant.connect.{region}.api.aws`. Off by default
 - **2026-09-23**: v5.2.0 - Added `customChatClient`, to replace the bundled AWS transport with your own. TypeScript: `GetTranscriptResult.NextToken` is now optional, so strict-mode consumers assigning it to `string` must widen to `string | undefined`
 - **2025-05-29**: Migrated baked-in dependency from AWS SDK v2 to AWS SDK v3: `src/client/aws-sdk-connectparticipant.js`
 - **2024-04-02**: Connection Acknowledgement (ConnAck) has migrated from [SendEvent](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_SendEvent.html) API to the [CreateParticipant](https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_CreateParticipantConnection.html) API. Please upgrade to `amazon-connect-chatjs@^1.4.0` by **Dec 31, 2024**
