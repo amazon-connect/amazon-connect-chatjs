@@ -1,4 +1,4 @@
-import { DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS, FEATURES } from "./constants";
+import { DEFAULT_MESSAGE_RECEIPTS_THROTTLE_MS, FEATURES, USE_DUAL_STACK_DEFAULT_VALUE } from "./constants";
 import { LogManager } from "./log";
 
 class GlobalConfigImpl {
@@ -40,6 +40,7 @@ class GlobalConfigImpl {
         this.customUserAgentSuffix = "";
         this.customChatClient = null;
         this._messageReceiptsExplicitlyConfigured = false;
+        this.useDualStack = USE_DUAL_STACK_DEFAULT_VALUE;
     }
     update(configInput) {
         // A truthy primitive would reach the `in` test below and throw, aborting the rest
@@ -57,6 +58,15 @@ class GlobalConfigImpl {
             this.features["values"] = new Array();
         }
         this.customUserAgentSuffix = config.customUserAgentSuffix || this.customUserAgentSuffix;
+        // Only a real boolean flips the flag. JS callers can pass anything (e.g. the string
+        // "false" read from env or a config file, which is truthy), so a non-boolean is ignored
+        // with a warning instead of silently picking an endpoint the caller did not ask for.
+        if (typeof config.useDualStack === "boolean") {
+            this.useDualStack = config.useDualStack;
+        } else if (config.useDualStack !== undefined) {
+            this.logger.warn("useDualStack must be a boolean; ignoring the provided value and keeping " +
+                "the current setting.", { providedType: typeof config.useDualStack, useDualStack: this.useDualStack });
+        }
 
         if ("customChatClient" in config) {
             this.customChatClient = config.customChatClient;
@@ -136,6 +146,10 @@ class GlobalConfigImpl {
         }
         const featureValues = Array.isArray(this.features["values"]) ? this.features["values"] : [];
         this.features["values"] = [...featureValues, feature];
+    }
+
+    getDualStackFlag() {
+        return this.useDualStack;
     }
 
     //private method

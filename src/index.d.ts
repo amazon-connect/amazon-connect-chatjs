@@ -268,6 +268,20 @@ declare namespace connect {
     readonly webSocketManagerConfig?: {
       isNetworkOnline: () => boolean;
     }
+
+    /**
+     * Use the dual-stack (IPv4 + IPv6) Participant Service endpoint,
+     * `https://participant.connect.{region}.api.aws`, instead of
+     * `https://participant.connect.{region}.amazonaws.com`. Ignored when `endpoint` is set.
+     *
+     * This only affects ChatJS's API calls. The WebSocket URL is returned by
+     * `CreateParticipantConnection` and depends on the Amazon Connect instance.
+     *
+     * Must be a boolean; any other value is ignored (a warning is logged) and the current
+     * setting is kept.
+     * @default false
+     */
+    readonly useDualStack?: boolean;
   }
 
   /** Feature configurations passed to `setGlobalConfig`'s `features` field. */

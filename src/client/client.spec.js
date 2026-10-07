@@ -15,6 +15,7 @@ jest.mock('../globalConfig', () => {
       getEndpointOverride: jest.fn(),
       getCustomUserAgentSuffix: jest.fn(),
       getCustomChatClient: jest.fn(),
+      getDualStackFlag: jest.fn(),
     }
   }
 });
@@ -325,6 +326,44 @@ describe("client test cases", () => {
         }
       });
     });
+  });
+});
+
+describe("dual-stack endpoint", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
+  test("uses the IPv4 endpoint by default", () => {
+    const client = ChatClientFactory.getCachedClient({ region: "ap-south-1" }, {});
+    expect(client.invokeUrl).toBe("https://participant.connect.ap-south-1.amazonaws.com");
+  });
+
+  test("uses the dual-stack endpoint when useDualStack is true", () => {
+    GlobalConfig.getDualStackFlag.mockReturnValue(true);
+    const client = ChatClientFactory.getCachedClient({ region: "ap-south-1" }, {});
+    expect(client.invokeUrl).toBe("https://participant.connect.ap-south-1.api.aws");
+  });
+
+  test("endpoint override wins over the dual-stack endpoint", () => {
+    GlobalConfig.getDualStackFlag.mockReturnValue(true);
+    GlobalConfig.getEndpointOverride.mockReturnValue("https://override.example.com");
+    const client = ChatClientFactory.getCachedClient({ region: "ca-central-1" }, {});
+    expect(client.invokeUrl).toBe("https://override.example.com");
+  });
+
+  test("toggling useDualStack returns a client bound to the new endpoint", () => {
+    const region = "sa-east-1";
+    GlobalConfig.getDualStackFlag.mockReturnValue(false);
+    const ipv4Client = ChatClientFactory.getCachedClient({ region }, {});
+    GlobalConfig.getDualStackFlag.mockReturnValue(true);
+    const dualStackClient = ChatClientFactory.getCachedClient({ region }, {});
+
+    expect(dualStackClient).not.toBe(ipv4Client);
+    expect(ipv4Client.invokeUrl).toBe(`https://participant.connect.${region}.amazonaws.com`);
+    expect(dualStackClient.invokeUrl).toBe(`https://participant.connect.${region}.api.aws`);
+    // Same setting reuses the cached client.
+    expect(ChatClientFactory.getCachedClient({ region }, {})).toBe(dualStackClient);
   });
 });
 

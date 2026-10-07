@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.3.0]
+### Added
+- `useDualStack` option in `setGlobalConfig()`. When `true`, ChatJS calls the dual-stack (IPv4 + IPv6) Participant Service endpoint `https://participant.connect.{region}.api.aws` instead of `https://participant.connect.{region}.amazonaws.com`. Defaults to `false`; an explicit `endpoint` still takes precedence. Must be a boolean: any other value is ignored with a warning and the current setting is kept. Re-adds the option from #295, which was reverted in #296. The WebSocket URL is still returned by `CreateParticipantConnection` and is not affected by this option.
+
+### Fixed
+- The AWS client cache is now keyed by region and endpoint stack, so changing `useDualStack` after a session was created no longer reuses a client bound to the previous endpoint.
+
 ## [5.2.0]
 ### Added
 - `customChatClient` — supply your own transport in place of the bundled AWS client, per session via `ChatSession.create({ options })` or globally via `setGlobalConfig()`. Extend the exported base class, `connect.ChatSession.ChatClient`. `chatDetails.participantToken` becomes optional when such a client holds the token. Documented under [`connect.ChatSession.ChatClient`](README.md#connectchatsessionchatclient).
