@@ -50,7 +50,7 @@ class ChatControllerArgsValidator {
 }
 
 class ChatServiceArgsValidator extends ChatControllerArgsValidator {
-    validateChatDetails(chatDetails, sessionType) {
+    validateChatDetails(chatDetails, sessionType, usingCustomChatClient = false) {
         Utils.assertIsObject(chatDetails, "chatDetails");
         if (sessionType===SESSION_TYPES.AGENT && !Utils.isFunction(chatDetails.getConnectionToken)) {
             throw new IllegalArgumentException(
@@ -66,7 +66,8 @@ class ChatServiceArgsValidator extends ChatControllerArgsValidator {
             chatDetails.participantId,
             "chatDetails.participantId"
         );
-        if (sessionType===SESSION_TYPES.CUSTOMER){
+        // A customChatClient's backend may hold the participantToken, so ChatJS never receives one.
+        if (sessionType===SESSION_TYPES.CUSTOMER && !usingCustomChatClient){
             if (chatDetails.participantToken){
                 Utils.assertIsNonEmptyString(
                     chatDetails.participantToken,
@@ -85,7 +86,7 @@ class ChatServiceArgsValidator extends ChatControllerArgsValidator {
         return true;
     }
 
-    normalizeChatDetails(chatDetailsInput) {
+    normalizeChatDetails(chatDetailsInput, usingCustomChatClient = false) {
         let chatDetails = {};
         chatDetails.contactId = chatDetailsInput.ContactId || chatDetailsInput.contactId;
         chatDetails.participantId = chatDetailsInput.ParticipantId || chatDetailsInput.participantId;
@@ -95,7 +96,8 @@ class ChatServiceArgsValidator extends ChatControllerArgsValidator {
         if (chatDetailsInput.participantToken || chatDetailsInput.ParticipantToken) {
             chatDetails.participantToken = chatDetailsInput.ParticipantToken || chatDetailsInput.participantToken;
         }
-        this.validateChatDetails(chatDetails);
+        // sessionType is deliberately not passed, as before; only the customChatClient exemption is new.
+        this.validateChatDetails(chatDetails, undefined, usingCustomChatClient);
         return chatDetails;
     }
 }

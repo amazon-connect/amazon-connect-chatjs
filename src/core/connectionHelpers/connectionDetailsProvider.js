@@ -1,4 +1,5 @@
 import { IllegalArgumentException } from "../exceptions";
+import { LogManager } from "../../log";
 import { ConnectionInfoType } from "./baseConnectionHelper";
 import {
     ACPS_METHODS,
@@ -13,7 +14,7 @@ import { csmService } from "../../service/csmService";
 
 export default class ConnectionDetailsProvider {
 
-    constructor(participantToken, chatClient, sessionType, getConnectionToken=null) {
+    constructor(participantToken, chatClient, sessionType, getConnectionToken=null, usingCustomChatClient=false, logMetaData=null) {
         this.chatClient = chatClient;
         this.participantToken = participantToken || null;
         this.connectionDetails = null;
@@ -21,6 +22,20 @@ export default class ConnectionDetailsProvider {
         this.connectionTokenExpiry = null;
         this.sessionType = sessionType;
         this.getConnectionToken = getConnectionToken;
+        this.usingCustomChatClient = usingCustomChatClient;
+        // Set only when a response omits ConnectionCredentials. A customChatClient that returns them stays false.
+        this.tokenless = false;
+        this.logger = LogManager.getLogger({ prefix: "ChatJS-ConnectionDetailsProvider", logMetaData });
+    }
+
+    /** Only a customChatClient may omit ConnectionCredentials; for the bundled AWS client that is a malformed response. */
+    _allowsTokenlessConnection() {
+        return this.usingCustomChatClient === true;
+    }
+
+    /** True once a response has actually come back without credentials, so there is no token to refresh. */
+    isTokenless() {
+        return this.tokenless === true;
     }
 
     getFetchedConnectionToken() {
@@ -40,16 +55,34 @@ export default class ConnectionDetailsProvider {
     }
 
     _handleCreateParticipantConnectionResponse(connectionDetails, ConnectParticipant) {
+        // Only a customChatClient can go tokenless. The bundled AWS client still requires ConnectionCredentials.
+        const entersTokenless = !this.tokenless && this._allowsTokenlessConnection() && !connectionDetails.ConnectionCredentials;
+        if ((this.tokenless || entersTokenless) && !connectionDetails.Websocket?.Url) {
+            throw new IllegalArgumentException(
+                "CreateParticipantConnection response is missing Websocket.Url."
+            );
+        }
+        if (entersTokenless) {
+            this.logger.warn(
+                "CreateParticipantConnection returned no ConnectionCredentials; running tokenless for the rest of " +
+                "this session. connectionToken will be null on every subsequent call to your customChatClient."
+            );
+            this.tokenless = true;
+        }
+        // A tokenless session stays tokenless. The backend owns the token and its refresh, not ChatJS.
+        const credentials = this.tokenless
+            ? { ConnectionToken: null, Expiry: null }
+            : connectionDetails.ConnectionCredentials;
         this.connectionDetails = {
             url: connectionDetails.Websocket.Url,
             expiry: connectionDetails.Websocket.ConnectionExpiry,
             transportLifeTimeInSeconds: TRANSPORT_LIFETIME_IN_SECONDS,
             connectionAcknowledged: ConnectParticipant,
-            connectionToken: connectionDetails.ConnectionCredentials.ConnectionToken,
-            connectionTokenExpiry: connectionDetails.ConnectionCredentials.Expiry,
+            connectionToken: credentials.ConnectionToken,
+            connectionTokenExpiry: credentials.Expiry,
         };
-        this.connectionToken = connectionDetails.ConnectionCredentials.ConnectionToken;
-        this.connectionTokenExpiry = connectionDetails.ConnectionCredentials.Expiry;
+        this.connectionToken = credentials.ConnectionToken;
+        this.connectionTokenExpiry = credentials.Expiry;
         return this.connectionDetails;
     }
 
