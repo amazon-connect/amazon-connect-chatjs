@@ -1054,7 +1054,7 @@ ChatJS checks the client when the session is created. It logs an error for a mis
    - On refresh calls, `acknowledgeConnection` is `null`. In that case, leave `ConnectParticipant` out of the `CreateParticipantConnection` request.
 3. For every other method, authenticate the request with your own credentials. Then look up the stored `ConnectionToken` and call the matching [Participant Service API](https://docs.aws.amazon.com/connect/latest/APIReference/API_Operations_Amazon_Connect_Participant_Service.html).
 
-Two things still reach the browser: the WebSocket URL, and the pre-signed attachment URLs if your client uploads or downloads from the browser.
+Two things still reach the browser: the WebSocket URL, and the pre-signed attachment URLs if your client uploads or downloads from the browser. If your client uploads or downloads attachments from the browser, your instance's attachment S3 bucket must allow your site's origin in its CORS configuration (`PUT` and `GET`). Otherwise uploads fail with `Failed to fetch`.
 
 <a id="tokenless-mode"></a>
 **Keeping both tokens in your backend (tokenless mode)**
