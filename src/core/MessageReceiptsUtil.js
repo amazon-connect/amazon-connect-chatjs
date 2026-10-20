@@ -16,6 +16,36 @@ export default class MessageReceiptsUtil {
         this.throttleSendEventApiCall = null;
     }
 
+    /** Clears all receipt timers and state; used by the terminal session reset(). */
+    reset() {
+        // A getTranscript() still in flight must not repopulate the cleared receipt sets.
+        this.disposed = true;
+        clearTimeout(this.timeout);
+        clearTimeout(this.timeoutId);
+        this.timeout = null;
+        this.timeoutId = null;
+        this.readSet = new Set();
+        this.deliveredSet = new Set();
+        // The throttled sends were cancelled above, so settle their promises or callers would hang.
+        this.resolveAllPendingPromises(this.readPromiseMap);
+        this.resolveAllPendingPromises(this.deliveredPromiseMap);
+        this.readPromiseMap = new Map();
+        this.deliveredPromiseMap = new Map();
+        this.lastReadArgs = null;
+        this.throttleInitialEventsToPrioritizeRead = null;
+        this.throttleSendEventApiCall = null;
+    }
+
+    /** Resolves (not rejects) every pending receipt promise, since callers often ignore it. */
+    resolveAllPendingPromises(promiseMap) {
+        promiseMap.forEach(([resolve]) => {
+            if (typeof resolve === 'function') {
+                resolve({ message: 'Chat session was reset before the message receipt was sent' });
+            }
+        });
+        promiseMap.clear();
+    }
+
     /**
      * check if message is of type read or delivered event
      *
@@ -263,7 +293,7 @@ export default class MessageReceiptsUtil {
         var self = this;
         return response => {
             self.logger.debug('rehydrate chat', response?.data);
-            if (shouldSendMessageReceipts) {
+            if (shouldSendMessageReceipts && !self.disposed) {
                 const { Transcript = [] } = response?.data || {};
                 Transcript.forEach(transcript => {
                     if (transcript?.Type === CHAT_EVENTS.MESSAGE_METADATA) {

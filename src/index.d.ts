@@ -91,7 +91,7 @@ declare namespace connect {
     /**
      * Routes every Participant Service call through this client instead of the bundled AWS
      * one, so tokens need not reach the browser. Takes precedence over a client registered
-     * via `setGlobalConfig`.
+     * via `setGlobalConfig`; pass `null` explicitly to opt this session out of that global client.
      */
     readonly customChatClient?: ChatClient | null;
   }
@@ -524,6 +524,9 @@ declare namespace connect {
       args: WithMetadata<DescribeViewArgs, T>
     ): Promise<WithMetadata<ParticipantServiceResponse<DescribeViewResult>, T>>;
 
+    /** Tears the session down without ending the contact; later service operations reject with `code: "CHAT_SESSION_RESET"`. */
+    reset(): Promise<void>;
+
     // ======
     // Events
     // ======
@@ -604,6 +607,11 @@ declare namespace connect {
      */
     onConnectionLost(
       handler: (event: ChatConnectionLostEvent) => void
+    ): void;
+
+    /** Subscribes a handler for when the WebSocket is suspended; call resumeWebSocketConnection() to reconnect. */
+    onConnectionSuspended(
+      handler: (event: { data: { suspendedBy: string }; chatDetails: ChatDetails }) => void
     ): void;
 
     /**
@@ -692,18 +700,27 @@ declare namespace connect {
      * See: https://docs.aws.amazon.com/connect-participant/latest/APIReference/API_DisconnectParticipant.html
      */
     disconnectParticipant(): Promise<ParticipantServiceResponse<void>>;
+
+    /** Closes the WebSocket without ending the contact; resolves once the close is initiated. */
+    suspendWebSocketConnection(): Promise<void>;
+
+    /** Reconnects a suspended session on a fresh WebSocket; call getTranscript() to catch up. */
+    resumeWebSocketConnection(): Promise<ConnectChatResult>;
   }
 
   interface ChatDetails {
     readonly contactId: string;
     readonly initialContactId: string;
     readonly participantId: string;
-    readonly participantToken?: string;
+    /** `null` after `reset()`, and may be absent when a customChatClient's backend holds the token. */
+    readonly participantToken?: string | null;
+    /** `null` after `reset()` or while the WebSocket is suspended. */
     readonly connectionDetails?: {
-      readonly connectionToken: string;
+      /** `null` for a tokenless customChatClient session. */
+      readonly connectionToken: string | null;
       readonly ConnectionId: string;
       readonly PreSignedConnectionUrl: string;
-    };
+    } | null;
   }
 
   // ==========================================

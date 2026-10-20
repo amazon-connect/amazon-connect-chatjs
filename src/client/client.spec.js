@@ -423,6 +423,27 @@ describe("customChatClient", () => {
       .toBe(perSession);
   });
 
+  test("an explicit per-session null opts out of the global client", () => {
+    const global = completeClient();
+    GlobalConfig.getCustomChatClient.mockReturnValue(global);
+
+    const { client, isCustom } = ChatClientFactory.getCachedClient(
+      { region, customChatClient: null },
+      {}
+    );
+
+    expect(client).not.toBe(global);
+    expect(client.constructor.name).toBe("AWSChatClient");
+    expect(isCustom).toBe(false);
+  });
+
+  test("an omitted per-session client still falls back to the global client", () => {
+    const global = completeClient();
+    GlobalConfig.getCustomChatClient.mockReturnValue(global);
+
+    expect(ChatClientFactory.resolveCustomChatClient({ customChatClient: undefined })).toBe(global);
+  });
+
   test("flags the session in logMetaData", () => {
     const logMetaData = {};
     ChatClientFactory.getCachedClient({ customChatClient: completeClient() }, logMetaData);

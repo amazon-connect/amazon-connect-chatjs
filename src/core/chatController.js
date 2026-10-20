@@ -28,12 +28,26 @@ import { GlobalConfig } from "../globalConfig";
 import StreamMetricUtils from "../streamMetricUtils";
 import PartialMessageUtil from "./PartialMessageUtil";
 import InternalTranscriptUtils from "./internalTranscriptUtils";
+import { ChatSessionResetError, IllegalStateException } from "./exceptions";
 
 var NetworkLinkStatus = {
     NeverEstablished: "NeverEstablished",
     Establishing: "Establishing",
     Established: "Established",
     Broken: "Broken"
+};
+
+/** Internal: a connect() that a later suspend or reset made obsolete. */
+class ConnectAbortedError extends Error {}
+
+// Closing and resetting finish synchronously, so they have no in-between states.
+const SESSION_STATE = {
+    NEW: "NEW",
+    CONNECTING: "CONNECTING",
+    CONNECTED: "CONNECTED",
+    SUSPENDED: "SUSPENDED",
+    ENDED: "ENDED",
+    RESET: "RESET"
 };
 
 class ChatController {
@@ -65,6 +79,11 @@ class ChatController {
         this.partialMessageUtil = new PartialMessageUtil();
         this.internalTranscriptUtils = new InternalTranscriptUtils(this.logger);
         this.transcriptUpdateEnabled = false;
+        this._state = SESSION_STATE.NEW;
+        // Bumped by suspend and reset, so a connect() still in flight gives up.
+        this._connectionEpoch = 0;
+        this._lastConnectArgs = {};
+        this._resumePromise = null;
     }
 
     subscribe(eventName, callback) {
@@ -290,17 +309,54 @@ class ChatController {
     }
 
     connect(args={}) {
+        if (this._state === SESSION_STATE.RESET) {
+            return Promise.reject(new ChatSessionResetError());
+        }
         this.sessionMetadata = args.metadata || null;
         this.argsValidator.validateConnectChat(args);
         if (!this.connectionDetailsProvider) {
-            this.connectionDetailsProvider = this._getConnectionDetailsProvider();
-            return this.connectionDetailsProvider.fetchConnectionDetails()
-                .then(
-                    (connectionDetails) =>
-                        this._initConnectionHelper(this.connectionDetailsProvider, connectionDetails)
-                )
-                .then((response) => this._onConnectSuccess(response, this.connectionDetailsProvider))
+            this._lastConnectArgs = args;
+            const epoch = this._connectionEpoch;
+            const stateBefore = this._state;
+            const provider = this._getConnectionDetailsProvider();
+            this.connectionDetailsProvider = provider;
+            this._state = SESSION_STATE.CONNECTING;
+            return provider.fetchConnectionDetails()
+                .then((connectionDetails) => {
+                    if (epoch !== this._connectionEpoch) {
+                        throw new ConnectAbortedError();
+                    }
+                    return this._initConnectionHelper(provider, connectionDetails);
+                })
+                .then((response) => {
+                    if (epoch !== this._connectionEpoch) {
+                        throw new ConnectAbortedError();
+                    }
+                    this._state = SESSION_STATE.CONNECTED;
+                    return this._onConnectSuccess(response, provider);
+                })
                 .catch(err => {
+                    if (this._state === SESSION_STATE.RESET || err instanceof ChatSessionResetError) {
+                        return Promise.reject(new ChatSessionResetError());
+                    }
+                    if (err instanceof ConnectAbortedError || epoch !== this._connectionEpoch) {
+                        return this._onConnectAborted();
+                    }
+                    // Release a failed resume's connection so it can be retried; plain connect() is unchanged.
+                    if (stateBefore === SESSION_STATE.SUSPENDED && this.connectionDetailsProvider === provider) {
+                        this.connectionHelper?.end();
+                        this.connectionDetailsProvider = null;
+                        this.connectionHelper = null;
+                        this.connectionDetails = null;
+                        this._state = stateBefore;
+                    } else if (this._state === SESSION_STATE.CONNECTING) {
+                        this._state = stateBefore;
+                    }
+                    if (stateBefore === SESSION_STATE.SUSPENDED && this._isChatEndedError(err)) {
+                        // The contact ended while suspended, so end the session the usual way.
+                        this._handleBackgroundChatEnded();
+                        return this._onConnectFailure(err).catch(error => Promise.reject({ ...error, chatEnded: true }));
+                    }
                     return this._onConnectFailure(err);
                 });
         } else {
@@ -325,6 +381,7 @@ class ChatController {
         this.connectionHelper.onDeepHeartbeatSuccess(this._handleDeepHeartbeatSuccess.bind(this));
         this.connectionHelper.onDeepHeartbeatFailure(this._handleDeepHeartbeatFailure.bind(this));
         this.connectionHelper.onBackgroundChatEnded(this._handleBackgroundChatEnded.bind(this));
+        this.connectionHelper.onSuspended?.(this._handlePeerSuspended.bind(this));
         return this.connectionHelper.start();
     }
 
@@ -356,6 +413,10 @@ class ChatController {
 
     _handleGainedConnection(eventData) {
         this.hasChatEnded = false;
+        // Mirrors hasChatEnded: a regained connection (e.g. agent transfer) means the chat continues.
+        if (this._state === SESSION_STATE.ENDED) {
+            this._state = SESSION_STATE.CONNECTED;
+        }
 
         this._forwardChatEvent(CHAT_EVENTS.CONNECTION_ESTABLISHED, {
             data: eventData,
@@ -420,6 +481,7 @@ class ChatController {
 
             if (incomingData.ContentType === CONTENT_TYPE.chatEnded) {
                 this.hasChatEnded = true;
+                this._state = SESSION_STATE.ENDED;
                 this._forwardChatEvent(CHAT_EVENTS.CHAT_ENDED, {
                     data: null,
                     chatDetails: this.getChatDetails()
@@ -479,6 +541,18 @@ class ChatController {
         return responseObject;
     }
 
+    /** A connect() overtaken by suspend is abandoned, not counted as a failure. */
+    _onConnectAborted() {
+        this._sendInternalLogToServer(this.logger.info("connect() abandoned: the session was suspended"));
+        return Promise.reject({
+            connectSuccess: false,
+            connectCalled: true,
+            aborted: true,
+            reason: "The WebSocket connection was suspended before connect() completed",
+            metadata: this.sessionMetadata
+        });
+    }
+
     _onConnectFailure(error) {
         const errorObject = {
             _debug: error,
@@ -508,6 +582,133 @@ class ChatController {
     // disconnected here means that the participant is no longer part of ther chat.
     cleanUpOnParticipantDisconnect() {
         this.pubsub.unsubscribeAll();
+    }
+
+    /** Terminal teardown that keeps the contact live; later calls reject with CHAT_SESSION_RESET. */
+    reset() {
+        if (this._state === SESSION_STATE.RESET) {
+            return Promise.resolve();
+        }
+        const connectionHelper = this.connectionHelper;
+        this._state = SESSION_STATE.RESET;
+        this._connectionEpoch++;
+        this.cleanUpOnParticipantDisconnect();
+        this.messageReceiptUtil.reset();
+        this.partialMessageUtil.reset();
+        this.connectionDetailsProvider?.reset();
+        this.internalTranscriptUtils.reset();
+        this.connectionDetailsProvider = null;
+        this.connectionHelper = null;
+        this.connectionDetails = null;
+        this.participantToken = null;
+        this.getConnectionToken = null;
+        this.sessionMetadata = null;
+        this.chatClient = null;
+        this.transcriptUpdateEnabled = false;
+        this._lastConnectArgs = {};
+        this._resumePromise = null;
+
+        return new Promise(resolve => resolve(
+            connectionHelper?.endAndRefuseReconnect ? connectionHelper.endAndRefuseReconnect() : connectionHelper?.end()
+        ))
+            .catch(error => this._sendInternalLogToServer(
+                this.logger.warn("Failed to close the websocket during reset", error)
+            ));
+    }
+
+    /** Closes the WebSocket without ending the contact; resolves once the close is initiated. */
+    suspendWebSocketConnection() {
+        if (this._state === SESSION_STATE.RESET) {
+            return Promise.reject(new ChatSessionResetError());
+        }
+        if (this._state === SESSION_STATE.ENDED) {
+            return Promise.reject(
+                new IllegalStateException("Cannot suspend the WebSocket after the chat has ended")
+            );
+        }
+        // The contact's socket is shared, so close it for every session on this contact.
+        const socketClosed = new Promise(resolve => resolve(this.connectionHelper?.forceClose()))
+            .catch(error => this._sendInternalLogToServer(
+                this.logger.warn("Failed to close the websocket during suspend", error)
+            ));
+        this._enterSuspended({ suspendedBy: "this session" });
+        return socketClosed;
+    }
+
+    _handlePeerSuspended() {
+        if (this._state !== SESSION_STATE.RESET) {
+            this._enterSuspended({ suspendedBy: "another session on this contact" });
+        }
+    }
+
+    _enterSuspended(eventData) {
+        this._connectionEpoch++;
+        // Chunks that arrive while suspended are lost, so a half-received message can't be completed.
+        this.partialMessageUtil.reset();
+        this.connectionDetailsProvider = null;
+        this.connectionHelper = null;
+        this.connectionDetails = null;
+        this._resumePromise = null;
+        if (this._state !== SESSION_STATE.ENDED) {
+            this._state = SESSION_STATE.SUSPENDED;
+        }
+        this._sendInternalLogToServer(this.logger.info("WebSocket connection suspended"));
+        // Every session on the contact is told, since only resumeWebSocketConnection() reconnects it.
+        this._forwardChatEvent(CHAT_EVENTS.CONNECTION_SUSPENDED, {
+            data: eventData,
+            chatDetails: this.getChatDetails()
+        });
+    }
+
+    /** Reconnects a suspended session with the last connect() arguments; concurrent calls share one attempt. */
+    resumeWebSocketConnection() {
+        if (this._state === SESSION_STATE.RESET) {
+            return Promise.reject(new ChatSessionResetError());
+        }
+        if (this._state === SESSION_STATE.ENDED) {
+            return Promise.reject(
+                new IllegalStateException("Cannot resume the WebSocket after the chat has ended")
+            );
+        }
+        if (this._resumePromise) {
+            return this._resumePromise;
+        }
+        if (this._state !== SESSION_STATE.SUSPENDED) {
+            this.logger.warn("resumeWebSocketConnection() ignored: the WebSocket connection is not suspended");
+            return Promise.resolve({ connectCalled: false, connectSuccess: false, reason: "not suspended" });
+        }
+        this._sendInternalLogToServer(this.logger.info("Resuming WebSocket connection"));
+        const attempt = this.connect(this._lastConnectArgs);
+        this._resumePromise = attempt;
+        const clear = () => {
+            if (this._resumePromise === attempt) {
+                this._resumePromise = null;
+            }
+        };
+        attempt.then(clear, clear);
+        return attempt;
+    }
+
+    // A 403 from CreateParticipantConnection means the participant is no longer part of the contact.
+    _isChatEndedError(err) {
+        const cause = err?._debug || err || {};
+        return cause.statusCode === 403 || cause.type === "AccessDeniedException" || cause.name === "AccessDeniedException";
+    }
+
+    getSessionState() {
+        return this._state;
+    }
+
+    isWebSocketSuspended() {
+        return this._state === SESSION_STATE.SUSPENDED;
+    }
+
+    /** Rejects calls on a reset session; otherwise calls through unchanged. */
+    _guardSession(call) {
+        if (this._state === SESSION_STATE.RESET) {
+            return Promise.reject(new ChatSessionResetError());
+        }
+        return call();
     }
 
     disconnectParticipant() {
