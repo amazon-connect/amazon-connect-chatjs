@@ -27,6 +27,14 @@ class IllegalStateException extends Error {
     }
 }
 
+class ChatSessionResetError extends Error {
+    constructor() {
+        super("The chat session was reset; create a new ChatSession to continue.");
+        this.name = "ChatSessionReset";
+        this.code = "CHAT_SESSION_RESET";
+    }
+}
+
 class IllegalJsonException extends Error {
     constructor(message, args) {
         super(message);
@@ -41,5 +49,6 @@ export {
     IllegalArgumentException,
     IllegalStateException,
     IllegalJsonException,
+    ChatSessionResetError,
     ValueError
 };

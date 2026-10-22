@@ -51,7 +51,8 @@ class LpcConnectionHelper extends BaseConnectionHelper {
             this.baseInstance.onMessage(this.handleMessage.bind(this)),
             this.baseInstance.onDeepHeartbeatSuccess(this.handleDeepHeartbeatSuccess.bind(this)),
             this.baseInstance.onDeepHeartbeatFailure(this.handleDeepHeartbeatFailure.bind(this)),
-            this.baseInstance.onBackgroundChatEnded(this.handleBackgroundChatEnded.bind(this))
+            this.baseInstance.onBackgroundChatEnded(this.handleBackgroundChatEnded.bind(this)),
+            this.baseInstance.onSuspended(this.handleSuspended.bind(this))
         ];
     }
 
@@ -71,6 +72,40 @@ class LpcConnectionHelper extends BaseConnectionHelper {
     tryCleanup() {
         if (this.customerConnection && !this.baseInstance.hasMessageSubscribers()) {
             this.baseInstance.end();
+            delete LpcConnectionHelper.customerBaseInstances[this.contactId];
+        }
+    }
+
+    /** Releases this session's polling and subscriptions without touching the shared socket. */
+    _detach() {
+        super.end();
+        this.eventBus.unsubscribeAll();
+        this.subscriptions.forEach(unsubscribe => unsubscribe());
+        this.status = ConnectionHelperStatus.Ended;
+    }
+
+    /** Ends like end(), but a customer socket it closes can never reopen; used by reset(). */
+    endAndRefuseReconnect() {
+        this._detach();
+        if (this.customerConnection && !this.baseInstance.hasMessageSubscribers()) {
+            this.baseInstance.closed = true;
+        }
+        this.tryCleanup();
+    }
+
+    /** Closes this contact's shared customer socket and suspends every session on it. */
+    forceClose() {
+        if (!this.customerConnection) {
+            return;
+        }
+        this._detach();
+        this.baseInstance.suspendAll();
+        this._releaseBaseInstance();
+    }
+
+    // Only forget the shared socket if it is still ours, so a newer one for the contact survives.
+    _releaseBaseInstance() {
+        if (LpcConnectionHelper.customerBaseInstances[this.contactId] === this.baseInstance) {
             delete LpcConnectionHelper.customerBaseInstances[this.contactId];
         }
     }
@@ -131,6 +166,16 @@ class LpcConnectionHelper extends BaseConnectionHelper {
         this.eventBus.trigger(ConnectionHelperEvents.BackgroundChatEnded, {});
     }
 
+    onSuspended(handler) {
+        return this.eventBus.subscribe(ConnectionHelperEvents.Suspended, handler);
+    }
+
+    handleSuspended() {
+        // Notify before detaching; the base helper does the one physical close, so skip tryCleanup().
+        this.eventBus.trigger(ConnectionHelperEvents.Suspended, {});
+        this._detach();
+    }
+
     handleMessage(message) {
         if (message.InitialContactId === this.initialContactId || message.ContactId === this.contactId || message.Type === CHAT_EVENTS.MESSAGE_METADATA) {
             this.eventBus.trigger(ConnectionHelperEvents.IncomingMessage, message);
@@ -167,11 +212,16 @@ class LpcConnectionHelperBase {
         this.logger.info("Initializing websocket manager.");
         if (!websocketManager) {
             const startTime = new Date().getTime();
-            this.websocketManager.init(() =>
-                this._getConnectionDetails(connectionDetailsProvider, this.initialConnectionDetails, startTime).then((response) => {
+            this.websocketManager.init(() => {
+                // Refuse once closed, so the manager terminates instead of reopening (e.g. on mobile foregrounding).
+                if (this.closed) {
+                    return Promise.reject({ reason: "WebSocket was closed by ChatJS" });
+                }
+                return this._getConnectionDetails(connectionDetailsProvider, this.initialConnectionDetails, startTime).then((response) => {
                     this.initialConnectionDetails = null;
                     return response;
-                }));
+                });
+            });
         }
     }
 
@@ -294,6 +344,17 @@ class LpcConnectionHelperBase {
  
     handleBackgroundChatEnded() {
         this.eventBus.trigger(ConnectionHelperEvents.BackgroundChatEnded);
+    }
+
+    onSuspended(handler) {
+        return this.eventBus.subscribe(ConnectionHelperEvents.Suspended, handler);
+    }
+
+    /** Tells every session on this contact it is suspended, then closes the socket. */
+    suspendAll() {
+        this.closed = true;
+        this.eventBus.trigger(ConnectionHelperEvents.Suspended, {});
+        this.end();
     }
 
     getStatus() {

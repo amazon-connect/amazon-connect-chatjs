@@ -38,6 +38,13 @@ export default class ConnectionDetailsProvider {
         return this.tokenless === true;
     }
 
+    /** Clears cached connection details so the next fetch re-resolves them. */
+    reset() {
+        this.connectionDetails = null;
+        this.connectionToken = null;
+        this.connectionTokenExpiry = null;
+    }
+
     getFetchedConnectionToken() {
         return this.connectionToken;
     }

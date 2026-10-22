@@ -191,4 +191,56 @@ describe("MessageReceiptsUtil", () => {
             });
         }
     });
+
+    test("reset clears receipt state and BOTH pending timers", () => {
+        jest.useRealTimers();
+        const util = new MessageReceiptsUtil({});
+        util.readSet.add("m1");
+        util.deliveredSet.add("m2");
+        util.lastReadArgs = { foo: "bar" };
+        // The two throttle paths use separate timer handles, so reset must clear both.
+        const clearSpy = jest.spyOn(global, "clearTimeout");
+        const timeoutHandle = setTimeout(() => {}, 10000);
+        const timeoutIdHandle = setTimeout(() => {}, 10000);
+        util.timeout = timeoutHandle;
+        util.timeoutId = timeoutIdHandle;
+
+        util.reset();
+
+        expect(clearSpy).toHaveBeenCalledWith(timeoutHandle);
+        expect(clearSpy).toHaveBeenCalledWith(timeoutIdHandle);
+        expect(util.readSet.size).toBe(0);
+        expect(util.deliveredSet.size).toBe(0);
+        expect(util.readPromiseMap.size).toBe(0);
+        expect(util.deliveredPromiseMap.size).toBe(0);
+        expect(util.lastReadArgs).toBeNull();
+        expect(util.timeout).toBeNull();
+        expect(util.timeoutId).toBeNull();
+        clearSpy.mockRestore();
+    });
+
+    test("reset settles in-flight receipt promises instead of leaving callers hanging", async () => {
+        jest.useRealTimers();
+        const util = new MessageReceiptsUtil({});
+        // Register receipts the way prioritizeAndSendMessageReceipt does, then abandon them.
+        const read = new Promise((resolve, reject) => util.readPromiseMap.set("m1", [resolve, reject]));
+        const delivered = new Promise((resolve, reject) => util.deliveredPromiseMap.set("m2", [resolve, reject]));
+
+        util.reset();
+
+        // Resolved, not rejected, so an ignored promise never becomes an unhandled rejection.
+        await expect(read).resolves.toEqual({
+            message: "Chat session was reset before the message receipt was sent"
+        });
+        await expect(delivered).resolves.toEqual({
+            message: "Chat session was reset before the message receipt was sent"
+        });
+        expect(util.readPromiseMap.size).toBe(0);
+        expect(util.deliveredPromiseMap.size).toBe(0);
+    });
+
+    test("resolveAllPendingPromises tolerates a map with no pending promises", () => {
+        const util = new MessageReceiptsUtil({});
+        expect(() => util.resolveAllPendingPromises(new Map())).not.toThrow();
+    });
 });

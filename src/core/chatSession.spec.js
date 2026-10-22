@@ -189,6 +189,7 @@ describe("chatSession", () => {
         jest.spyOn(controller, 'getChatDetails').mockImplementation(() => {});
         jest.spyOn(controller, 'cancelParticipantAuthentication').mockImplementation(() => {});
         jest.spyOn(controller, 'getAttachmentURL').mockImplementation(() => {});
+        jest.spyOn(controller, 'reset').mockImplementation(() => {});
 
         session.sendMessage(args);
         expect(controller.sendMessage).toHaveBeenCalled();
@@ -208,6 +209,16 @@ describe("chatSession", () => {
         expect(controller.cancelParticipantAuthentication).toHaveBeenCalled();
         session.getAttachmentURL(args);
         expect(controller.getAttachmentURL).toHaveBeenCalled();
+        session.reset();
+        expect(controller.reset).toHaveBeenCalled();
+    });
+
+    test('reset forwards the controller teardown promise to the caller', async () => {
+        const teardown = Promise.resolve();
+        jest.spyOn(controller, 'reset').mockImplementation(() => teardown);
+
+        await expect(session.reset()).resolves.toBeUndefined();
+        expect(session.reset()).toBe(teardown);
     });
 });
 

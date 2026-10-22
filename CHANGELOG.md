@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.4.0]
+### Added
+- Tokenless mode for a `customChatClient`: when `createParticipantConnection` returns no `ConnectionCredentials`, ChatJS passes `null` as `connectionToken` on every call and stops connection token refresh, so neither token reaches the browser. The bundled AWS client still requires `ConnectionCredentials`. Documented under [tokenless mode](README.md#tokenless-mode).
+- `customerChatSession.suspendWebSocketConnection()` and `resumeWebSocketConnection()` close and reopen the WebSocket without ending the contact, with `chatSession.onConnectionSuspended()` to observe it. Documented under [`suspendWebSocketConnection()`](README.md#customerchatsessionsuspendwebsocketconnection--resumewebsocketconnection).
+- `chatSession.reset()` tears a session down without ending the contact; later service calls on it reject with `code: "CHAT_SESSION_RESET"`. Documented under [`chatSession.reset()`](README.md#chatsessionreset).
+- `options.customChatClient: null` opts a session out of a global `customChatClient`.
+
+### Changed
+- **Types only:** `ChatSessionInterface` gains `reset()` and `onConnectionSuspended()`, and `CustomerChatSession` gains `suspendWebSocketConnection()` and `resumeWebSocketConnection()`. No runtime change, but hand-written TypeScript mocks of these interfaces must add them to keep compiling. These interfaces describe objects returned by `ChatSession.create()` and are not meant to be implemented by apps.
+- **Types only:** In `ChatDetails`, `connectionDetails`, `connectionDetails.connectionToken` and `participantToken` may now be `null`, matching tokenless sessions and the state after `reset()` or a suspend. No runtime change, but strict-mode consumers assigning them to `string` must handle `null`.
+
+### Fixed
+- Connection token refresh no longer calls `createParticipantConnection` in a tight loop when `ConnectionCredentials.Expiry` is missing, invalid or in the past. A missing or invalid `Expiry` logs a warning and stops refreshing; a past one refreshes at most once a minute.
+
 ## [5.3.0]
 ### Added
 - `useDualStack` option in `setGlobalConfig()`. When `true`, ChatJS calls the dual-stack (IPv4 + IPv6) Participant Service endpoint `https://participant.connect.{region}.api.aws` instead of `https://participant.connect.{region}.amazonaws.com`. Defaults to `false`; an explicit `endpoint` still takes precedence. Must be a boolean: any other value is ignored with a warning and the current setting is kept. Re-adds the option from #295, which was reverted in #296. The WebSocket URL is still returned by `CreateParticipantConnection` and is not affected by this option.

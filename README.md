@@ -938,7 +938,7 @@ const chatSession = await connect.ChatSession.create({
   },
   options: {
     region: "us-east-1", // (optional) defaults to `region` set in `.setGlobalConfig()`
-    customChatClient: new MyChatClient(), // (optional) see `connect.ChatSession.ChatClient`
+    customChatClient: new MyChatClient(), // (optional); use null to ignore a globally configured client
   },
   type: window.connect.ChatSession.SessionTypes.CUSTOMER, // REQUIRED - options: `CUSTOMER`, `AGENT`
   disableCSM: true
@@ -1006,7 +1006,7 @@ Set the global configuration to use. If this method is not called, the defaults 
 
 #### `connect.ChatSession.ChatClient`
 
-The transport contract between ChatJS and the [Amazon Connect Participant Service](https://docs.aws.amazon.com/connect/latest/APIReference/API_Operations_Amazon_Connect_Participant_Service.html). By default ChatJS calls that service directly using its bundled AWS SDK client; extend `ChatClient` and pass the instance as `customChatClient` to route every call through your own backend instead, so tokens need not reach the browser. Methods resolve to `{ data: <response body, PascalCase keys unchanged> }`, except `downloadAttachment` (a `Blob`) and `getAttachmentURL` (a `string`). A client passed to `create()` takes precedence over one registered with `setGlobalConfig()`.
+The transport contract between ChatJS and the [Amazon Connect Participant Service](https://docs.aws.amazon.com/connect/latest/APIReference/API_Operations_Amazon_Connect_Participant_Service.html). By default ChatJS calls that service directly using its bundled AWS SDK client; extend `ChatClient` and pass the instance as `customChatClient` to route every call through your own backend instead, so tokens need not reach the browser. Methods resolve to `{ data: <response body, PascalCase keys unchanged> }`, except `downloadAttachment` (a `Blob`) and `getAttachmentURL` (a `string`). A client passed to `create()` takes precedence over one registered with `setGlobalConfig()`. Pass `{ customChatClient: null }` on `create()` to opt one session out of the globally configured client.
 
 ```js
 class MyChatClient extends connect.ChatSession.ChatClient {
@@ -1424,6 +1424,38 @@ The response `data` is the same as the [API response body](https://docs.aws.amaz
 
 **Important note:** The session id is only available from the authentication.initiated event which is only emitted when the authenticate customer contact flow block is used. The session id is a 1 time use code.
 
+#### `customerChatSession.suspendWebSocketConnection()` / `resumeWebSocketConnection()`
+
+```js
+await customerChatSession.suspendWebSocketConnection();   // socket closed, contact still live
+// ...later
+await customerChatSession.resumeWebSocketConnection();    // reconnects on a fresh WebSocket
+const { data } = await customerChatSession.getTranscript({ /* from your last message */ });
+```
+
+Closes the WebSocket **without** ending the contact, and keeps event handlers, the transcript and session state. `resumeWebSocketConnection()` reconnects with the arguments of the last `connect()`. Matches the iOS and Android SDKs.
+
+- `suspendWebSocketConnection()` resolves once the close has been initiated; no further messages are delivered after that. It never rejects.
+- It closes the WebSocket for every session on the same contact, since they share it.
+- While suspended, calls that need the connection (such as `sendMessage()`) reject. Messages sent meanwhile are not replayed, so call `getTranscript()` after resuming.
+- The contact keeps running while suspended: chat idle timeouts and the chat duration still apply.
+- Every session on the contact gets `onConnectionSuspended()`; only `resumeWebSocketConnection()` reconnects, ChatJS doesn't.
+- If the chat ended while suspended, resume rejects with `chatEnded: true`, the session moves to ended, and `onEnded()` fires. A `customChatClient` must reject with the service's `statusCode` (403) for this to work.
+
+#### `chatSession.reset()`
+
+```js
+await chatSession.reset();
+const next = connect.ChatSession.create({ /* new chatDetails */ });
+```
+
+Tears the session down **without** ending the contact: closes the WebSocket and releases its event handlers, transcript, credentials and client reference. Afterwards service operations on that session reject with `code: "CHAT_SESSION_RESET"`; read-only details remain available for diagnostics. Create a new `ChatSession` to continue. Use `disconnectParticipant()` to end the contact instead.
+
+- Returns a promise that resolves once the close has been initiated. It never rejects, and calling it again is a no-op.
+- To end the old chat as well, call `disconnectParticipant()` before `reset()`.
+- With a `customChatClient`, also end the session on your backend so it drops the stored tokens; ChatJS can't do that for you.
+- A `customChatClient` registered with `setGlobalConfig()` is not cleared, because other sessions may use it. A new session without its own `customChatClient` picks up that global client. Pass `options: { customChatClient: null }` when creating a session that should use ChatJS's bundled AWS client instead.
+
 #### `customerChatSession.disconnectParticipant()`
 
 ```js
@@ -1601,6 +1633,16 @@ chatSession.onConnectionEstablished(event => {
     .catch(() => {})
 });
 ```
+
+#### `chatSession.onConnectionSuspended()`
+
+```js
+chatSession.onConnectionSuspended(event => {
+  // event.data.suspendedBy: "this session" | "another session on this contact"
+});
+```
+
+Triggers when the WebSocket is suspended. Unlike `onConnectionLost()`, ChatJS does not reconnect on its own; call `resumeWebSocketConnection()`.
 
 #### `chatSession.onConnectionLost()`
 

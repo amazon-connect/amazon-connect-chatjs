@@ -341,4 +341,19 @@ describe("ConnectionDetailsProvider", () => {
             expect(connectionDetailsProvider.getFetchedConnectionToken()).toEqual("real-token");
         });
     });
+
+    describe(".reset()", () => {
+        it("clears cached connection details, token, and expiry", () => {
+            setupCustomer();
+            connectionDetailsProvider.connectionDetails = { url: "u" };
+            connectionDetailsProvider.connectionToken = "token";
+            connectionDetailsProvider.connectionTokenExpiry = "expiry";
+
+            connectionDetailsProvider.reset();
+
+            expect(connectionDetailsProvider.getConnectionDetails()).toBeNull();
+            expect(connectionDetailsProvider.getFetchedConnectionToken()).toBeNull();
+            expect(connectionDetailsProvider.getConnectionTokenExpiry()).toBeNull();
+        });
+    });
 });

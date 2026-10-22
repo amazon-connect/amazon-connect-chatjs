@@ -326,4 +326,19 @@ describe("InternalTranscriptUtils", () => {
             expect(mockLogger.warn).not.toHaveBeenCalled();
         });
     });
+
+    describe("reset", () => {
+        it("restores all accumulated state to empty", () => {
+            utils.handleSendMessage({ contentType: "text/plain", message: "Hello" });
+            utils.previousTranscriptNextToken = "token-abc";
+            expect(utils.transcriptItems.length).toBeGreaterThan(0);
+
+            utils.reset();
+
+            expect(utils.transcriptItems).toEqual([]);
+            expect(utils.transcriptDict).toEqual({});
+            expect(utils.tempMessageIdMap).toEqual({});
+            expect(utils.previousTranscriptNextToken).toBeNull();
+        });
+    });
 });

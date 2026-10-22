@@ -138,6 +138,10 @@ export class ChatSession {
         this.controller.subscribe(CHAT_EVENTS.AUTODISCONNECTION, callback);
     }
 
+    onConnectionSuspended(callback) {
+        this.controller.subscribe(CHAT_EVENTS.CONNECTION_SUSPENDED, callback);
+    }
+
     onConnectionLost(callback) {
         this.controller.subscribe(CHAT_EVENTS.CONNECTION_LOST, callback);
     }
@@ -187,19 +191,19 @@ export class ChatSession {
     }
 
     sendMessage(args) {
-        return this.controller.sendMessage(args);
+        return this.controller._guardSession(() => this.controller.sendMessage(args));
     }
 
     sendAttachment(args){
-        return this.controller.sendAttachment(args);
+        return this.controller._guardSession(() => this.controller.sendAttachment(args));
     }
 
     downloadAttachment(args){
-        return this.controller.downloadAttachment(args);
+        return this.controller._guardSession(() => this.controller.downloadAttachment(args));
     }
 
     getAttachmentURL(args){
-        return this.controller.getAttachmentURL(args);
+        return this.controller._guardSession(() => this.controller.getAttachmentURL(args));
     }
 
     connect(args) {
@@ -207,15 +211,15 @@ export class ChatSession {
     }
 
     sendEvent(args) {
-        return this.controller.sendEvent(args);
+        return this.controller._guardSession(() => this.controller.sendEvent(args));
     }
 
     sendMessageReceipt(args) {
-        return this.controller.sendMessageReceipt(args);
+        return this.controller._guardSession(() => this.controller.sendMessageReceipt(args));
     }
 
     getTranscript(args) {
-        return this.controller.getTranscript(args);
+        return this.controller._guardSession(() => this.controller.getTranscript(args));
     }
 
     getChatDetails() {
@@ -223,15 +227,20 @@ export class ChatSession {
     }
 
     describeView(args) {
-        return this.controller.describeView(args);
+        return this.controller._guardSession(() => this.controller.describeView(args));
     }
 
     getAuthenticationUrl(args) {
-        return this.controller.getAuthenticationUrl(args);
+        return this.controller._guardSession(() => this.controller.getAuthenticationUrl(args));
     }
 
     cancelParticipantAuthentication(args) {
-        return this.controller.cancelParticipantAuthentication(args);
+        return this.controller._guardSession(() => this.controller.cancelParticipantAuthentication(args));
+    }
+
+    /** Tears the session down without ending the contact; create a new ChatSession afterwards. */
+    reset() {
+        return this.controller.reset();
     }
 }
 
@@ -251,7 +260,17 @@ class CustomerChatSession extends ChatSession {
     }
 
     disconnectParticipant() {
-        return this.controller.disconnectParticipant();
+        return this.controller._guardSession(() => this.controller.disconnectParticipant());
+    }
+
+    /** Closes the WebSocket without ending the contact, keeping handlers and transcript. */
+    suspendWebSocketConnection() {
+        return this.controller.suspendWebSocketConnection();
+    }
+
+    /** Reconnects a suspended session on a fresh WebSocket. */
+    resumeWebSocketConnection() {
+        return this.controller.resumeWebSocketConnection();
     }
 }
 

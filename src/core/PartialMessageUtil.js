@@ -4,6 +4,12 @@ export default class PartialMessageUtil {
         this.partialMessageMapChanged = false;
     }
 
+    /** Drops partially received bot messages so stale chunks are never stitched onto new ones. */
+    reset() {
+        this.partialMessageMap = new Map();
+        this.partialMessageMapChanged = false;
+    }
+
     isPartialMessage(incomingData) {
         return incomingData?.ParticipantRole === "SYSTEM"
             && incomingData?.Type === "MESSAGE"

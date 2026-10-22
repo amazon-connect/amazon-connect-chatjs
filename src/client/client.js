@@ -74,11 +74,13 @@ class ChatClientFactoryImpl {
     return { client, isCustom: false };
   }
 
-  /**
-   * The session's customChatClient: per-session first, then global, else null.
-   */
-  resolveCustomChatClient(optionsInput) {
-    return optionsInput.customChatClient || GlobalConfig.getCustomChatClient() || null;
+  /** The per-session customChatClient if set (an explicit null opts out), else the global one. */
+  resolveCustomChatClient(optionsInput = {}) {
+    if (Object.prototype.hasOwnProperty.call(optionsInput, "customChatClient") &&
+        optionsInput.customChatClient !== undefined) {
+      return optionsInput.customChatClient || null;
+    }
+    return GlobalConfig.getCustomChatClient() || null;
   }
 
   _reportUnimplementedMethods(client, logMetaData) {
