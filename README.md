@@ -1044,7 +1044,10 @@ const chatSession = connect.ChatSession.create({
 - **`sendAttachment` does the whole upload:** start the upload, send the file to the returned URL, then complete the upload.
 - **Throttle typing events yourself if needed.** The bundled client throttles them, but a custom client replaces it.
 
-ChatJS checks the client when the session is created. It logs an error for a missing required method and a warning for a missing optional one. Calling a missing method rejects with an `UnImplementedMethod` error, and ChatJS doesn't fall back to the bundled client.
+ChatJS checks the client when the session is created. If [logging is configured](#connectchatsessionsetglobalconfig), it logs an error for a missing required method (`createParticipantConnection`, `disconnectParticipant`, `sendMessage`, `sendEvent`, `getTranscript`) and a warning for a missing optional one. The session is still created, and ChatJS doesn't fall back to the bundled client:
+
+- A missing `createParticipantConnection` makes `connect()` reject with `connectSuccess: false`.
+- Calling any other missing method throws an `UnImplementedMethod` error synchronously, so `.catch()` on the call doesn't catch it. Use `await` inside `try`/`catch`.
 
 **Your backend**
 

@@ -444,6 +444,15 @@ describe("customChatClient", () => {
     expect(ChatClientFactory.resolveCustomChatClient({ customChatClient: undefined })).toBe(global);
   });
 
+  // Only an explicit null opts out; other falsy values keep the pre-5.4.0 fallback.
+  test("a falsy per-session value other than null still falls back to the global client", () => {
+    const global = completeClient();
+    GlobalConfig.getCustomChatClient.mockReturnValue(global);
+
+    expect(ChatClientFactory.resolveCustomChatClient({ customChatClient: false })).toBe(global);
+    expect(ChatClientFactory.resolveCustomChatClient({ customChatClient: "" })).toBe(global);
+  });
+
   test("flags the session in logMetaData", () => {
     const logMetaData = {};
     ChatClientFactory.getCachedClient({ customChatClient: completeClient() }, logMetaData);
