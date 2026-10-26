@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Types only:** `ChatSessionInterface` gains `reset()` and `onConnectionSuspended()`, and `CustomerChatSession` gains `suspendWebSocketConnection()` and `resumeWebSocketConnection()`. No runtime change, but hand-written TypeScript mocks of these interfaces must add them to keep compiling. These interfaces describe objects returned by `ChatSession.create()` and are not meant to be implemented by apps.
 - **Types only:** In `ChatDetails`, `connectionDetails`, `connectionDetails.connectionToken` and `participantToken` may now be `null`, matching tokenless sessions and the state after `reset()` or a suspend. No runtime change, but strict-mode consumers assigning them to `string` must handle `null`.
+- **Packaging only:** `jest-environment-jsdom` moved from `dependencies` to `devDependencies`. It is test tooling and was never used at runtime, so installing ChatJS no longer pulls in Jest and its dependency tree, including `braces` (flagged for CVE-2026-93687). The bundle is unchanged. If your own tests use `testEnvironment: "jsdom"` and relied on ChatJS to provide it, add `jest-environment-jsdom` to your `devDependencies`. Fixes #314.
 
 ### Fixed
 - Connection token refresh no longer calls `createParticipantConnection` in a tight loop when `ConnectionCredentials.Expiry` is missing, invalid or in the past. A missing or invalid `Expiry` logs a warning and stops refreshing; a past one refreshes at most once a minute.
