@@ -76,11 +76,10 @@ class ChatClientFactoryImpl {
 
   /** The per-session customChatClient if set (an explicit null opts out), else the global one. */
   resolveCustomChatClient(optionsInput = {}) {
-    if (Object.prototype.hasOwnProperty.call(optionsInput, "customChatClient") &&
-        optionsInput.customChatClient !== undefined) {
-      return optionsInput.customChatClient || null;
+    if (optionsInput.customChatClient === null) {
+      return null;
     }
-    return GlobalConfig.getCustomChatClient() || null;
+    return optionsInput.customChatClient || GlobalConfig.getCustomChatClient() || null;
   }
 
   _reportUnimplementedMethods(client, logMetaData) {
