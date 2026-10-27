@@ -8,7 +8,8 @@ import {
     TRANSPORT_LIFETIME_IN_SECONDS,
     CONN_ACK_FAILED,
     AGENT_GET_CONNECTION_TOKEN_ERROR_RATE,
-    AGENT_CREATE_PARTICIPANT_ERROR_RATE
+    AGENT_CREATE_PARTICIPANT_ERROR_RATE,
+    CUSTOM_CHAT_CLIENT_METRICS
 } from "../../constants";
 import { csmService } from "../../service/csmService";
 
@@ -75,6 +76,7 @@ export default class ConnectionDetailsProvider {
                 "this session. connectionToken will be null on every subsequent call to your customChatClient."
             );
             this.tokenless = true;
+            csmService.addCountMetric(CUSTOM_CHAT_CLIENT_METRICS.TOKENLESS, CSM_CATEGORY.API);
         }
         // A tokenless session stays tokenless. The backend owns the token and its refresh, not ChatJS.
         const credentials = this.tokenless

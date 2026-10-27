@@ -1,6 +1,6 @@
 import ConnectionDetailsProvider from "./connectionDetailsProvider";
 import {  ConnectionInfoType } from "./baseConnectionHelper";
-import {ACPS_METHODS, CSM_CATEGORY, SESSION_TYPES } from "../../constants";
+import {ACPS_METHODS, CSM_CATEGORY, CUSTOM_CHAT_CLIENT_METRICS, SESSION_TYPES } from "../../constants";
 import { csmService } from "../../service/csmService";
 
 jest.useFakeTimers();
@@ -253,6 +253,28 @@ describe("ConnectionDetailsProvider", () => {
             await connectionDetailsProvider.fetchConnectionDetails();
 
             expect(warn).toHaveBeenCalledWith(expect.stringContaining("no ConnectionCredentials"));
+        });
+
+        test("counts the session in CSM once when it goes tokenless", async () => {
+            respondWith(websocketOnly);
+            setupWithCustomClient();
+            const count = jest.spyOn(csmService, "addCountMetric").mockImplementation(() => {});
+
+            await connectionDetailsProvider.fetchConnectionDetails();
+            await connectionDetailsProvider.fetchConnectionDetails();
+
+            const tokenlessCalls = count.mock.calls.filter(([name]) => name === CUSTOM_CHAT_CLIENT_METRICS.TOKENLESS);
+            expect(tokenlessCalls).toEqual([[CUSTOM_CHAT_CLIENT_METRICS.TOKENLESS, CSM_CATEGORY.API]]);
+        });
+
+        test("does not count a session that returns ConnectionCredentials", async () => {
+            respondWith({ ...websocketOnly, ConnectionCredentials: { ConnectionToken: "t", Expiry: "2026-08-20T00:00:00.000Z" } });
+            setupWithCustomClient();
+            const count = jest.spyOn(csmService, "addCountMetric").mockImplementation(() => {});
+
+            await connectionDetailsProvider.fetchConnectionDetails();
+
+            expect(count).not.toHaveBeenCalledWith(CUSTOM_CHAT_CLIENT_METRICS.TOKENLESS, expect.anything());
         });
 
         test("warns only on the first websocket-only response", async () => {

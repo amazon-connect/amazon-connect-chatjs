@@ -1049,6 +1049,8 @@ ChatJS checks the client when the session is created. If [logging is configured]
 - A missing `createParticipantConnection` makes `connect()` reject with `connectSuccess: false`.
 - Calling any other missing method throws an `UnImplementedMethod` error synchronously, so `.catch()` on the call doesn't catch it. Use `await` inside `try`/`catch`.
 
+Unless the session is created with `disableCSM: true`, ChatJS records a client-side metric count for each customer session that uses a custom client, and for each one that runs tokenless. The counts don't include tokens or message content.
+
 **Your backend**
 
 1. Call `StartChatContact`. Keep `ParticipantToken` and return only `ContactId` and `ParticipantId` to the browser.
