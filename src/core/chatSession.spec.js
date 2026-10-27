@@ -3,7 +3,7 @@ import { ChatClient } from "../client/client";
 import { csmService } from "../service/csmService";
 import { CHAT_SESSION_FACTORY } from "./chatSession";
 import { ChatController } from "./chatController";
-import { SESSION_TYPES, CHAT_EVENTS, STREAM_JS, CHAT_SESSION_ERROR_TYPES, STREAM_METRIC_ERROR_TYPES, CHAT_SESSION_SUCCESS_TYPES } from "../constants";
+import { SESSION_TYPES, CHAT_EVENTS, STREAM_JS, CHAT_SESSION_ERROR_TYPES, STREAM_METRIC_ERROR_TYPES, CHAT_SESSION_SUCCESS_TYPES, CSM_CATEGORY, CUSTOM_CHAT_CLIENT_METRICS } from "../constants";
 import { GlobalConfig } from "../globalConfig";
 import StreamMetricUtils from "../streamMetricUtils";
 
@@ -358,6 +358,46 @@ describe("customChatClient through the public create() path", () => {
         expect(spy).toHaveBeenLastCalledWith(expect.any(Object), true);
         create({});
         expect(spy).toHaveBeenLastCalledWith(expect.any(Object), false);
+    });
+
+    describe("usage metric", () => {
+        const create = options => ChatSessionObject.create({
+            chatDetails: { ...chatDetails, participantToken: "pToken" },
+            type: SESSION_TYPES.CUSTOMER,
+            options,
+            websocketManager: {},
+            disableCSM: true
+        });
+        const usageCalls = () => csmService.addCountMetric.mock.calls
+            .filter(([name]) => name === CUSTOM_CHAT_CLIENT_METRICS.SESSION);
+
+        beforeEach(() => {
+            jest.spyOn(csmService, "addCountMetric").mockImplementation(() => {});
+        });
+
+        test("counts a session that uses a per-session customChatClient", () => {
+            create({ customChatClient: customClient() });
+            expect(csmService.addCountMetric).toHaveBeenCalledWith(
+                CUSTOM_CHAT_CLIENT_METRICS.SESSION, CSM_CATEGORY.API, [{ name: "Scope", value: "session" }]
+            );
+            expect(usageCalls()).toHaveLength(1);
+        });
+
+        test("counts a session that uses the global customChatClient", () => {
+            GlobalConfig.update({ customChatClient: customClient() });
+            create({});
+            expect(csmService.addCountMetric).toHaveBeenCalledWith(
+                CUSTOM_CHAT_CLIENT_METRICS.SESSION, CSM_CATEGORY.API, [{ name: "Scope", value: "global" }]
+            );
+        });
+
+        // Customers on the bundled AWS client must see no new metric.
+        test("does not count sessions on the bundled AWS client", () => {
+            create({});
+            GlobalConfig.update({ customChatClient: customClient() });
+            create({ customChatClient: null });
+            expect(usageCalls()).toHaveLength(0);
+        });
     });
 
     test("ChatSessionObject exposes the ChatClient base class customers extend", () => {

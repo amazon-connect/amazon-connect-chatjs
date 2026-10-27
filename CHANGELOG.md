@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.4.1]
+### Added
+- Client-side metric (CSM) counts for `customChatClient` usage: `CustomChatClientSession` for each customer session that uses a custom client (with a `Scope` dimension of `session` or `global`), and `CustomChatClientTokenless` when a session runs tokenless. Nothing is recorded for sessions on the bundled AWS client, or when `disableCSM: true` is passed to `ChatSession.create()`.
+
 ## [5.4.0]
 ### Added
 - Tokenless mode for a `customChatClient`: when `createParticipantConnection` returns no `ConnectionCredentials`, ChatJS passes `null` as `connectionToken` on every call and stops connection token refresh, so neither token reaches the browser. The bundled AWS client still requires `ConnectionCredentials`. Documented under [tokenless mode](README.md#tokenless-mode).

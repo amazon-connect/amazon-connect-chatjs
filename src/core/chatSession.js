@@ -1,5 +1,5 @@
 import { ChatClientFactory, ChatClient } from "../client/client";
-import { CHAT_EVENTS, CHAT_SESSION_ERROR_TYPES, CHAT_SESSION_SUCCESS_TYPES, FEATURES, SESSION_TYPES, STREAM_JS, STREAM_METRIC_ERROR_TYPES } from "../constants";
+import { CHAT_EVENTS, CHAT_SESSION_ERROR_TYPES, CHAT_SESSION_SUCCESS_TYPES, CSM_CATEGORY, CUSTOM_CHAT_CLIENT_METRICS, FEATURES, SESSION_TYPES, STREAM_JS, STREAM_METRIC_ERROR_TYPES } from "../constants";
 import { GlobalConfig } from "../globalConfig";
 import WebSocketManager from "../lib/amazon-connect-websocket-manager";
 import { LogLevel, LogManager, Logger } from "../log";
@@ -78,6 +78,12 @@ class PersistentConnectionAndChatServiceSessionFactory extends ChatSessionFactor
             };
 
             StreamMetricUtils.publishEvent(`${STREAM_JS}-${window.connect.version}-${CHAT_SESSION_SUCCESS_TYPES.CHATJS_CONNECT_SESSION_SUCCESS}`);
+            if (usingCustomChatClient) {
+                csmService.addCountMetric(CUSTOM_CHAT_CLIENT_METRICS.SESSION, CSM_CATEGORY.API, [{
+                    name: "Scope",
+                    value: options?.customChatClient === customChatClient ? "session" : "global"
+                }]);
+            }
 
             return new ChatController(args);
         }
