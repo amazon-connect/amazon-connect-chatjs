@@ -24,6 +24,9 @@ This stand-alone library supports customer chat sessions by default. For agent c
   - [ChatSession Class](#chatsession-class)
   - [`chatSession` Methods](#chatsession-methods)
   - [`chatSession` Events](#chatsession-events)
+  - [Custom Chat Client](#connectchatsessionchatclient)
+    - [Implementing a custom chat client](#implementing-a-custom-chat-client)
+    - [Tokenless mode](#tokenless-mode)
 - [Feature Documentation](#features)
 - [Local Development 💻](#local-development)
 - [Known Issues and Debugging 🐛](#known-issues-and-debugging)
@@ -31,6 +34,7 @@ This stand-alone library supports customer chat sessions by default. For agent c
 
 ## 📢 Announcements
 
+- **2026-10-26**: v5.4.0 - Added [tokenless mode](#tokenless-mode) for a `customChatClient`, `suspendWebSocketConnection()` / `resumeWebSocketConnection()`, and `chatSession.reset()`. See [Implementing a custom chat client](#implementing-a-custom-chat-client)
 - **2026-10-07**: v5.3.0 - Added `useDualStack` in `setGlobalConfig()`, to call the dual-stack (IPv4 + IPv6) Participant Service endpoint `participant.connect.{region}.api.aws`. Off by default
 - **2026-09-23**: v5.2.0 - Added `customChatClient`, to replace the bundled AWS transport with your own. TypeScript: `GetTranscriptResult.NextToken` is now optional, so strict-mode consumers assigning it to `string` must widen to `string | undefined`
 - **2025-05-29**: Migrated baked-in dependency from AWS SDK v2 to AWS SDK v3: `src/client/aws-sdk-connectparticipant.js`
@@ -1033,6 +1037,7 @@ const chatSession = connect.ChatSession.create({
 });
 ```
 
+<a id="implementing-a-custom-chat-client"></a>
 **Implementing a custom chat client**
 
 - **Return `ConnectionCredentials` from `createParticipantConnection`, or omit it to run [tokenless](#tokenless-mode).** ChatJS never reads `ConnectionToken`. It only passes the value back as the `connectionToken` argument of every other method, so it can be any string your backend recognizes. Keep the `ConnectionToken` that `CreateParticipantConnection` returned on your backend.
