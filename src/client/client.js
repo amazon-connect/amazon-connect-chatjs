@@ -371,14 +371,15 @@ class AWSChatClient extends ChatClient {
 
   sendAttachment(connectionToken, attachment, metadata) {
     let self = this;
+    const contentType = attachment.type || CONTENT_TYPE.textPlain;
     const startUploadRequestParams = {
-      ContentType: attachment.type,
+      ContentType: contentType,
       AttachmentName: attachment.name,
       AttachmentSizeInBytes: attachment.size,
       ConnectionToken: connectionToken
     };
     const startUploadCommand = new StartAttachmentUploadCommand(startUploadRequestParams);
-    const logContent = { contentType: attachment.type, size: attachment.size };
+    const logContent = { contentType, size: attachment.size };
     return self._sendRequest(startUploadCommand)
       .then(startUploadResponse => {
         return self._uploadToS3(attachment, startUploadResponse.data.UploadMetadata)
