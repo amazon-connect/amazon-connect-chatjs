@@ -254,6 +254,38 @@ describe("client test cases", () => {
       });
     });
 
+    describe("sendAttachment", () => {
+      beforeEach(() => {
+        jest.spyOn(chatClient, "_uploadToS3").mockResolvedValue({});
+        jest.spyOn(chatClient, "_sendRequest").mockResolvedValue({
+          data: { AttachmentId: "attachmentId", UploadMetadata: {} }
+        });
+      });
+
+      test("uses the attachment MIME type as ContentType", async () => {
+        const attachment = { name: "file.pdf", type: "application/pdf", size: 100 };
+        await chatClient.sendAttachment("token", attachment);
+        expect(chatClient._sendRequest.mock.calls[0][0].input).toEqual({
+          ContentType: "application/pdf",
+          AttachmentName: "file.pdf",
+          AttachmentSizeInBytes: 100,
+          ConnectionToken: "token"
+        });
+      });
+
+      test("falls back to text/plain when the attachment MIME type is empty", async () => {
+        const attachment = { name: "server.log", type: "", size: 100 };
+        await chatClient.sendAttachment("token", attachment);
+        expect(chatClient._sendRequest.mock.calls[0][0].input.ContentType).toBe(CONTENT_TYPE.textPlain);
+      });
+
+      test("falls back to text/plain when the attachment MIME type is undefined", async () => {
+        const attachment = { name: "server.log", size: 100 };
+        await chatClient.sendAttachment("token", attachment);
+        expect(chatClient._sendRequest.mock.calls[0][0].input.ContentType).toBe(CONTENT_TYPE.textPlain);
+      });
+    });
+
     describe("getAttachmentURL", () => {
       test("Successfully gets attachment URL", async () => {
         const mockResponse = {
