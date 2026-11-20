@@ -44,7 +44,7 @@ const MyChatUI = () => {
       },
       options: { region: '<AWS_REGION>' },
       type: "CUSTOMER",
-      disableCSM: true // CSM is an internal feature, safe to disable
+      disableCSM: true // CSM can't run in React Native
     })
 
     // Connect to chat session WebsSocket connection
@@ -82,8 +82,7 @@ window.connect.ChatSession.setGlobalConfig({
 ```js
 chatSession.onConnectionLost(async () => {
   console.log('Websocket lost connection');
-  // Implement reconnection logic
-  await chatSession.connect();
+  // ChatJS tries to reconnect automatically, and onConnectionEstablished() fires when it does.
 });
 
 chatSession.onConnectionEstablished(() => {
@@ -109,15 +108,14 @@ chatSession.onDeepHeartbeatFailure(() => {
 
 ### CSM not initialized
 
-Client-side-metric (CSM) is an internal feature. This functionality is enabled by default but completely safe to disable.
+[Client-side metrics (CSM)](../README.md#client-side-metric) can't start in React Native. Chat isn't affected. If you [enabled ChatJS logging](#enable-chatjs-logging), versions earlier than v2.2.0 log CSM errors like the following, even when you pass `disableCSM: true`:
 
 ```log
-ChatJS-csmService: Failed to addCountAndErrorMetric csm:  ReferenceError: Property 'csm' doesn't exist undefined
-ChatJS-csmService: Failed to addLatencyMetric csm:  ReferenceError: Property 'csm' doesn't exist undefined
-addCSMCountMetric: CSM not initialized TypeError: Cannot read properties of null (reading 'Metric')
+ChatJS-csmService: Failed to addCountAndErrorMetric csm:  ReferenceError: Property 'csm' doesn't exist
+ChatJS-csmService: Failed to addLatencyMetric csm:  ReferenceError: Property 'csm' doesn't exist
 ```
 
-**Fix:**
+To avoid CSM log messages, use ChatJS v2.2.0 or later and pass `disableCSM: true` when you create each session:
 
 ```js
 connect.ChatSession.create({
@@ -125,3 +123,5 @@ connect.ChatSession.create({
   disableCSM: true
 })
 ```
+
+For more information about the log messages that you might see, see [CSM not initialized](../README.md#csm-not-initialized) in the README.
