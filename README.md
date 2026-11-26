@@ -27,9 +27,11 @@ This stand-alone library supports customer chat sessions by default. For agent c
   - [Custom Chat Client](#connectchatsessionchatclient)
     - [Implementing a custom chat client](#implementing-a-custom-chat-client)
     - [Tokenless mode](#tokenless-mode)
+  - [Client-side metrics (CSM)](#client-side-metric)
 - [Feature Documentation](#features)
 - [Local Development 💻](#local-development)
 - [Known Issues and Debugging 🐛](#known-issues-and-debugging)
+  - [Monitoring and alerting](#monitoring-and-alerting)
 - [Troubleshooting and Support](#troubleshooting-and-support)
 
 ## 📢 Announcements
@@ -953,6 +955,8 @@ const chatSession = await connect.ChatSession.create({
 
 `participantToken` may be omitted only when you supply a [`customChatClient`](#connectchatsessionchatclient) that holds the token on your backend, since nothing in the browser then needs it.
 
+`disableCSM` is optional. To turn off client-side metrics (CSM), set it to `true` for every customer chat session. For what CSM records and what changes when it's off, see [Client-side metrics (CSM)](#client-side-metric).
+
 #### `connect.ChatSession.setGlobalConfig()`
 
 ```js
@@ -1054,7 +1058,7 @@ ChatJS checks the client when the session is created. If [logging is configured]
 - A missing `createParticipantConnection` makes `connect()` reject with `connectSuccess: false`.
 - Calling any other missing method throws an `UnImplementedMethod` error synchronously, so `.catch()` on the call doesn't catch it. Use `await` inside `try`/`catch`.
 
-Unless the session is created with `disableCSM: true`, ChatJS records a client-side metric count for each customer session that uses a custom client, and for each one that runs tokenless. The counts don't include tokens or message content.
+Unless [CSM is turned off](#client-side-metric), ChatJS records a client-side metric count for each customer session that uses a custom client, and for each one that runs tokenless. The counts don't include tokens or message content.
 
 **Your backend**
 
@@ -2040,6 +2044,24 @@ chatSession.onChatRehydrated(event => {
 });
 ```
 
+<a id="client-side-metric"></a>
+
+### Client-side metrics (CSM)
+
+By default, ChatJS sends client-side metrics (CSM) to AWS for customer chat sessions. CSM includes only operational metrics: counts, failure counts, and latency for ChatJS API calls and WebSocket events. It doesn't include chat messages, attachment content, participant or connection tokens, or contact or participant IDs. ChatJS sends CSM data to `*.telemetry.connect.<region>.amazonaws.com`.
+
+CSM data isn't available in your AWS account and doesn't alert you about failures. To monitor chat failures yourself, see [Monitoring and alerting](#monitoring-and-alerting).
+
+**Turn CSM off**
+
+Set `disableCSM: true` in `connect.ChatSession.create()` for every customer chat session. If any customer session on the page is created without it, CSM can record metrics for every customer session on that page. You can't turn CSM off with `setGlobalConfig()`. To turn CSM back on, remove `disableCSM: true`.
+
+**What changes when CSM is off**
+
+- Chat works the same.
+- AWS doesn't receive client-side metrics from your sessions, so issues that affect only your customers are less likely to show up in them.
+- Server-side metrics, logs, and contact records don't change.
+
 ## Features
 
 Additional features and documentation can be found in the [docs/](docs) directory:
@@ -2103,8 +2125,7 @@ chatSession.onConnectionEstablished(() => {
 
 chatSession.onConnectionBroken(event => {
   console.log('WebSocket connection is broken or terminated');
-  // Implement reconnection logic
-  await chatSession.connect();
+  // ChatJS stopped trying to reconnect. You can't call connect() again on this session. To reconnect, create a new session.
 });
 ```
 
@@ -2119,6 +2140,89 @@ chatSession.onDeepHeartbeatFailure(() => {
   console.log('WebSocket connection issues detected');
 });
 ```
+
+### Monitoring and alerting
+
+Amazon Connect metrics don't include chat failures that happen in your customer's browser or app, or before a request reaches the service, and Amazon Connect doesn't alert you about errors that it returns to your backend. To find out when chats fail for your customers, report the following signals to your own monitoring tool, such as [Amazon CloudWatch RUM](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM.html), and create alarms on them.
+
+| Signal | What it means | What to alarm on |
+| --- | --- | --- |
+| Your backend's [StartChatContact](https://docs.aws.amazon.com/connect/latest/APIReference/API_StartChatContact.html) call fails | The chat couldn't start. For example, `LimitExceededException` (HTTP 429) means that your instance reached its concurrent active chats quota. | The number of failed calls |
+| Your page's request to your backend fails, or doesn't return chat details | The chat couldn't start. Your backend might not see the failure, such as when a network, CORS, or Content Security Policy problem blocks the request. | The number or percentage of failed requests |
+| `chatSession.connect()` rejects | The chat couldn't start. `CreateParticipantConnection` might have failed or been blocked. | The number or percentage of failed connects |
+| `chatSession.onConnectionLost()` | The WebSocket connection dropped or couldn't open, such as when a network blocks WebSocket connections. ChatJS tries to reconnect, and `onConnectionEstablished()` fires when it does. | Connections that don't recover within a time that you choose. Stop waiting if `onEnded()` fires, because the chat can end while the connection is down. |
+| `chatSession.onConnectionBroken()` | ChatJS stopped trying to reconnect. | Any sustained increase |
+| A `sendMessage()`, `sendEvent()`, `sendAttachment()`, `getTranscript()`, `getAttachmentURL()`, or `disconnectParticipant()` call that rejects or throws | The call failed. If `disconnectParticipant()` fails, the chat might not have ended. | The rate of failed requests |
+
+Keep the following in mind:
+
+- Don't treat a resolved `connect()` or the first `onConnectionEstablished()` as a connected WebSocket. Both happen before the WebSocket opens, and `onConnectionEstablished()` fires again when it does.
+- To retry a failed `connect()`, create a new session. ChatJS ignores a second `connect()` call on the same session.
+- Don't count calls that ChatJS rejects without sending a request, such as calls made before `connect()` succeeds or after `onEnded()` fires. They reject with a string instead of an error object.
+- Don't count typing events and read or delivered receipts toward failure alarms. ChatJS combines them into fewer requests, so one failure can reject several calls.
+
+The following example reports these signals for a customer chat session:
+
+```js
+// Replace with a call to your monitoring tool.
+function reportChatEvent(name, details) {}
+
+// Report a lost connection that doesn't come back within this time.
+const RECOVERY_TIMEOUT_MS = 30000;
+
+async function startChat(startChatResponse) {
+  if (!startChatResponse?.ContactId || !startChatResponse?.ParticipantId || !startChatResponse?.ParticipantToken) {
+    // Your backend didn't return chat details, such as when StartChatContact failed.
+    reportChatEvent("chat_start_failed", {});
+    throw new Error("Missing chat details");
+  }
+
+  // Report IDs only. chatDetails and event payloads contain participant and connection tokens.
+  const ids = {
+    contactId: startChatResponse.ContactId,
+    participantId: startChatResponse.ParticipantId,
+  };
+
+  const chatSession = connect.ChatSession.create({
+    chatDetails: {
+      contactId: startChatResponse.ContactId,
+      participantId: startChatResponse.ParticipantId,
+      participantToken: startChatResponse.ParticipantToken,
+    },
+    options: { region: "us-west-2" },
+    type: connect.ChatSession.SessionTypes.CUSTOMER,
+  });
+
+  // Subscribe before you call connect().
+  let recoveryTimer;
+  const stopRecoveryTimer = () => clearTimeout(recoveryTimer);
+  chatSession.onConnectionLost(() => {
+    reportChatEvent("chat_connection_lost", ids);
+    stopRecoveryTimer();
+    recoveryTimer = setTimeout(() => reportChatEvent("chat_connection_not_recovered", ids), RECOVERY_TIMEOUT_MS);
+  });
+  chatSession.onConnectionEstablished(stopRecoveryTimer);
+  chatSession.onEnded(stopRecoveryTimer);
+  chatSession.onConnectionBroken(() => {
+    stopRecoveryTimer();
+    reportChatEvent("chat_connection_broken", ids);
+  });
+
+  try {
+    await chatSession.connect();
+  } catch (error) {
+    // To retry, create a new session.
+    reportChatEvent("chat_connect_failed", ids);
+    throw error;
+  }
+  return { chatSession, ids };
+}
+```
+
+To create alarms on these signals:
+
+- **StartChatContact failures:** Log each failed call from your backend, create a [CloudWatch Logs metric filter](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/MonitoringLogData.html) that counts them, and create an alarm when the count in 5 minutes is higher than you normally see.
+- **Signals from the browser:** With CloudWatch RUM, record each signal as a [custom event](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-custom-events.html), create a [custom metric](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-custom-and-extended-metrics.html) for each event type, and create alarms on those metrics, such as when `chat_connect_failed` or `chat_connection_not_recovered` events in 5 minutes are higher than you normally see.
 
 ### Handle Browser Refresh
 
@@ -2190,7 +2294,7 @@ ChatJS requires manually calling `chatSession.getTranscript()` to fetch missed m
 
 ```js
 // Fetch any missed messages by retrieving the recent transcript
-chatSession.onConnectionEstablished(() => {
+chatSession.onConnectionEstablished(async () => {
     console.log('WebSocket connection has been established/reestablished');
 
     // Get recent messages including any that were missed while offline
@@ -2207,17 +2311,17 @@ chatSession.onConnectionEstablished(() => {
 
 ### CSM not initialized
 
-Client-side-metric (CSM) is an internal feature. This functionality is enabled by default but completely safe to disable.
+CSM messages in the console don't affect chat. They mean that [client-side metrics (CSM)](#client-side-metric) couldn't start or couldn't send metrics, such as in a browser that doesn't support [SharedWorker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker#browser_compatibility), on a page whose Content Security Policy blocks inline scripts or `blob:` workers, or when your Content Security Policy, a browser extension, or a network blocks `*.telemetry.connect.<region>.amazonaws.com`. You might see messages like the following:
 
 ```log
-ChatJS-csmService: Failed to addCountAndErrorMetric csm:  ReferenceError: Property 'csm' doesn't exist undefined
-
-ChatJS-csmService: Failed to addLatencyMetric csm:  ReferenceError: Property 'csm' doesn't exist undefined
-
-addCSMCountMetric: CSM not initialized TypeError: Cannot read properties of null (reading 'Metric')
+ChatJS-csmService: Load csm script error:
+ChatJS-csmService: Failed to initialize csm:
+ChatJS-csmService: Failed to addCountAndErrorMetric csm:
+ChatJS-csmService: Failed to addLatencyMetric csm:
+[FATAL] CSM initialization failed! Please make sure the sharedWorkerUrl is reachable.
 ```
 
-**Fix:**
+You can safely [turn CSM off](#client-side-metric) to stop them:
 
 ```js
 connect.ChatSession.create({
@@ -2225,6 +2329,8 @@ connect.ChatSession.create({
   disableCSM: true
 });
 ```
+
+If you still see CSM messages after you turn CSM off, upgrade to ChatJS v2.2.0 or later. For React Native, see [CSM not initialized](docs/ReactNativeSupport.md#csm-not-initialized) in React Native Support.
 
 ### React Native Support
 
@@ -2272,7 +2378,7 @@ const MyChatUI = () => {
       },
       options: { region: '<AWS-REGION>' },
       type: "CUSTOMER",
-      disableCSM: true // CSM is an internal feature, safe to disable
+      disableCSM: true // CSM can't run in React Native
     })
 
     // Connect to chat session WebsSocket connection
